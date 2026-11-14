@@ -1,0 +1,7 @@
+# Runtime state (pools, scheduler config/runs, profiles overrides, logs).
+# The deployed seeds/ directory is versioned; data/ is machine-local and
+# shadowed by the Fly.io volume in production.
+data/
+__pycache__/
+*.pyc
+.DS_Store

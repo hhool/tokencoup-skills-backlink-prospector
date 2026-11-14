@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "note": "线上外链发现渠道（免费渠道，无需 API key）。poll=true 的渠道在每次分析时按顺序轮询执行；enabled=false 可临时停用；interval_minutes 为建议轮询间隔（后台服务周期查询时参考）。每个渠道返回真实 URL，统一走 HTTP 校验后才入库。",
+  "rotation": {
+    "mode": "sequential",
+    "max_results_per_channel": 20,
+    "max_queries_per_channel": 8,
+    "concurrency": 4,
+    "inter_query_delay_seconds": 1.0,
+    "note": "sequential = 按 enabled 渠道顺序依次轮询；每个渠道内部多查询并发受限并限速，避免被封。"
+  },
+  "channels": [
+    {
+      "id": "bing_rss",
+      "name_zh": "Bing 搜索 RSS（免费，无需 key）",
+      "name_en": "Bing search RSS (free, no key)",
+      "kind": "bing_rss",
+      "enabled": true,
+      "poll": true,
+      "interval_minutes": 60,
+      "templates": {
+        "guest": [
+          "{kw} \"write for us\"",
+          "{kw} \"guest post\"",
+          "{kw} \"become a contributor\""
+        ],
+        "resource": [
+          "{kw} resources page",
+          "{kw} useful links"
+        ],
+        "industry_media": [
+          "best {kw} sites 2026",
+          "top {kw} websites review"
+        ],
+        "community": [
+          "{kw} forum discussion",
+          "{kw} community board"
+        ],
+        "directory": [
+          "{kw} directory submit site",
+          "{kw} web directory"
+        ]
+      },
+      "note": "Bing RSS 输出真实结果 URL，best-effort；被限流或结果不相关时返回空、自动降级。"
+    },
+    {
+      "id": "bing_cite",
+      "name_zh": "Bing 网页版（cite 域名提取，免费）",
+      "name_en": "Bing web (cite domain extraction, free)",
+      "kind": "bing_cite",
+      "enabled": true,
+      "poll": true,
+      "interval_minutes": 120,
+      "templates": {
+        "guest": [
+          "{kw} \"write for us\""
+        ],
+        "resource": [
+          "{kw} resources page"
+        ],
+        "industry_media": [
+          "best {kw} sites 2026"
+        ],
+        "community": [
+          "{kw} forum discussion"
+        ]
+      },
+      "note": "从 b_algo 结果块 cite 元素提取真实域名（Bing 跳转链接为加密，无法解码）。限流时返回空。"
+    },
+    {
+      "id": "duckduckgo_html",
+      "name_zh": "DuckDuckGo HTML 版（免费）",
+      "name_en": "DuckDuckGo HTML (free)",
+      "kind": "ddg_html",
+      "enabled": true,
+      "poll": true,
+      "interval_minutes": 180,
+      "templates": {
+        "guest": [
+          "{kw} \"write for us\"",
+          "{kw} \"guest post\""
+        ],
+        "resource": [
+          "{kw} resources page"
+        ],
+        "industry_media": [
+          "best {kw} sites 2026"
+        ],
+        "community": [
+          "{kw} forum discussion"
+        ],
+        "directory": [
+          "{kw} web directory"
+        ]
+      },
+      "note": "从 result__a 的 uddg 参数还原真实 URL。有频率限制（429/挑战页时返回空并标记限流）。"
+    }
+  ]
+}

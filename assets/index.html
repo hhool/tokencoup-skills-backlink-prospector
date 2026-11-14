@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>外链目标发现器 · Backlink Prospector</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a212b; --panel2:#222b38; --border:#2c3744;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#4ea1ff; --accent2:#7ee787;
+    --warn:#f0883e; --bad:#ff6b6b; --good:#3fb950;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;margin:0 0 12px;color:var(--text)}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+  input[type=text],textarea{width:100%;background:var(--panel2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:9px 11px;font-size:13px;font-family:inherit}
+  textarea{resize:vertical;min-height:64px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:14px}
+  .checks{display:flex;gap:18px;align-items:center}
+  .checks label{margin:0;color:var(--text);display:flex;gap:6px;align-items:center;font-size:13px}
+  button{background:var(--accent);color:#08111c;border:0;border-radius:8px;padding:10px 18px;
+    font-size:14px;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .card .n{font-size:24px;font-weight:700}
+  .card .l{color:var(--muted);font-size:12px;margin-top:2px}
+  .card.gap .n{color:var(--accent2)}
+  .card.rec .n{color:var(--warn)}
+  .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar select,.toolbar input[type=number]{background:var(--panel2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:7px 9px;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;position:sticky;top:0;background:var(--panel)}
+  tbody tr:hover{background:var(--panel2)}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--border)}
+  .pill.ok{color:var(--good);border-color:#1f6f3a}
+  .pill.no{color:var(--bad);border-color:#7d2b2b}
+  .pill.gap{color:var(--accent2);border-color:#2f6b3a}
+  .pill.comp{color:var(--warn);border-color:#7a4a1f}
+  .pill.have{color:var(--accent2);border-color:#2f6b3a}
+  .badge{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
+  .prio{font-weight:700}
+  .note{color:var(--muted);font-size:12px}
+  .src{margin-top:14px;font-size:12px;color:var(--muted)}
+  .lim{margin-top:8px;font-size:12px;color:var(--muted)}
+  .lim li{margin:2px 0}
+  .err{color:var(--bad);background:#2a1518;border:1px solid #5a2630;padding:10px 12px;border-radius:8px;margin-bottom:14px}
+  .toggler{cursor:pointer;user-select:none;color:var(--accent);font-size:13px;font-weight:600}
+  .toggler:hover{text-decoration:underline}
+  .tips-body{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+  .tips-note{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px}
+  .tips-note b{color:var(--accent2)}
+  .ttable th,.ttable td{font-size:12.5px;padding:7px 9px}
+  .warnbox{background:#2a2113;border:1px solid #6b4a1f;color:#f0c08a;border-radius:8px;padding:10px 12px;font-size:12.5px;margin:8px 0}
+  .hidden{display:none}
+  .kv{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 12px}
+  .kv .item{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px}
+  .kv .item b{font-size:18px;display:block}
+  .sched-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
+  .sched-card .grid{margin-bottom:8px}
+  .sched-card .p-del{margin-left:auto;padding:4px 12px;font-size:12px}
+  .sched-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .sched-head .checks{margin:0}
+  .chartbox{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-top:8px}
+  .chartbox h3{margin:0 0 4px;font-size:13px}
+  .chart-sub{color:var(--muted);font-size:11px;margin:0 0 8px}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:18px;flex-wrap:wrap}
+  .tab{padding:10px 16px;cursor:pointer;color:var(--muted);border:1px solid transparent;
+    border-bottom:none;border-radius:8px 8px 0 0;font-weight:600;font-size:13px;background:transparent}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--text);background:var(--panel);border-color:var(--border);border-bottom:1px solid var(--panel)}
+  .tabpane{display:none}
+  .tabpane.active{display:block}
+  .ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .ov-full{grid-column:1 / -1}
+  .topbar{display:flex;align-items:center;gap:12px}
+  #langToggle{margin-left:auto;padding:6px 14px;font-size:12px;border:1px solid var(--border);background:var(--panel2);color:var(--text)}
+  .center-dom{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;margin-bottom:18px;flex-wrap:wrap}
+  .center-dom .lab{color:var(--muted);font-size:12px}
+  .center-dom input{width:240px;font-weight:700;color:var(--accent2);font-family:inherit}
+  .center-dom .hint{color:var(--muted);font-size:11px}
+  th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+  th.sortable:hover{color:var(--accent)}
+  th.sortable::after{content:" ⇅";font-size:9px;opacity:.35;margin-left:4px}
+  th.sorted-asc::after{content:" ▲";font-size:10px;opacity:1}
+  th.sorted-desc::after{content:" ▼";font-size:10px;opacity:1}
+  .minitable{width:100%;border-collapse:collapse;font-size:12.5px;color:var(--text)}
+  .minitable th,.minitable td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  .minitable th{position:static;background:transparent}
+  .minitable tbody tr:hover{background:rgba(78,161,255,.07)}
+  .sortbar{font-size:12px;color:var(--muted);margin:0 0 8px}
+  .poolfilters{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin:12px 0}
+  .tree-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:0}
+  .tree-head{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:8px;flex-wrap:wrap}
+  .tree-node{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:12.5px;user-select:none}
+  .tree-node:hover{background:rgba(78,161,255,.10)}
+  .tree-node.active{background:rgba(78,161,255,.20);color:var(--accent)}
+  .tree-node.empty,.chip.empty{opacity:.45}
+  .tree-node.empty:hover{opacity:.9}
+  .tree-node .tw{color:var(--muted);font-size:10px;width:10px}
+  .tree-node .cnt{margin-left:auto;display:flex;gap:7px;font-size:11px;color:var(--muted);align-items:center}
+  .tree-node .cnt b{font-weight:700;color:var(--text)}
+  .tree-node .cnt .c-acq{color:var(--accent2)}
+  .tree-node .cnt .c-gap{color:var(--warn)}
+  .tree-kids{margin-left:12px;border-left:1px dashed var(--border);padding-left:8px}
+  .tree-kids .tree-node .tw{width:auto}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:11.5px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);cursor:pointer;color:var(--muted)}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{background:rgba(78,161,255,.16);border-color:var(--accent);color:var(--accent)}
+  .chip .cn{opacity:.75;margin-left:4px}
+  @media(max-width:860px){.cards{grid-template-columns:repeat(2,1fr)}.ov-grid,.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Shown only when the channel config API genuinely fails -->
+  <div id="cacheNotice" style="background:#f0883e;color:#08111c;padding:12px 16px;border-radius:8px;margin-bottom:18px;display:none;font-size:13px;font-weight:600;">
+    ⚠️ <span data-i18n="ch_err">渠道配置加载失败：/api/channels 返回异常。请确认后台服务在线（/api/health）后重试。</span>
+  </div>
+  <div class="topbar">
+    <h1 data-i18n="title">外链目标发现器 <span style="color:var(--muted);font-weight:400;font-size:14px">· Backlink Prospector</span></h1>
+    <button id="langToggle">EN</button>
+  </div>
+  <p class="sub" data-i18n="sub">为某一域名查找真实、有效的可用外链目标地址 · 后台服务 + CSV + 前端 · 仅用免费数据源（Tranco / Bing / 种子库 / 本地外链导入）</p>
+
+  <div class="center-dom">
+    <span class="badge">中心域名 · Center domain</span>
+    <span class="lab" data-i18n="center_lab">分析对象（所有 Tab 围绕此域名展开）：</span>
+    <input type="text" id="centerDomain" value="soundbuttons.cc" spellcheck="false">
+    <span class="hint" data-i18n="center_hint">切换域名后，分析/外链池/后台档案默认均以该域名为中心</span>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="ov" data-i18n="tab_ov">📊 总体概况</div>
+    <div class="tab" data-tab="analyze" data-i18n="tab_analyze">🔍 分析</div>
+    <div class="tab" data-tab="tips" data-i18n="tab_tips">📖 类型说明 &amp; 权重</div>
+    <div class="tab" data-tab="pool" data-i18n="tab_pool">🗃 外链池 · 已有 vs 空缺</div>
+    <div class="tab" data-tab="sched" data-i18n="tab_sched">⚙ 后台服务 · 周期查询</div>
+  </div>
+
+  <div id="err" class="err hidden"></div>
+
+  <!-- ============ TAB 1: OVERVIEW ============ -->
+  <div class="tabpane active" id="tab-ov">
+    <div class="cards" id="ovCards">
+      <div class="card"><div class="n" id="ov_total">0</div><div class="l" data-i18n="ov_total">累计发现 Discovered</div></div>
+      <div class="card"><div class="n" id="ov_acq">0</div><div class="l" data-i18n="ov_acq">已拥有 Acquired</div></div>
+      <div class="card gap"><div class="n" id="ov_gap">0</div><div class="l" data-i18n="ov_gap">空缺 Gap</div></div>
+      <div class="card gap"><div class="n" id="ov_gapv">0</div><div class="l" data-i18n="ov_gapv">空缺且有效 Gap &amp; valid</div></div>
+        <div class="card rec"><div class="n" id="ov_recip">0%</div><div class="l" data-i18n="ov_recip">互链占比 Reciprocal</div></div>
+    </div>
+    <p class="note" id="ovCenter" style="margin:0 0 14px"></p>
+
+    <div class="ov-grid">
+      <div class="chartbox">
+        <h3 data-i18n="ov_type_title">外链类型分布</h3>
+        <p class="chart-sub" data-i18n="ov_type_sub">基于外链池累计发现数（按类型）</p>
+        <div id="ovTypeChart"></div>
+      </div>
+      <div class="chartbox">
+        <h3 data-i18n="ov_funnel_title">缺口漏斗</h3>
+        <p class="chart-sub" data-i18n="ov_funnel_sub">发现 → 有效 → 空缺 → 空缺且有效</p>
+        <div id="ovFunnel"></div>
+      </div>
+      <div class="ov-full chartbox">
+        <h3 data-i18n="ov_recip_title">互链占比监控</h3>
+        <p class="chart-sub" data-i18n="ov_recip_sub">互链超过 30% 阈值即触发 link scheme 风险告警（互链类型已与 directory 分开统计）</p>
+        <div id="ovRecip"></div>
+      </div>
+      <div class="ov-full chartbox">
+        <h3 data-i18n="ov_obtain_title">各类型可获取性对比（越高越易拿）</h3>
+        <p class="chart-sub" data-i18n="ov_obtain_sub">来源：类型说明 Tips（obtain_score，满分 30）</p>
+        <div id="ovObtain"></div>
+      </div>
+    </div>
+    <p class="note" id="ovNote" style="margin-top:12px">…</p>
+  </div>
+
+  <!-- ============ TAB 2: ANALYZE ============ -->
+  <div class="tabpane" id="tab-analyze">
+    <div class="panel">
+      <div class="grid">
+        <div>
+          <label><span data-i18n="lbl_domain">目标域名 / Target domain</span></label>
+          <input type="text" id="domain" value="soundbuttons.cc" placeholder="soundbuttons.cc">
+        </div>
+        <div>
+          <label><span data-i18n="lbl_keywords">品类关键词 / Niche keywords（逗号分隔）</span></label>
+          <input type="text" id="keywords" value="sound, soundboard, sound buttons, sound effects, meme soundboard, funny sounds">
+        </div>
+      </div>
+      <p class="note" id="profileNote" style="margin:8px 0 0"></p>
+      <div class="grid" style="margin-top:14px">
+        <div>
+          <label><span data-i18n="lbl_competitors">竞品域名 / Competitors（逗号或换行分隔，自动排除）</span></label>
+          <textarea id="competitors" placeholder="myinstants.com&#10;voicemod.net"></textarea>
+        </div>
+        <div>
+          <label><span data-i18n="lbl_existing">已有外链域名 / Existing backlinks（每行一个，留空则自动以「外链池」作为已有库去重）</span></label>
+          <textarea id="existing" placeholder="粘贴 GSC / Ahrefs 导出的已有外链域名，每行一个"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="checks">
+          <label><input type="checkbox" id="use_bing" checked> <span data-i18n="c_bing">Bing 实时发现</span></label>
+          <label><input type="checkbox" id="use_tranco" checked> <span data-i18n="c_tranco">Tranco 权威信号</span></label>
+          <label><input type="checkbox" id="persist" checked> <span data-i18n="c_persist">并入外链池</span></label>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:10px">
+          <button id="run" data-i18n="btn_analyze">分析</button>
+          <button id="csv" class="ghost" data-i18n="btn_csv">下载 CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="summary" class="cards hidden">
+      <div class="card"><div class="n" id="c_cand">0</div><div class="l" data-i18n="c_cand">候选地址 Candidates</div></div>
+      <div class="card"><div class="n" id="c_valid">0</div><div class="l" data-i18n="c_valid">有效地址 Valid (HTTP reachable)</div></div>
+      <div class="card gap"><div class="n" id="c_gap">0</div><div class="l" data-i18n="c_gap">缺口 Gap (未拥有)</div></div>
+      <div class="card gap"><div class="n" id="c_gapv">0</div><div class="l" data-i18n="c_gapv">缺口且有效 Gap &amp; valid</div></div>
+    </div>
+
+    <div id="results" class="panel hidden">
+      <div class="toolbar">
+        <label style="margin:0"><span data-i18n="f_type">类型</span></label>
+        <select id="f_type"><option value=""></option></select>
+        <label style="margin:0"><span data-i18n="f_min">最低优先级</span></label>
+        <input type="number" id="f_min" value="0" min="0" max="100" style="width:80px">
+        <label style="margin:0 0 0 4px" class="checks"><input type="checkbox" id="f_gap"> <span data-i18n="f_gap">仅缺口</span></label>
+        <label style="margin:0 0 0 4px" class="checks"><input type="checkbox" id="f_valid" checked> <span data-i18n="f_valid">仅有效</span></label>
+        <span id="f_count" class="badge"></span>
+      </div>
+      <div class="sortbar" data-i18n="sort_hint">点击表头可排序 · Click a column header to sort</div>
+      <div style="overflow-x:auto">
+        <table id="resTable">
+          <thead><tr>
+            <th class="sortable" data-sort="domain" data-i18n="h_url">URL / 域名</th>
+            <th class="sortable" data-sort="type" data-i18n="h_type">类型</th>
+            <th class="sortable" data-sort="authority" data-i18n="h_auth">权威</th>
+            <th class="sortable" data-sort="relevance" data-i18n="h_rel">相关</th>
+            <th class="sortable" data-sort="ascore" data-i18n="h_ascore">权威分</th>
+            <th class="sortable" data-sort="obtain" data-i18n="h_obt">可获取</th>
+            <th class="sortable" data-sort="priority" data-i18n="h_prio">优先级</th>
+            <th class="sortable" data-sort="valid" data-i18n="h_check">校验</th>
+            <th class="sortable" data-sort="gap" data-i18n="h_gap">缺口</th>
+            <th class="sortable" data-sort="note" data-i18n="h_note">备注</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="src" id="src"></div>
+      <ul class="lim" id="lim"></ul>
+    </div>
+  </div>
+
+  <!-- ============ TAB 3: TIPS ============ -->
+  <div class="tabpane" id="tab-tips">
+    <div class="panel">
+      <span class="toggler" id="tipsToggle" data-i18n="tips_toggle">▸ 类型说明 &amp; 权重 Tips（含互链说明 / 打分模型 / 周期查询）</span>
+      <div id="tipsBody" class="tips-body hidden"></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 4: POOL ============ -->
+  <div class="tabpane" id="tab-pool">
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:0">
+        <h2 style="margin:0" data-i18n="pool_title">外链池 · 已有 vs 空缺 <span class="badge">周期查询不断扩充</span> <span id="poolCenter" class="badge" style="background:#7a5a1a;color:#ffd27a"></span></h2>
+        <div style="margin-left:auto;display:flex;gap:10px">
+          <button id="poolLoad" class="ghost" data-i18n="pool_load">加载外链池</button>
+          <button id="poolCsv" class="ghost" data-i18n="pool_csv">下载池 CSV</button>
+        </div>
+      </div>
+      <div class="note" style="margin:8px 0 4px" data-i18n="pool_note">
+        每次分析自动并入外链池（按域名去重、累计发现次数与首见/末见时间）。已有外链库即外链池本身：新分析条目与库内条目按域名自动去重，命中标「已拥有」，不计入缺口。也可用下方导入框补充 GSC/Ahrefs 导出。
+      </div>
+
+      <div class="kv" id="poolStats" style="display:none">
+        <div class="item" style="border-color:#2c3744"><span data-i18n="ps_total">累计发现</span><b id="p_total">0</b></div>
+        <div class="item" style="border-color:#2f6b3a"><span data-i18n="ps_acq">已拥有</span><b id="p_acq" style="color:var(--accent2)">0</b></div>
+        <div class="item" style="border-color:#2f6b3a"><span data-i18n="ps_gap">空缺</span><b id="p_gap" style="color:var(--accent2)">0</b></div>
+        <div class="item" style="border-color:#2f6b3a"><span data-i18n="ps_gapv">空缺且有效</span><b id="p_gapv" style="color:var(--accent2)">0</b></div>
+        <div class="item" id="p_recip_box" style="border-color:#3a4a5a"><span data-i18n="ps_recip">互链占比</span><b id="p_recip">0%</b><div class="note" id="p_recip_note" style="font-size:11px"></div></div>
+      </div>
+
+      <div class="note" style="margin:10px 0 4px">
+        <span id="existingCount" class="badge"></span>
+        <span id="existingMsg" class="badge"></span>
+      </div>
+      <div class="poolfilters">
+        <div class="tree-card">
+          <div class="tree-head">
+            <span data-i18n="tree_title">目录树 · 类型（点击筛选，可多选）</span>
+            <span class="badge" id="treeScope"></span>
+          </div>
+          <div class="note" style="margin:0 0 6px;font-size:11px" data-i18n="tree_legend">计数：总数 / 已拥有 / 缺口</div>
+          <div id="poolTree"></div>
+        </div>
+        <div class="tree-card">
+          <div class="tree-head"><span data-i18n="flt_status">状态筛选</span></div>
+          <div class="checks">
+            <label><input type="checkbox" class="st-acq" checked> <span data-i18n="flt_acquired">已拥有 Acquired</span></label>
+            <label><input type="checkbox" class="st-gap" checked> <span data-i18n="flt_gap">缺口 Gap</span></label>
+          </div>
+          <div class="tree-head" style="margin-top:12px"><span data-i18n="flt_type">类型筛选（可多选）</span></div>
+          <div class="chips" id="poolTypeChips"></div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button id="poolFilterReset" class="ghost" data-i18n="flt_reset">重置筛选</button>
+            <span class="note" id="poolFilterNote"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sortbar" data-i18n="sort_hint">点击表头可排序 · Click a column header to sort</div>
+      <div style="overflow-x:auto">
+        <table id="poolTable" class="hidden">
+          <thead><tr>
+            <th class="sortable" data-sort="domain" data-i18n="ph_domain">域名</th>
+            <th class="sortable" data-sort="type" data-i18n="ph_type">类型</th>
+            <th class="sortable" data-sort="authority" data-i18n="ph_auth">权威</th>
+            <th class="sortable" data-sort="priority" data-i18n="ph_prio">优先级</th>
+            <th class="sortable" data-sort="valid" data-i18n="ph_check">校验</th>
+            <th class="sortable" data-sort="status" data-i18n="ph_status">状态</th>
+            <th class="sortable" data-sort="times" data-i18n="ph_times">发现次数</th>
+            <th class="sortable" data-sort="seen" data-i18n="ph_seen">首见 / 末见</th>
+            <th data-i18n="ph_edit">编辑</th>
+          </tr></thead>
+          <tbody id="poolBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:10px">
+        <label><span data-i18n="imp_label">导入已有外链（GSC / Ahrefs / Common Crawl 导出，每行一个域名）→ 标记「已拥有」</span></label>
+        <textarea id="importExisting" placeholder="example.com&#10;another-backlink.com"></textarea>
+        <div style="margin-top:8px"><button id="importBtn" data-i18n="imp_btn">导入并标记已拥有</button> <span id="importMsg2" class="badge"></span></div>
+      </div>
+
+      <div class="grid" style="margin-top:8px">
+        <div>
+          <label><span data-i18n="bytype_label">按类型分布 / By type</span></label>
+          <div class="sortbar" style="margin:8px 0 4px" data-i18n="sort_hint">点击表头可排序 · Click a column header to sort</div>
+          <div id="poolByType" style="background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-height:64px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 5: SCHEDULER ============ -->
+  <div class="tabpane" id="tab-sched">
+    <div class="panel">
+      <div class="toolbar" style="margin-bottom:0">
+        <h2 style="margin:0" data-i18n="sched_title">后台服务 · 周期查询 <span class="badge">定时自动并入外链池</span></h2>
+        <div style="margin-left:auto;display:flex;gap:10px">
+          <button id="schedRun" class="ghost" data-i18n="sched_run">立即运行</button>
+          <button id="schedSave" data-i18n="sched_save">保存配置</button>
+        </div>
+      </div>
+      <div class="note" style="margin:8px 0 4px" data-i18n="sched_note">
+        配置后台定时任务：开启后，系统按设定间隔自动对下方「定时档案」逐个执行分析，并把结果并入外链池（去重、累计）。适合"周期查询、不断扩充外链地址"。<span id="schedCenter" style="color:var(--accent2)"></span>
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <div class="sched-head">
+          <label class="checks"><input type="checkbox" id="schedEnabled"> <span data-i18n="sched_enable">启用周期查询</span></label>
+          <div>
+            <label style="display:inline;margin-right:8px" data-i18n="sched_interval">间隔（小时）</label>
+            <input type="number" id="schedInterval" value="24" min="0.05" max="8760" step="0.05" style="width:90px">
+          </div>
+          <button id="schedAdd" class="ghost" data-i18n="sched_add">从当前表单添加为定时档案</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px"><b style="font-size:13px" data-i18n="sched_profiles">定时档案 / Profiles</b></div>
+      <div id="schedProfiles" style="margin-top:8px"></div>
+
+      <div id="schedStatus" style="margin-top:12px"></div>
+
+      <div style="margin-top:14px"><b style="font-size:13px" data-i18n="ch_title">线上外链发现渠道 · 轮询执行</b>
+        <span class="badge" id="chCount"></span>
+        <span class="note" id="chDomainBadge"></span>
+      </div>
+      <div class="note" style="margin:6px 0" data-i18n="ch_note">
+        所有免费发现渠道按顺序轮询执行（channels.json 维护：启用/停用、每渠道查询模板与建议间隔）。分析时逐渠道执行并合并去重；被限流的渠道自动降级为空，不影响其他渠道。
+      </div>
+      <div class="sortbar" data-i18n="sort_hint">点击表头可排序 · Click a column header to sort</div>
+      <div style="overflow-x:auto">
+        <table id="chTable">
+          <thead><tr>
+            <th class="sortable" data-sort="name" data-i18n="ch_id">渠道</th>
+            <th class="sortable" data-sort="kind" data-i18n="ch_kind">类型</th>
+            <th class="sortable" data-sort="enabled" data-i18n="ch_enabled">状态</th>
+            <th class="sortable" data-sort="interval" data-i18n="ch_interval">建议间隔</th>
+            <th class="sortable" data-sort="found" data-i18n="ch_last">本次结果</th>
+            <th data-i18n="ch_action">操作</th>
+          </tr></thead>
+          <tbody id="chBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:12px"><b style="font-size:13px" data-i18n="sched_runs">运行历史 / Run history</b></div>
+      <div class="sortbar" data-i18n="sort_hint">点击表头可排序 · Click a column header to sort</div>
+      <div style="overflow-x:auto;margin-top:8px">
+        <table id="runsTable">
+          <thead><tr>
+            <th class="sortable" data-sort="ts" data-i18n="rh_time">时间</th>
+            <th class="sortable" data-sort="domain" data-i18n="rh_domain">域名</th>
+            <th class="sortable" data-sort="ok" data-i18n="rh_result">结果</th>
+            <th class="sortable" data-sort="candidates" data-i18n="rh_cand">候选数</th>
+            <th class="sortable" data-sort="pool" data-i18n="rh_pool">外链池</th>
+          </tr></thead>
+          <tbody id="schedRuns"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let LAST = null, TIPS = null, POOL = null, LANG = 'zh';
+let CENTER = 'soundbuttons.cc';
+const TYPE_LABEL = {industry_media:'行业媒体',authority:'权威机构',digital_pr:'数字PR',guest:'客座博客',
+  resource:'资源页',partner:'互补品牌',directory:'目录',reciprocal:'互链',community:'社区',social:'社媒'};
+const TYPE_LABEL_EN = {industry_media:'Industry media',authority:'Authority',digital_pr:'Digital PR',guest:'Guest post',
+  resource:'Resource',partner:'Partner',directory:'Directory',reciprocal:'Reciprocal',community:'Community',social:'Social'};
+
+const I18N = {
+  zh: {
+    title:'外链目标发现器 <span style="color:var(--muted);font-weight:400;font-size:14px">· Backlink Prospector</span>',
+    sub:'为某一域名查找真实、有效的可用外链目标地址 · 后台服务 + CSV + 前端 · 仅用免费数据源（Tranco / Bing / 种子库 / 本地外链导入）',
+    center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'切换域名后，分析/外链池/后台档案默认均以该域名为中心',
+    tab_ov:'📊 总体概况', tab_analyze:'🔍 分析', tab_tips:'📖 类型说明 & 权重', tab_pool:'🗃 外链池 · 已有 vs 空缺', tab_sched:'⚙ 后台服务 · 周期查询',
+    ov_total:'累计发现 Discovered', ov_acq:'已拥有 Acquired', ov_gap:'空缺 Gap', ov_gapv:'空缺且有效 Gap & valid', ov_recip:'互链占比 Reciprocal',
+    ov_type_title:'外链类型分布', ov_type_sub:'基于外链池累计发现数（按类型）',
+    ov_funnel_title:'缺口漏斗', ov_funnel_sub:'发现 → 有效 → 空缺 → 空缺且有效',
+    ov_recip_title:'互链占比监控', ov_recip_sub:'互链超过 30% 阈值即触发 link scheme 风险告警（互链类型已与 directory 分开统计）',
+    ov_obtain_title:'各类型可获取性对比（越高越易拿）', ov_obtain_sub:'来源：类型说明 Tips（obtain_score，满分 30）',
+    lbl_domain:'目标域名 / Target domain', lbl_keywords:'品类关键词 / Niche keywords（逗号分隔）',
+    lbl_competitors:'竞品域名 / Competitors（逗号或换行分隔，自动排除）', lbl_existing:'已有外链域名 / Existing backlinks（每行一个；留空则自动以「外链池」作为已有库去重）',
+    c_bing:'Bing 实时发现', c_tranco:'Tranco 权威信号', c_persist:'并入外链池',
+    btn_analyze:'分析', btn_csv:'下载 CSV',
+    c_cand:'候选地址 Candidates', c_valid:'有效地址 Valid (HTTP reachable)', c_gap:'缺口 Gap (未拥有)', c_gapv:'缺口且有效 Gap & valid',
+    f_type:'类型', f_min:'最低优先级', f_gap:'仅缺口', f_valid:'仅有效',
+    h_url:'URL / 域名', h_type:'类型', h_auth:'权威', h_rel:'相关', h_ascore:'权威分', h_obt:'可获取', h_prio:'优先级', h_check:'校验', h_gap:'缺口', h_note:'备注',
+    tips_toggle:'▸ 类型说明 & 权重 Tips（含互链说明 / 打分模型 / 周期查询）',
+    pool_title:'外链池 · 已有 vs 空缺 <span class="badge">周期查询不断扩充</span>', pool_load:'加载外链池', pool_csv:'下载池 CSV',
+    pool_note:'每次分析自动并入外链池（按域名去重、累计发现次数与首见/末见时间）。已有外链库即外链池本身：新分析条目与库内条目按域名自动去重，命中标「已拥有」，不计入缺口。点击下方列表标题可排序；「编辑」列可直接标记/取消已拥有。',
+    existing_title:'已有外链库 · 条目状态（外链池）',
+    ps_total:'累计发现', ps_acq:'已拥有', ps_gap:'空缺', ps_gapv:'空缺且有效', ps_recip:'互链占比',
+    imp_label:'导入已有外链（GSC / Ahrefs / Common Crawl 导出，每行一个域名）→ 标记「已拥有」', imp_btn:'导入并标记已拥有',
+    bytype_label:'按类型分布 / By type', bytype_hint:'点击「加载外链池」查看分布。',
+    sort_hint:'点击表头可排序 · Click a column header to sort',
+    tree_title:'目录树 · 类型（点击筛选，可多选）', tree_legend:'计数：总数 / 已拥有 / 缺口',
+    flt_status:'状态筛选', flt_acquired:'已拥有 Acquired', flt_gap:'缺口 Gap',
+    flt_type:'类型筛选（可多选）', flt_reset:'重置筛选',
+    ph_domain:'域名', ph_type:'类型', ph_auth:'权威', ph_prio:'优先级', ph_check:'校验', ph_status:'状态', ph_times:'发现次数', ph_seen:'首见 / 末见', ph_edit:'编辑',
+    sched_title:'后台服务 · 周期查询 <span class="badge">定时自动并入外链池</span>', sched_run:'立即运行', sched_save:'保存配置',
+    ch_title:'线上外链发现渠道 · 轮询执行', ch_note:'所有免费发现渠道按顺序轮询执行（channels.json 维护：启用/停用、每渠道查询模板与建议间隔）。分析时逐渠道执行并合并去重；被限流的渠道自动降级为空，不影响其他渠道。', ch_err:'渠道配置加载失败：/api/channels 返回异常。请确认后台服务在线（/api/health）后重试。',
+    ch_id:'渠道', ch_kind:'类型', ch_enabled:'状态', ch_interval:'建议间隔', ch_last:'本次结果', ch_action:'操作',
+    sched_note:'配置后台定时任务：开启后，系统按设定间隔自动对下方「定时档案」逐个执行分析，并把结果并入外链池（去重、累计）。适合"周期查询、不断扩充外链地址"。',
+    sched_enable:'启用周期查询', sched_interval:'间隔（小时）', sched_add:'从当前表单添加为定时档案',
+    sched_profiles:'定时档案 / Profiles', sched_runs:'运行历史 / Run history',
+    rh_time:'时间', rh_domain:'域名', rh_result:'结果', rh_cand:'候选数', rh_pool:'外链池',
+    ov_warn:'⚠ 互链占比 {p}% 已超过 30% 阈值，存在 link scheme 风险，建议降低互链比例（互链已作为独立类型与 directory 分开统计）。',
+    ov_ok:'互链占比受控（≤30%）。共 {r} 个互链类型外链，{t} 个累计发现。'
+  },
+  en: {
+    title:'Backlink Prospector <span style="color:var(--muted);font-weight:400;font-size:14px">· 外链目标发现器</span>',
+    sub:'Find real, valid backlink target addresses for a domain · backend service + CSV + frontend · free-only data sources (Tranco / Bing / seed library / local backlink import)',
+    center_lab:'Analysis target (all tabs center on this domain):', center_hint:'After switching, analysis / pool / scheduler profiles all default to this domain',
+    tab_ov:'📊 Overview', tab_analyze:'🔍 Analyze', tab_tips:'📖 Types & Weights', tab_pool:'🗃 Pool · Owned vs Gap', tab_sched:'⚙ Backend · Scheduler',
+    ov_total:'Discovered', ov_acq:'Acquired', ov_gap:'Gap', ov_gapv:'Gap & valid', ov_recip:'Reciprocal %',
+    ov_type_title:'Backlink type distribution', ov_type_sub:'Cumulative discovered count by type (from pool)',
+    ov_funnel_title:'Gap funnel', ov_funnel_sub:'Discovered → Valid → Gap → Gap & valid',
+    ov_recip_title:'Reciprocal ratio monitor', ov_recip_sub:'Above 30% triggers a link-scheme risk warning (reciprocal is tracked separately from directory)',
+    ov_obtain_title:'Obtainability by type (higher = easier)', ov_obtain_sub:'Source: Types & Weights Tips (obtain_score, out of 30)',
+    lbl_domain:'Target domain', lbl_keywords:'Niche keywords (comma-separated)',
+    lbl_competitors:'Competitors (comma/newline, auto-excluded)', lbl_existing:'Existing backlinks (one domain per line; if empty, the pool itself is used as the existing library for dedup)',
+    c_bing:'Bing live discovery', c_tranco:'Tranco authority', c_persist:'Merge into pool',
+    btn_analyze:'Analyze', btn_csv:'Download CSV',
+    c_cand:'Candidates', c_valid:'Valid (HTTP reachable)', c_gap:'Gap (not owned)', c_gapv:'Gap & valid',
+    f_type:'Type', f_min:'Min priority', f_gap:'Gap only', f_valid:'Valid only',
+    h_url:'URL / Domain', h_type:'Type', h_auth:'Authority', h_rel:'Rel', h_ascore:'Auth', h_obt:'Obtain', h_prio:'Priority', h_check:'Check', h_gap:'Gap', h_note:'Note',
+    tips_toggle:'▸ Types & Weights Tips (reciprocal / scoring / periodic)',
+    pool_title:'Backlink Pool · Owned vs Gap <span class="badge">expanded by periodic queries</span>', pool_load:'Load pool', pool_csv:'Pool CSV',
+    pool_note:'Every analysis auto-merges into the pool (dedup by domain, accumulates discovery count and first/last seen). The pool itself is the existing-backlink library: new analysis entries are deduped against it (matched domains are marked "acquired" and excluded from the gap). Click column headers to sort; use the "Edit" column to toggle acquired.',
+    existing_title:'Existing backlink library · entry status (the pool)',
+    ps_total:'Discovered', ps_acq:'Acquired', ps_gap:'Gap', ps_gapv:'Gap & valid', ps_recip:'Reciprocal %',
+    imp_label:'Import existing backlinks (GSC / Ahrefs / Common Crawl export, one domain per line) → mark "acquired"', imp_btn:'Import & mark acquired',
+    bytype_label:'Distribution by type', bytype_hint:'Click "Load pool" to see distribution.',
+    sort_hint:'Click a column header to sort · 点击表头可排序',
+    tree_title:'Type tree · click to filter (multi-select)', tree_legend:'Counts: total / acquired / gap',
+    flt_status:'Status filter', flt_acquired:'Acquired 已拥有', flt_gap:'Gap 缺口',
+    flt_type:'Type filter (multi-select)', flt_reset:'Reset filters',
+    ph_domain:'Domain', ph_type:'Type', ph_auth:'Authority', ph_prio:'Priority', ph_check:'Check', ph_status:'Status', ph_times:'Times', ph_seen:'First / Last seen', ph_edit:'Edit',
+    sched_title:'Backend Service · Scheduled Queries <span class="badge">auto-merge into pool</span>', sched_run:'Run now', sched_save:'Save config',
+    ch_title:'Live Discovery Channels · Rotated', ch_note:'All free discovery channels are polled in order (maintained in channels.json: enable/disable, per-channel query templates & suggested interval). Each analysis executes them one by one and merges + dedups; rate-limited channels degrade to empty without affecting others.', ch_err:'Channel config failed to load: /api/channels returned an error. Check that the backend is alive (/api/health) and retry.',
+    ch_id:'Channel', ch_kind:'Kind', ch_enabled:'Status', ch_interval:'Interval', ch_last:'Last result', ch_action:'Action',
+    sched_note:'Configure a background scheduler: when enabled, the system runs each profile on an interval and merges results into the pool (dedup, accumulate). Ideal for "periodic queries, continuously expanding the address list".',
+    sched_enable:'Enable scheduled queries', sched_interval:'Interval (hours)', sched_add:'Add current form as profile',
+    sched_profiles:'Profiles', sched_runs:'Run history',
+    rh_time:'Time', rh_domain:'Domain', rh_result:'Result', rh_cand:'Candidates', rh_pool:'Pool',
+    ov_warn:'⚠ Reciprocal ratio {p}% exceeds the 30% threshold — link-scheme risk; reduce reciprocal proportion (reciprocal is a distinct type, separate from directory).',
+    ov_ok:'Reciprocal ratio controlled (≤30%). {r} reciprocal links, {t} total discovered.'
+  }
+};
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(I18N[LANG][k]==null) return;
+    // Guard: innerHTML replacement must never destroy live child nodes that
+    // carry an id (badges / counters). Those are re-appended after the swap.
+    const keep=[];
+    el.querySelectorAll('[id]').forEach(c=>keep.push(c.outerHTML));
+    el.innerHTML=I18N[LANG][k];
+    if(keep.length) el.insertAdjacentHTML('beforeend', keep.join(''));
+  });
+  $('langToggle').textContent = LANG==='zh' ? 'EN' : '中';
+}
+
+/* ---------- generic sortable table engine ---------- */
+/* Every list in the app (analysis results / pool / tips types / discovery
+   channels / run history / type distribution) is registered here.
+   The sort state lives in this registry — not in the DOM — so it survives
+   every re-render (filter change, domain switch, language switch, refresh). */
+const SORT_TABLES = Object.create(null);
+
+function sortAccessor(t, key){
+  const a = t && t.accessor ? t.accessor[key] : null;
+  if(typeof a==='function') return {get:a, dir:1};
+  return a || null;
+}
+function defineSortable(tableId, opts){
+  SORT_TABLES[tableId] = {
+    accessor: opts.accessor||{},
+    state: {key: opts.defaultKey||null, dir: opts.defaultDir||1},
+    rerender: opts.rerender||function(){}
+  };
+}
+function sortRows(tableId, rows){
+  const t=SORT_TABLES[tableId];
+  if(!t || !t.state.key) return rows||[];
+  const acc=sortAccessor(t, t.state.key);
+  if(!acc) return rows||[];
+  const dir=t.state.dir||1;
+  return (rows||[]).slice().sort((a,b)=>{
+    let va=acc.get(a), vb=acc.get(b);
+    if(va===null||va===undefined) va='';
+    if(vb===null||vb===undefined) vb='';
+    if(typeof va==='boolean') va=va?1:0;
+    if(typeof vb==='boolean') vb=vb?1:0;
+    if(typeof va==='number'&&typeof vb==='number'){
+      if(va===vb) return 0;
+      return (va<vb?-1:1)*dir;
+    }
+    return String(va).localeCompare(String(vb), undefined, {numeric:true, sensitivity:'base'})*dir;
+  });
+}
+function applySortMarks(tableId){
+  const t=SORT_TABLES[tableId]; if(!t) return;
+  const tbl=document.getElementById(tableId); if(!tbl) return;
+  tbl.querySelectorAll('th.sortable[data-sort]').forEach(th=>{
+    const on = th.dataset.sort===t.state.key;
+    th.classList.toggle('sorted-asc', on && t.state.dir===1);
+    th.classList.toggle('sorted-desc', on && t.state.dir===-1);
+    th.setAttribute('aria-sort', on ? (t.state.dir===1?'ascending':'descending') : 'none');
+  });
+}
+function refreshSortTitles(){
+  document.querySelectorAll('th.sortable[data-sort]').forEach(th=>{
+    th.title = (LANG==='en' ? 'Click to sort' : '点击表头排序');
+  });
+}
+function bindSortHeaders(tableId){
+  const tbl=document.getElementById(tableId); if(!tbl) return;
+  tbl.querySelectorAll('th.sortable[data-sort]').forEach(th=>{
+    if(th.dataset.sortBound==='1'){ th.title = (LANG==='en'?'Click to sort':'点击表头排序'); return; }
+    th.dataset.sortBound='1';
+    th.title = (LANG==='en' ? 'Click to sort' : '点击表头排序');
+    th.addEventListener('click',()=>{
+      const t=SORT_TABLES[tableId]; if(!t) return;
+      const k=th.dataset.sort;
+      if(t.state.key===k){
+        t.state.dir = t.state.dir===1 ? -1 : 1;      // same column -> flip
+      }else{
+        const acc=sortAccessor(t,k);
+        t.state.key = k;
+        t.state.dir = (acc && acc.dir) ? acc.dir : 1; // new column -> its natural order
+      }
+      t.rerender();
+      applySortMarks(tableId);
+    });
+  });
+}
+function setSort(tableId, key, dir){
+  const t=SORT_TABLES[tableId]; if(!t) return;
+  const acc=sortAccessor(t,key);
+  t.state.key=key;
+  t.state.dir = dir || ((acc && acc.dir) ? acc.dir : 1);
+  t.rerender();
+  applySortMarks(tableId);
+}
+
+/* ---------- register every sortable list ---------- */
+function initSorting(){
+  defineSortable('resTable', {                       // 分析结果
+    accessor: {
+      domain:    {get:p=>p.domain||'', dir:1},
+      type:      {get:p=>p.type_key||'', dir:1},
+      authority: {get:p=>{const r=p.authority&&p.authority.tranco_global_rank; return r!=null?r:999999999;}, dir:1},
+      relevance: {get:p=>p.relevance||0, dir:-1},
+      ascore:    {get:p=>p.authority_score||0, dir:-1},
+      obtain:    {get:p=>p.obtainability||0, dir:-1},
+      priority:  {get:p=>(p.priority==null?-1:p.priority), dir:-1},
+      valid:     {get:p=>p.valid?1:0, dir:-1},
+      gap:       {get:p=>p.is_gap?2:(p.already_have?1:0), dir:-1},
+      note:      {get:p=>p.note||'', dir:1}
+    },
+    defaultKey:'priority', defaultDir:-1,
+    rerender: ()=>drawRows()
+  });
+  defineSortable('poolTable', {                      // 外链池
+    accessor: {
+      domain:    {get:d=>d.domain||'', dir:1},
+      type:      {get:d=>d.type_key||'', dir:1},
+      authority: {get:d=>d.tranco_global_rank!=null?d.tranco_global_rank:999999999, dir:1},
+      priority:  {get:d=>(d.priority==null?-1:d.priority), dir:-1},
+      valid:     {get:d=>d.valid?1:0, dir:-1},
+      status:    {get:d=>d.acquired?1:0, dir:-1},
+      times:     {get:d=>d.times_discovered||0, dir:-1},
+      seen:      {get:d=>d.last_seen||'', dir:-1}
+    },
+    defaultKey:'priority', defaultDir:-1,
+    rerender: ()=>renderPool(POOL)
+  });
+  defineSortable('tipsTable', {                      // 类型说明
+    accessor: {
+      type:   {get:r=>r.key, dir:1},
+      weight: {get:r=>weightRank(r.v&&r.v.value_weight), dir:-1},
+      obtain: {get:r=>obtainNum(r.v&&r.v.obtain_score), dir:-1}
+    },
+    defaultKey:'weight', defaultDir:-1,
+    rerender: ()=>renderTips()
+  });
+  defineSortable('chTable', {                        // 发现渠道
+    accessor: {
+      name:     {get:c=>c.name_zh||c.id||'', dir:1},
+      kind:     {get:c=>c.kind||'', dir:1},
+      enabled:  {get:c=>c.enabled?1:0, dir:-1},
+      interval: {get:c=>c.interval_minutes==null?0:c.interval_minutes, dir:1},
+      found:    {get:c=>{const s=LAST_CHANNEL_STATS[c.id]||{}; return s.found!=null?s.found:-1;}, dir:-1}
+    },
+    defaultKey:'name', defaultDir:1,
+    rerender: ()=>renderChannels(LAST_CHANNELS, LAST_ROTATION)
+  });
+  defineSortable('runsTable', {                       // 运行历史
+    accessor: {
+      ts:         {get:r=>r.ts||'', dir:-1},
+      domain:     {get:r=>r.domain||'', dir:1},
+      ok:         {get:r=>r.ok?1:0, dir:-1},
+      candidates: {get:r=>r.candidates==null?-1:r.candidates, dir:-1},
+      pool:       {get:r=>r.pool_total==null?-1:r.pool_total, dir:-1}
+    },
+    defaultKey:'ts', defaultDir:-1,
+    rerender: ()=>renderSchedRuns()
+  });
+  defineSortable('poolTypeTable', {                  // 按类型分布
+    accessor: {
+      type:       {get:r=>r.key, dir:1},
+      discovered: {get:r=>r.discovered||0, dir:-1},
+      acquired:   {get:r=>r.acquired||0, dir:-1},
+      gap:        {get:r=>r.gap||0, dir:-1}
+    },
+    defaultKey:'discovered', defaultDir:-1,
+    rerender: ()=>renderPoolByType((POOL_STATS_CACHE&&POOL_STATS_CACHE.by_type)||{})
+  });
+  refreshAllSortUI();
+}
+function refreshAllSortUI(){
+  Object.keys(SORT_TABLES).forEach(id=>{ bindSortHeaders(id); applySortMarks(id); });
+  refreshSortTitles();
+}
+
+/* ---------- tabs ---------- */
+function initTabs(){
+  const tabs=[...document.querySelectorAll('#tabs .tab')];
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    tabs.forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+    t.classList.add('active');
+    $('tab-'+t.dataset.tab).classList.add('active');
+    if(t.dataset.tab==='ov') loadOverview();
+  }));
+}
+
+function payload(){
+  return {
+    domain: $('domain').value.trim(),
+    keywords: $('keywords').value.trim(),
+    competitors: $('competitors').value.trim(),
+    existing: $('existing').value.trim(),
+    center_domain: CENTER,  // for storage isolation
+    use_bing: $('use_bing').checked ? '1':'0',
+    use_tranco: $('use_tranco').checked ? '1':'0',
+    persist: $('persist').checked ? '1':'0'
+  };
+}
+function showErr(m){ const e=$('err'); e.textContent=m; e.classList.remove('hidden'); }
+function hideErr(){ $('err').classList.add('hidden'); }
+function esc(s){ return (s==null?'':s).toString().replace(/</g,'&lt;'); }
+function tlabel(k){ return (LANG==='en'?TYPE_LABEL_EN:TYPE_LABEL)[k]||k; }
+
+/* ---------- center domain (all tabs revolve around this) ---------- */
+let SWITCH_TIMER = null;
+function updateCenterLabels(){
+  const ov = $('ovCenter'); if(ov) ov.textContent =
+    (LANG==='en'?'Analysis target (center domain): ':'分析对象（中心域名）：') + CENTER;
+  const pc = $('poolCenter'); if(pc) pc.textContent = CENTER;
+  const sc = $('schedCenter');
+  if(sc) sc.textContent = ' · ' + (LANG==='en'?'Center domain: ':'中心域名：') + CENTER;
+}
+async function saveProfile(domain){
+  if(!domain) return;
+  try{
+    await fetch('/api/profiles',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({center_domain:domain,
+                           keywords:$('keywords').value,
+                           competitors:$('competitors').value})});
+  }catch(e){ console.warn('[saveProfile]', e); }
+}
+async function loadProfile(domain){
+  try{
+    const r=await fetch('/api/profiles?domain='+encodeURIComponent(domain));
+    const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'fail');
+    const p=d.profile||{};
+    $('keywords').value=(p.keywords||[]).join(', ');
+    $('competitors').value=(p.competitors||[]).join('\n');
+    // Existing backlinks are per-run operator input: never inherited from a profile.
+    $('existing').value='';
+    const pn=$('profileNote');
+    if(pn){
+      const src=p.source||'none';
+      pn.textContent=(LANG==='en'?'Profile ':'档案 ') + domain
+        + ' ['+src+']' + (p.note?(' · '+p.note):'')
+        + (src==='none' ? (LANG==='en'?' · no profile yet, keywords are empty':' · 尚无档案，关键词为空'):'');
+    }
+  }catch(e){ console.warn('[loadProfile]', e); }
+}
+async function switchDomain(oldD, newD){
+  if(oldD) await saveProfile(oldD);   // persist the form of the domain we leave
+  await loadProfile(newD);             // pull the profile of the domain we enter
+  await Promise.all([loadChannels(), loadOverview(), loadPool()]);
+}
+function refreshCenterUI(){
+  const oldCenter = CENTER;
+  const next = ($('centerDomain').value||'').trim().toLowerCase() || 'soundbuttons.cc';
+  CENTER = next;
+  $('domain').value = CENTER;
+  updateCenterLabels();
+  if(CENTER !== oldCenter){
+    switchDomain(oldCenter, CENTER);
+  }
+}
+function onCenterTyped(){
+  // Only schedule the switch. CENTER must NOT be mutated here, otherwise the
+  // switch check in refreshCenterUI() would compare against the value that was
+  // just typed and never fire the profile/channel/pool reload.
+  clearTimeout(SWITCH_TIMER);
+  SWITCH_TIMER = setTimeout(()=>refreshCenterUI(), 700);
+}
+
+/* ---------- SVG chart helpers ---------- */
+function svgBars(el, items, opts){
+  opts=opts||{};
+  const rowH=26, pad=10, labelW=opts.labelW||92, valW=42, gap=8;
+  const maxV=Math.max(1,...items.map(i=>i.value));
+  const W=600, H=items.length*rowH+pad*2;
+  const barMax=W-labelW-valW;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMinYMin meet" style="max-width:640px">`;
+  items.forEach((it,i)=>{
+    const y=pad+i*rowH;
+    const bw=Math.max(2,Math.round(barMax*(it.value/maxV)));
+    s+=`<text x="0" y="${y+rowH/2+4}" fill="var(--muted)" font-size="12">${esc(it.label)}</text>`;
+    s+=`<rect x="${labelW}" y="${y+3}" width="${bw}" height="${rowH-8}" rx="4" fill="${it.color||'#4ea1ff'}"/>`;
+    s+=`<text x="${labelW+bw+6}" y="${y+rowH/2+4}" fill="var(--text)" font-size="12">${it.value}${it.sub||''}</text>`;
+  });
+  s+='</svg>';
+  el.innerHTML=s;
+}
+function svgRatio(el, ratio, warn){
+  const W=600,H=44,thr=0.30;
+  const fillW=W*Math.min(ratio,1), thrX=W*thr;
+  const col=warn?'#ff6b6b':(ratio>0?'#7ee787':'#3a4a5a');
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMinYMin meet" style="max-width:720px">`;
+  s+=`<rect x="0" y="12" width="${W}" height="20" rx="6" fill="#222b38"/>`;
+  s+=`<rect x="0" y="12" width="${fillW}" height="20" rx="6" fill="${col}"/>`;
+  s+=`<line x1="${thrX}" y1="6" x2="${thrX}" y2="38" stroke="#f0883e" stroke-width="2" stroke-dasharray="4 3"/>`;
+  s+=`<text x="${thrX+5}" y="9" fill="#f0883e" font-size="10">30% threshold</text>`;
+  s+=`<text x="${Math.min(fillW+6,W-30)}" y="27" fill="var(--text)" font-size="12">${(ratio*100).toFixed(0)}%</text>`;
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+/* ---------- Overview ---------- */
+async function loadOverview(){
+  try{
+    const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)); const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'fail');
+    const s=d.stats||{};
+    $('ov_total').textContent=s.total_discovered||0;
+    $('ov_acq').textContent=s.acquired||0;
+    $('ov_gap').textContent=s.gap||0;
+    $('ov_gapv').textContent=s.gap_valid||0;
+    const ratio=s.reciprocal_ratio||0;
+    $('ov_recip').textContent=(ratio*100).toFixed(0)+'%';
+    $('ov_recip').style.color = s.reciprocal_ratio_warn?'var(--bad)':'var(--accent2)';
+
+    const bt=s.by_type||{};
+    const torder=['industry_media','authority','digital_pr','guest','resource','partner','directory','reciprocal','community','social'];
+    const tcolor={industry_media:'#4ea1ff',authority:'#7ee787',digital_pr:'#f0883e',guest:'#a371f7',resource:'#4ea1ff',
+      partner:'#58a6ff',directory:'#8b98a5',reciprocal:'#ffd27a',community:'#8b98a5',social:'#8b98a5'};
+    const typeItems=torder.filter(k=>bt[k]).map(k=>({label:tlabel(k),value:bt[k].discovered,color:tcolor[k]||'#4ea1ff'}));
+    svgBars($('ovTypeChart'), typeItems.length?typeItems:[{label:LANG==='en'?'No data':'暂无数据',value:0,color:'#3a4a5a'}]);
+
+    const total=s.total_discovered||0, valid=s.valid||0, gap=s.gap||0, gapv=s.gap_valid||0;
+    const funnel=[
+      {label:LANG==='en'?'Discovered':'发现',value:total,color:'#4ea1ff'},
+      {label:LANG==='en'?'Valid':'有效',value:valid,color:'#58a6ff'},
+      {label:LANG==='en'?'Gap':'空缺',value:gap,color:'#7ee787'},
+      {label:LANG==='en'?'Gap & valid':'空缺且有效',value:gapv,color:'#3fb950'}
+    ];
+    svgBars($('ovFunnel'), funnel);
+
+    svgRatio($('ovRecip'), ratio, s.reciprocal_ratio_warn);
+
+    const note = s.reciprocal_ratio_warn
+      ? I18N[LANG].ov_warn.replace('{p}',(ratio*100).toFixed(0))
+      : I18N[LANG].ov_ok.replace('{r}',(s.reciprocal||0)).replace('{t}',(total||0));
+    $('ovNote').textContent=note;
+
+    if(TIPS && TIPS.types){
+      const items=Object.entries(TIPS.types).map(([k,v])=>{
+        const m=String(v.obtain_score||'').match(/(\d+)\s*\/\s*30/);
+        const val=m?+m[1]:0;
+        return {label:tlabel(k), value:val, color:tcolor[k]||'#4ea1ff'};
+      }).sort((a,b)=>b.value-a.value);
+      svgBars($('ovObtain'), items, {labelW:92});
+    }
+  }catch(e){ showErr('Overview load failed: '+e.message); }
+}
+
+/* ---------- Tips ---------- */
+async function loadTips(){
+  if(TIPS) return TIPS;
+  try{
+    const r=await fetch('/api/tips'); const d=await r.json();
+    TIPS=d.tips||{}; renderTips(); return TIPS;
+  }catch(e){ return null; }
+}
+function renderTips(){
+  if(!TIPS) return;
+  const t=TIPS, e=s=>(s||'').replace(/</g,'&lt;');
+  const types=t.types||{};
+  let html='';
+  const gen = LANG==='en'? (t.general&&t.general.en) : (t.general&&t.general.zh);
+  const sco = LANG==='en'? (t.scoring&&t.scoring.en) : (t.scoring&&t.scoring.zh);
+  const rec = LANG==='en'? (t.reciprocal&&t.reciprocal.en) : (t.reciprocal&&t.reciprocal.zh);
+  const per = LANG==='en'? (t.periodic&&t.periodic.en) : (t.periodic&&t.periodic.zh);
+  if(gen) html+=`<div class="tips-note">${e(gen)}</div>`;
+  if(sco) html+=`<div class="tips-note"><b>${LANG==='en'?'Scoring:':'打分模型：'}</b>${e(sco)}</div>`;
+  if(rec) html+=`<div class="warnbox"><b>${LANG==='en'?'Reciprocal (distinct type):':'互链说明（独立类型）：'}</b>${e(rec)}</div>`;
+  if(per) html+=`<div class="tips-note"><b>${LANG==='en'?'Periodic:':'周期查询：'}</b>${e(per)}</div>`;
+  const tipRows=sortRows('tipsTable', Object.entries(types).map(([k,v])=>({key:k, v:v})));
+  html+='<table class="ttable" id="tipsTable"><thead><tr>'
+    +'<th class="sortable" data-sort="type">'+ (LANG==='en'?'Type':'类型') +'</th>'
+    +'<th class="sortable" data-sort="weight">'+ (LANG==='en'?'Value weight':'价值权重') +'</th>'
+    +'<th class="sortable" data-sort="obtain">'+ (LANG==='en'?'Obtain':'可获取分') +'</th>'
+    +'<th>'+ (LANG==='en'?'Notes':'说明') +'</th></tr></thead><tbody>';
+  for(const row of tipRows){
+    const k=row.key, v=row.v;
+    const prim = LANG==='en'? (v.en||v.zh) : (v.zh||v.en);
+    const other = LANG==='en'? (v.zh||'') : (v.en||'');
+    const hl = (k==='reciprocal'||k==='directory') ? ' style="background:rgba(255,200,80,0.07)"' : '';
+    const tag = (k==='reciprocal') ? '<span class="badge" style="background:#7a5a1a;color:#ffd27a">'+ (LANG==='en'?'distinct type':'独立类型') +'</span> ' : '';
+    const head = (prim||'').split(LANG==='en'?'. ':'。')[0];
+    html+=`<tr${hl}>
+      <td><b>${tag}${e(head)}</b><div class="note">${e(other)}</div></td>
+      <td><span class="badge">${e(v.value_weight||'—')}</span></td>
+      <td>${e(v.obtain_score||'—')}</td>
+      <td class="note">${e(prim||'')}${v.reciprocal_note?`<div class="warnbox" style="margin-top:6px">${e(v.reciprocal_note)}</div>`:''}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  $('tipsBody').innerHTML=html;
+  bindSortHeaders('tipsTable');
+  applySortMarks('tipsTable');
+}
+/* tips.json stores value_weight as a free-text label — map it to a rank so the
+   column can be sorted numerically instead of alphabetically */
+function weightRank(label){
+  const s=String(label||'');
+  if(!s) return 0;
+  if(s.includes('信任最高')) return 95;
+  if(s.includes('极高')) return 92;
+  if(s.includes('最高')) return 90;
+  if(s.includes('中高')) return 75;
+  if(s.includes('高')) return 70;
+  if(s.includes('中')) return 55;
+  if(s.includes('品牌')) return 50;
+  if(s.includes('偏低')) return 40;
+  if(s.includes('最低')) return 10;
+  return 0;
+}
+function obtainNum(score){
+  const m=String(score||'').match(/(\d+)/);
+  return m?+m[1]:0;
+}
+
+/* ---------- Analyze ---------- */
+function render(r){
+  const t=r.result? r.result : r;
+  LAST=t;
+  const tot=t.totals||{};
+  $('c_cand').textContent=tot.candidates||0;
+  $('c_valid').textContent=tot.valid||0;
+  $('c_gap').textContent=tot.gap||0;
+  $('c_gapv').textContent=tot.gap_valid||0;
+  $('summary').classList.remove('hidden');
+  $('results').classList.remove('hidden');
+  const types=new Set(t.prospects.map(p=>p.type_key));
+  const sel=$('f_type'); const cur=sel.value;
+  sel.innerHTML='<option value="">'+ (LANG==='en'?'All':'全部') +'</option>'+[...types].map(k=>{
+    const p=t.prospects.find(x=>x.type_key===k);
+    return `<option value="${k}">${p.type_label_zh} / ${p.type_label_en}</option>`;
+  }).join('');
+  sel.value=cur;
+  drawRows();
+  const ds=t.data_sources||{};
+  const el=t.existing_library;
+  const dc=(ds.discovery_channels&&ds.discovery_channels.channels)||[];
+  LAST_CHANNEL_STATS={}; dc.forEach(c=>{ LAST_CHANNEL_STATS[c.id]=c; });
+  $('src').innerHTML=(LANG==='en'?'Data sources: ':'数据源：')+Object.entries(ds).map(([k,v])=>
+    `<span class="badge">${k}: ${v.status||(v.enabled?'on':'off')}</span>`).join(' ')
+    + (el ? ` <span class="badge">${LANG==='en'?'existing library':'已有外链库'}: ${el.size} (${LANG==='en'?'matched':'命中'} ${el.matched_domains})</span>` : '')
+    + (dc.length ? ` <span class="badge">${LANG==='en'?'channels':'发现渠道'}: ${dc.map(c=>c.id+'='+(c.found||0)).join(', ')}</span>` : '');
+  $('lim').innerHTML=(t.limitations||[]).map(l=>`<li>${l}</li>`).join('');
+  if(t.pool_stats){ renderPoolStats(t.pool_stats); }
+  loadOverview();
+}
+
+function drawRows(){
+  if(!LAST) return;
+  const fk=$('f_type').value, min=+$('f_min').value||0,
+        gapOnly=$('f_gap').checked, validOnly=$('f_valid').checked;
+  const rows=sortRows('resTable', LAST.prospects.filter(p=>
+    (!fk||p.type_key===fk) && p.priority>=min &&
+    (!gapOnly||p.is_gap) && (!validOnly||p.valid)));
+  $('f_count').textContent=`${rows.length} / ${LAST.prospects.length}`;
+  $('tbody').innerHTML=rows.map(p=>{
+    const val=p.valid?`<span class="pill ok">✓ ${p.http_status}</span>`
+                     :`<span class="pill no">✗ ${p.http_status||p.valid_error||'dead'}</span>`;
+    const gap=p.is_competitor?`<span class="pill comp">${LANG==='en'?'Competitor':'竞品'}</span>`
+             :p.already_have?`<span class="pill comp">${LANG==='en'?'Owned':'已拥有'}</span>`
+             :p.is_gap?`<span class="pill gap">${LANG==='en'?'Gap':'缺口'}</span>`:`<span class="pill">—</span>`;
+    const tr=p.authority&&p.authority.tranco_global_rank!=null?p.authority.tranco_global_rank:'—';
+    return `<tr>
+      <td><a href="${p.url}" target="_blank" rel="noopener">${p.domain}</a><div class="note">${p.url}</div></td>
+      <td>${p.type_label_zh}<div class="note">${p.type_label_en}</div></td>
+      <td>${p.authority_tier||'—'}<div class="note">Tranco ${tr}</div></td>
+      <td>${p.relevance}</td><td>${p.authority_score}</td><td>${p.obtainability}</td>
+      <td class="prio">${p.priority}</td>
+      <td>${val}</td><td>${gap}</td>
+      <td class="note">${p.note||''}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------- Pool ---------- */
+function renderPoolStats(s){
+  $('poolStats').style.display='flex';
+  $('p_total').textContent=s.total_discovered||0;
+  $('p_acq').textContent=s.acquired||0;
+  $('p_gap').textContent=s.gap||0;
+  $('p_gapv').textContent=s.gap_valid||0;
+  const ratio=(s.reciprocal_ratio||0)*100;
+  $('p_recip').textContent=ratio.toFixed(0)+'%';
+  const box=$('p_recip_box'); const note=$('p_recip_note');
+  if(s.reciprocal_ratio_warn){
+    box.style.borderColor='#7a3a3a'; $('p_recip').style.color='#ff8a8a';
+    note.textContent= LANG==='en'? '⚠ reciprocal >30%: link-scheme risk' : '⚠ 互链超 30% 阈值，存在 link scheme 风险，建议降比例';
+  }else if((s.reciprocal||0)>0){
+    box.style.borderColor='#3a5a4a'; $('p_recip').style.color='var(--accent2)';
+    note.textContent= LANG==='en'? 'controlled (≤30%); '+s.reciprocal+' reciprocal' : '已控比例（≤30%）；互链 '+s.reciprocal+' 个';
+  }else{
+    box.style.borderColor='#3a4a5a'; $('p_recip').style.color='var(--fg)';
+    note.textContent= LANG==='en'? 'no reciprocal type yet' : '暂无互链类型';
+  }
+  const bt=s.by_type||{};
+  renderPoolByType(bt);
+}
+/* type distribution as a sortable mini table (rows built in canonical type
+   order, so equal counts keep a stable, meaningful sequence) */
+function renderPoolByType(bt){
+  const box=$('poolByType'); if(!box) return;
+  const order=['industry_media','authority','digital_pr','guest','resource','partner','directory','reciprocal','community','social'];
+  const keys=Object.keys(bt||{});
+  if(!keys.length){
+    box.innerHTML='<div class="note">'+(I18N[LANG].bytype_hint||'No data')+'</div>';
+    return;
+  }
+  const canonical=order.filter(k=>bt[k]).concat(keys.filter(k=>!order.includes(k)));
+  const rows=sortRows('poolTypeTable', canonical.map(k=>({key:k, discovered:bt[k].discovered||0,
+                                                            acquired:bt[k].acquired||0, gap:bt[k].gap||0})));
+  box.innerHTML='<table class="minitable" id="poolTypeTable"><thead><tr>'
+    +'<th class="sortable" data-sort="type">'+(LANG==='en'?'Type':'类型')+'</th>'
+    +'<th class="sortable" data-sort="discovered">'+(LANG==='en'?'Discovered':'发现')+'</th>'
+    +'<th class="sortable" data-sort="acquired">'+(LANG==='en'?'Acquired':'已拥有')+'</th>'
+    +'<th class="sortable" data-sort="gap">'+(LANG==='en'?'Gap':'空缺')+'</th>'
+    +'</tr></thead><tbody>'
+    + rows.map(r=>`<tr><td>${tlabel(r.key)}<div class="note">${r.key}</div></td>`
+                +`<td>${r.discovered}</td><td>${r.acquired}</td><td>${r.gap}</td></tr>`).join('')
+    +'</tbody></table>';
+  bindSortHeaders('poolTypeTable');
+  applySortMarks('poolTypeTable');
+}
+/* ---------- Pool table: sortable + editable acquired ---------- */
+/* ---------- pool type tree + faceted filters ---------- */
+const TYPE_GROUPS = [
+  {key:'content', zh:'内容与评测', en:'Content & Reviews', types:['industry_media','guest','digital_pr','resource']},
+  {key:'trust',   zh:'权威与社区', en:'Authority & Community', types:['authority','community']},
+  {key:'market',  zh:'商业与伙伴', en:'Partners & Marketplaces', types:['partner','directory','social']},
+  {key:'recip',   zh:'互链（独立类型）', en:'Reciprocal (distinct type)', types:['reciprocal']}
+];
+const POOL_FILTER = {types:new Set(), acquired:true, gap:true};
+
+function poolStatusOk(d){
+  if(POOL_FILTER.acquired && POOL_FILTER.gap) return true;   // both on = everything
+  return d.acquired ? POOL_FILTER.acquired : POOL_FILTER.gap;
+}
+function poolTypeOk(d){
+  if(!POOL_FILTER.types.size) return true;
+  return POOL_FILTER.types.has(d.type_key);
+}
+function poolFilterOk(d){ return poolStatusOk(d) && poolTypeOk(d); }
+/* counts follow the status facet but ignore the type facet (standard faceting:
+   a node's count must not depend on whether that node is selected) */
+function poolCounts(domains, pred){
+  let t=0,a=0,g=0;
+  for(const d of domains){
+    if(pred && !pred(d)) continue;
+    if(!poolStatusOk(d)) continue;
+    t++; if(d.acquired) a++; else g++;
+  }
+  return {t:t,a:a,g:g};
+}
+function poolTypeKeys(domains){
+  const set=new Set();
+  (domains||[]).forEach(d=>{ if(d.type_key) set.add(d.type_key); });
+  return set;
+}
+function renderPoolTree(domains){
+  const box=$('poolTree'); if(!box) return;
+  const sel=POOL_FILTER.types;
+  const cnt=c=>`<span class="cnt"><b>${c.t}</b><span class="c-acq">${c.a}</span><span class="c-gap">${c.g}</span></span>`;
+  const root=poolCounts(domains, null);
+  let html=`<div class="tree-node ${sel.size?'':'active'}" data-act="all"><span class="tw">▾</span>`
+    +`<span>${LANG==='en'?'All sites':'全部站点'}</span>${cnt(root)}</div>`;
+  // The full taxonomy is always shown (including types with 0 entries, e.g.
+  // 互链 / reciprocal) so the operator can see the whole structure and pick
+  // an empty branch to confirm nothing has been collected for it yet.
+  TYPE_GROUPS.forEach(g=>{
+    const types=g.types.slice();
+    const gSel=types.filter(t=>sel.has(t)).length;
+    const gc=poolCounts(domains, d=>types.includes(d.type_key));
+    html+=`<div class="tree-node ${gSel===types.length&&types.length?'active':''}" data-act="group" data-group="${g.key}">`
+      +`<span class="tw">▾</span><span>${LANG==='en'?g.en:g.zh}</span>${cnt(gc)}</div><div class="tree-kids">`;
+    types.forEach(t=>{
+      const c=poolCounts(domains, d=>d.type_key===t);
+      const tag = t==='reciprocal'
+        ? `<span class="badge" style="background:#7a5a1a;color:#ffd27a">${LANG==='en'?'distinct':'独立'}</span>` : '';
+      html+=`<div class="tree-node ${sel.has(t)?'active':''} ${c.t?'':'empty'}" data-act="type" data-type="${t}">`
+        +`<span class="tw">•</span><span>${tlabel(t)} ${tag}</span>${cnt(c)}</div>`;
+    });
+    html+='</div>';
+  });
+  box.innerHTML=html;
+  const scope=$('treeScope');
+  if(scope) scope.textContent = sel.size
+    ? (LANG==='en'? sel.size+' type(s) selected' : '已选 '+sel.size+' 个类型')
+    : (LANG==='en'? 'all types' : '全部类型');
+}
+function renderPoolChips(domains){
+  const box=$('poolTypeChips'); if(!box) return;
+  const keys=[];
+  TYPE_GROUPS.forEach(g=>g.types.forEach(t=>{ if(!keys.includes(t)) keys.push(t); }));
+  if(!keys.length){
+    box.innerHTML='<span class="note">'+(LANG==='en'?'No data':'暂无数据')+'</span>';
+    return;
+  }
+  box.innerHTML=keys.map(t=>{
+    const c=poolCounts(domains, d=>d.type_key===t);
+    return `<span class="chip ${POOL_FILTER.types.has(t)?'on':''} ${c.t?'':'empty'}" data-type="${t}">${tlabel(t)}`
+      +`<span class="cn">${c.t}</span></span>`;
+  }).join('');
+}
+function poolRow(d){
+  const st=d.acquired?`<span class="pill have">${LANG==='en'?'Owned':'已拥有'}</span>`:`<span class="pill gap">${LANG==='en'?'Gap':'空缺'}</span>`;
+  const val=d.valid?`<span class="pill ok">✓ ${d.http_status}</span>`:`<span class="pill no">✗ ${d.http_status||'dead'}</span>`;
+  const btn=d.acquired
+    ?`<button class="ghost acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="0" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Unmark':'取消已拥有'}</button>`
+    :`<button class="acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Mark owned':'标记已拥有'}</button>`;
+  return `<tr>
+    <td><a href="${d.url||'#'}" target="_blank" rel="noopener">${d.domain}</a></td>
+    <td>${d.type_label_zh||d.type_key||''}</td>
+    <td>${d.authority_tier||'—'}<div class="note">Tranco ${d.tranco_global_rank!=null?d.tranco_global_rank:'—'}</div></td>
+    <td class="prio">${d.priority!=null?d.priority:'—'}</td>
+    <td>${val}</td><td>${st}</td>
+    <td>${d.times_discovered||1}</td>
+    <td class="note">${d.first_seen||''}<br>${d.last_seen||''}</td>
+    <td>${btn}</td>
+  </tr>`;
+}
+function sortPoolRows(rows){
+  return sortRows('poolTable', rows);
+}
+function renderPool(domains){
+  renderPoolStats(POOL_STATS_CACHE);
+  const all=domains||[];
+  const bad=all.filter(d=>!d.valid).length;
+  const shown=all.filter(poolFilterOk);
+  $('existingCount').textContent = (LANG==='en'?'Total ':'共 ') + all.length + (LANG==='en'?' entries':' 条');
+  $('existingMsg').textContent = bad ? (LANG==='en'? (bad+' need re-check'): (bad+' 条需复核')) : (LANG==='en'?'all checked':'全部已校验');
+  const rows=sortRows('poolTable', shown);
+  $('poolBody').innerHTML=rows.map(poolRow).join('');
+  $('poolTable').classList.remove('hidden');
+  applySortMarks('poolTable');
+  renderPoolTree(all);
+  renderPoolChips(all);
+  const note=$('poolFilterNote');
+  if(note){
+    note.textContent=(LANG==='en'? 'Showing '+shown.length+' / '+all.length
+                                : '显示 '+shown.length+' / '+all.length)
+      + (POOL_FILTER.types.size ? (LANG==='en'?' · type filter on':' · 类型筛选生效') : '')
+      + (!POOL_FILTER.acquired && !POOL_FILTER.gap ? (LANG==='en'?' · no status selected':' · 未选择状态') : '');
+  }
+}
+async function toggleAcquired(domain, makeAcquired){
+  try{
+    if(makeAcquired){
+      await fetch('/api/store/sync-existing',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({domains:domain, center_domain:CENTER})});
+    }else{
+      await fetch('/api/store/unmark-existing',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({domains:domain, center_domain:CENTER})});
+    }
+    await loadPool();
+  }catch(e){ showErr(LANG==='en'?'Update failed: ':'更新失败：'+e.message); }
+}
+
+let POOL_STATS_CACHE={};
+async function loadPool(){
+  try{
+    const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)); const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'fail');
+    POOL_STATS_CACHE=d.stats||{}; POOL=d.domains||[];
+    renderPool(POOL);
+    if($('tab-ov').classList.contains('active')) loadOverview();
+  }catch(e){ showErr(LANG==='en'?'Pool load failed: ':'外链池加载失败：'+e.message); }
+}
+async function importExisting(){
+  const txt=$('importExisting').value.trim();
+  if(!txt){ showErr(LANG==='en'?'Enter existing backlink domains first':'请先填入已有外链域名'); return; }
+  $('importMsg2').textContent= LANG==='en'?'Importing…':'导入中…';
+  try{
+    const r=await fetch('/api/store/sync-existing',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({domains:txt, center_domain:CENTER})});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    POOL_STATS_CACHE=d.stats;
+    $('importMsg2').textContent= LANG==='en'? ('marked '+d.added) : ('已新增标记 '+d.added+' 个');
+    await loadPool();
+  }catch(e){ $('importMsg2').textContent=''; showErr(LANG==='en'?'Import failed: ':'导入失败：'+e.message); }
+}
+
+/* ---------- Scheduler / backend service ---------- */
+let SCHED = null;
+function escAttr(s){ return (s==null?'':s).toString().replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+async function loadSchedule(){
+  try{
+    const r=await fetch('/api/schedule'); const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'fail');
+    SCHED=d.snapshot||{}; renderSchedule(); return SCHED;
+  }catch(e){ showErr(LANG==='en'?'Scheduler load failed: ':'调度配置加载失败：'+e.message); }
+}
+function renderSchedule(){
+  if(!SCHED) return;
+  refreshCenterUI();
+  const c=SCHED.config||{};
+  $('schedEnabled').checked=!!c.enabled;
+  $('schedInterval').value=(c.interval_hours!=null)?c.interval_hours:24;
+  renderProfiles(c.profiles||[]);
+  renderSchedStatus();
+  renderSchedRuns();
+}
+function renderProfiles(profiles){
+  const box=$('schedProfiles');
+  if(!profiles.length){ box.innerHTML='<div class="note">'+(LANG==='en'?'No profiles yet. Fill the form above and click "Add current form as profile".':'暂无定时档案。填写上方表单后点「从当前表单添加为定时档案」。')+'</div>'; return; }
+  box.innerHTML=profiles.map(p=>`<div class="sched-card">
+    <div class="grid">
+      <div><label>${LANG==='en'?'Name':'名称'}</label><input type="text" class="p-name" value="${escAttr(p.name||'')}"></div>
+      <div><label>${LANG==='en'?'Domain':'域名'}</label><input type="text" class="p-domain" value="${escAttr(p.domain||'')}"></div>
+    </div>
+    <div><label>${LANG==='en'?'Keywords (comma-sep)':'关键词（逗号分隔）'}</label><input type="text" class="p-kw" value="${escAttr(p.keywords||'')}"></div>
+    <div class="checks">
+      <label><input type="checkbox" class="p-bing" ${p.use_bing?'checked':''}> ${LANG==='en'?'Bing live':'Bing 实时发现'}</label>
+      <label><input type="checkbox" class="p-tranco" ${p.use_tranco!==false?'checked':''}> ${LANG==='en'?'Tranco':'Tranco 信号'}</label>
+      <button type="button" class="ghost p-del">${LANG==='en'?'Delete':'删除'}</button>
+    </div>
+  </div>`).join('');
+  box.querySelectorAll('.p-del').forEach(b=>b.addEventListener('click',()=>{
+    b.closest('.sched-card').remove();
+  }));
+}
+function schedAddFromForm(){
+  const dom=$('domain').value.trim();
+  if(!dom){ showErr(LANG==='en'?'Fill target domain in Analyze tab first':'请先在分析页填写目标域名'); return; }
+  const kw=$('keywords').value.trim() || 'sound, soundboard, sound buttons, sound effects';
+  const card=document.createElement('div');
+  card.className='sched-card';
+  card.innerHTML=`<div class="grid">
+      <div><label>${LANG==='en'?'Name':'名称'}</label><input type="text" class="p-name" value="${escAttr(dom)}"></div>
+      <div><label>${LANG==='en'?'Domain':'域名'}</label><input type="text" class="p-domain" value="${escAttr(dom)}"></div>
+    </div>
+    <div><label>${LANG==='en'?'Keywords (comma-sep)':'关键词（逗号分隔）'}</label><input type="text" class="p-kw" value="${escAttr(kw)}"></div>
+    <div class="checks">
+      <label><input type="checkbox" class="p-bing" ${$('use_bing').checked?'checked':''}> ${LANG==='en'?'Bing live':'Bing 实时发现'}</label>
+      <label><input type="checkbox" class="p-tranco" ${$('use_tranco').checked?'checked':''}> ${LANG==='en'?'Tranco':'Tranco 信号'}</label>
+      <button type="button" class="ghost p-del">${LANG==='en'?'Delete':'删除'}</button>
+    </div>`;
+  card.querySelector('.p-del').addEventListener('click',()=>card.remove());
+  $('schedProfiles').appendChild(card);
+}
+function renderSchedStatus(){
+  const c=SCHED.config||{}, st=SCHED.status||{};
+  const running=st.running?'<span class="pill gap">'+ (LANG==='en'?'Running':'运行中') +'</span>':'<span class="pill ok">'+ (LANG==='en'?'Idle':'空闲') +'</span>';
+  const enabled=c.enabled?'<span class="pill ok">'+ (LANG==='en'?'Enabled':'已启用') +'</span>':'<span class="pill no">'+ (LANG==='en'?'Disabled':'已停用') +'</span>';
+  const err=st.last_error?`<span class="pill no" title="${escAttr(st.last_error)}">${LANG==='en'?'Error':'有错误'}</span>`:'<span class="pill ok">'+ (LANG==='en'?'None':'无') +'</span>';
+  $('schedStatus').innerHTML=`<div class="kv">
+    <div class="item">${LANG==='en'?'Status':'状态'} ${enabled}</div>
+    <div class="item">${LANG==='en'?'Running':'运行中'} ${running}</div>
+    <div class="item">${LANG==='en'?'Last run':'上次运行'}<b>${escAttr(c.last_run||'—')}</b></div>
+    <div class="item">${LANG==='en'?'Next run':'下次运行'}<b>${escAttr(st.next_run||'—')}</b></div>
+    <div class="item">${LANG==='en'?'Last error':'最近错误'} ${err}</div>
+  </div>`;
+}
+let LAST_CHANNELS = [];
+async function loadChannels(){
+  try{
+    const r=await fetch('/api/channels?domain='+encodeURIComponent(CENTER)); const d=await r.json();
+    if(!d.ok) throw new Error(d.error||'fail');
+    LAST_ROTATION = d.rotation||{};
+    LAST_CHANNELS = d.channels||[];
+    // Initialize channel stats with basic info (no analysis stats yet - those come from /api/analyze response)
+    LAST_CHANNEL_STATS = {};
+    LAST_CHANNELS.forEach(c=>{ LAST_CHANNEL_STATS[c.id] = { status: c.enabled ? 'ready' : 'disabled' }; });
+    renderChannels(LAST_CHANNELS, LAST_ROTATION);
+    const nb=$('cacheNotice'); if(nb) nb.style.display='none';
+  }catch(e){
+    console.error('[loadChannels] Error:', e);
+    const nb=$('cacheNotice'); if(nb) nb.style.display='block';
+    showErr(LANG==='en'?'Channels load failed: ':'渠道加载失败：'+e.message);
+  }
+}
+let LAST_CHANNEL_STATS = {};  // per-channel status from last analysis
+function renderChannels(channels, rotation){
+  const cnt=$('chCount'), body=$('chBody');
+  if(!cnt||!body) return;  // DOM not ready — fail silently
+  if(!channels || !Array.isArray(channels) || !channels.length){
+    cnt.textContent = '0/0';
+    body.innerHTML = '<tr><td colspan="6" class="note" style="text-align:center">'+(LANG==='en'?'No channels configured':'暂无配置渠道')+'</td></tr>';
+    return;
+  }
+  // Update domain badge
+  const badge = $('chDomainBadge');
+  if(badge) {
+    badge.textContent = CENTER ? ` · ${LANG==='en'?'Domain: ':'域名：'}${CENTER}` : '';
+    badge.className = 'note';
+  }
+  cnt.textContent = (LANG==='en'?'enabled ':'启用 ') + channels.filter(c=>c.enabled).length + '/' + channels.length;
+  const list = sortRows('chTable', channels);
+  body.innerHTML = list.map(c=>{
+    const st=c.enabled?'<span class="pill ok">'+(LANG==='en'?'On':'已启用')+'</span>':'<span class="pill no">'+(LANG==='en'?'Off':'已停用')+'</span>';
+    const last=LAST_CHANNEL_STATS[c.id];
+    let lastTxt='<span class="note">—</span>';
+    if(last && last.found!=null){
+      // "✓ 12" + "/48" = 12 relevant out of 48 raw hits (rest were off-topic)
+      const raw=(last.raw!=null && last.raw>last.found)?('<span class="note">/'+last.raw+'</span>'):'';
+      lastTxt='✓ '+last.found+(LANG==='en'?' found':' 条')+raw;
+    }else if(last && last.status && last.status!=='ready'){
+      lastTxt='<span class="note">'+esc(last.status)+'</span>';
+    }
+    const btn=c.enabled
+      ?`<button class="ghost ch-toggle" data-id="${c.id}" data-en="0" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Disable':'停用'}</button>`
+      :`<button class="ch-toggle" data-id="${c.id}" data-en="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Enable':'启用'}</button>`;
+    return `<tr>
+      <td>${c.name_zh||c.id}<div class="note">${c.name_en||''}</div></td>
+      <td><code>${c.kind}</code><div class="note">${c.id}</div></td>
+      <td>${st}</td>
+      <td>${c.interval_minutes?(c.interval_minutes+(LANG==='en'?' min':' 分钟')):'—'}</td>
+      <td>${lastTxt}</td>
+      <td>${btn}</td>
+    </tr>`;
+  }).join('');
+}
+async function toggleChannel(id, enable){
+  try{
+    const r=await fetch('/api/channels',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:id, enabled:enable, center_domain:CENTER})});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    LAST_CHANNEL_STATS = {};
+    (d.channels||[]).forEach(c=>{ LAST_CHANNEL_STATS[c.id] = { status: c.enabled ? 'ready' : 'disabled' }; });
+    renderChannels(d.channels, LAST_ROTATION);
+  }catch(e){ showErr(LANG==='en'?'Update failed: ':'更新失败：'+e.message); }
+}
+let LAST_ROTATION = {};
+function renderSchedRuns(){
+  const runs=(SCHED.runs||[]);
+  const tb=$('schedRuns');
+  if(!runs.length){ tb.innerHTML='<tr><td colspan="5" class="note">'+(LANG==='en'?'No runs yet. Enable & save, or click "Run now".':'尚无运行记录。启用并保存配置后，或点「立即运行」试一次。')+'</td></tr>'; return; }
+  // keep the 15 most recent runs, then sort that window by the chosen column
+  const recent=runs.slice().sort((a,b)=>String(b.ts||'').localeCompare(String(a.ts||''))).slice(0,15);
+  tb.innerHTML=sortRows('runsTable', recent).map(r=>{
+    const st=r.ok?'<span class="pill ok">'+ (LANG==='en'?'OK':'成功') +'</span>':`<span class="pill no">${LANG==='en'?'Fail':'失败'}</span>`;
+    const err=r.error?`<div class="note" style="color:var(--bad)">${escAttr(r.error)}</div>`:'';
+    return `<tr>
+      <td class="note">${escAttr(r.ts||'')}</td>
+      <td>${escAttr(r.domain||'')}</td>
+      <td>${st}</td>
+      <td>${r.candidates!=null?r.candidates:'—'}</td>
+      <td>${LANG==='en'?'pool ':'池总数 '}${r.pool_total!=null?r.pool_total:'—'}${err}</td>
+    </tr>`;
+  }).join('');
+}
+async function schedSave(){
+  const profiles=[...document.querySelectorAll('#schedProfiles .sched-card')].map(card=>{
+    const g=s=>card.querySelector(s).value;
+    const c=s=>card.querySelector(s).checked;
+    return {name:g('.p-name').trim(), domain:g('.p-domain').trim(),
+            keywords:g('.p-kw').trim(), use_bing:c('.p-bing'), use_tranco:c('.p-tranco')};
+  }).filter(p=>p.domain);
+  const body={enabled:$('schedEnabled').checked,
+              interval_hours:(+$('schedInterval').value)||24, profiles};
+  $('schedSave').disabled=true; $('schedSave').textContent= LANG==='en'?'Saving…':'保存中…';
+  try{
+    const r=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    SCHED={config:d.config||SCHED.config, status:d.status||SCHED.status, runs:SCHED.runs||[]};
+    renderSchedule();
+  }catch(e){ showErr(LANG==='en'?'Save failed: ':'保存失败：'+e.message); }
+  finally{ $('schedSave').disabled=false; $('schedSave').textContent= LANG==='en'?'Save config':'保存配置'; }
+}
+async function schedRun(){
+  $('schedRun').disabled=true; $('schedRun').textContent= LANG==='en'?'Running…':'运行中…';
+  try{
+    const r=await fetch('/api/schedule/run',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    SCHED={config:SCHED.config, status:d.status||SCHED.status, runs:d.runs||SCHED.runs};
+    renderSchedule();
+    await loadPool();
+  }catch(e){ showErr(LANG==='en'?'Run failed: ':'立即运行失败：'+e.message); }
+  finally{ $('schedRun').disabled=false; $('schedRun').textContent= LANG==='en'?'Run now':'立即运行'; }
+}
+
+/* ---------- actions ---------- */
+async function analyze(){
+  hideErr();
+  $('run').disabled=true; $('run').textContent= LANG==='en'?'Analyzing…':'分析中…';
+  try{
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload())});
+    const data=await res.json();
+    if(!res.ok||data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+    render(data);
+  }catch(e){ showErr(LANG==='en'?'Analyze failed: ':'分析失败：'+e.message); }
+  finally{ $('run').disabled=false; $('run').textContent= LANG==='en'?'Analyze':'分析'; }
+}
+async function downloadCsv(){
+  hideErr();
+  try{
+    const res=await fetch('/api/analyze/csv',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload())});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const blob=await res.blob();
+    const fn=res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]||'backlink-prospects.csv';
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){ showErr(LANG==='en'?'CSV download failed: ':'CSV 下载失败：'+e.message); }
+}
+async function downloadPoolCsv(){
+  try{
+    const res=await fetch('/api/store/csv');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const blob=await res.blob();
+    const fn=res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]||'backlink-pool.csv';
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){ showErr(LANG==='en'?'Pool CSV failed: ':'池 CSV 下载失败：'+e.message); }
+}
+
+$('langToggle').addEventListener('click',()=>{
+  LANG = LANG==='zh' ? 'en' : 'zh';
+  applyLang(); renderTips(); refreshCenterUI(); loadOverview();
+  if(LAST_CHANNELS.length) renderChannels(LAST_CHANNELS, LAST_ROTATION);
+  if(POOL) renderPool(POOL);
+  refreshAllSortUI();
+});
+$('centerDomain').addEventListener('input', onCenterTyped);
+$('centerDomain').addEventListener('change', refreshCenterUI);
+$('domain').addEventListener('input', ()=>{
+  $('centerDomain').value = $('domain').value;
+  onCenterTyped();
+});
+$('tipsToggle').addEventListener('click', async ()=>{
+  const b=$('tipsBody');
+  if(b.classList.contains('hidden')){ await loadTips(); b.classList.remove('hidden'); }
+  else { b.classList.add('hidden'); }
+});
+['f_type','f_min','f_gap','f_valid'].forEach(id=>$(id).addEventListener('input',drawRows));
+$('run').addEventListener('click',analyze);
+$('csv').addEventListener('click',downloadCsv);
+$('poolLoad').addEventListener('click',loadPool);
+$('poolCsv').addEventListener('click',downloadPoolCsv);
+$('importBtn').addEventListener('click',importExisting);
+$('chBody').addEventListener('click', (ev)=>{
+  const b=ev.target.closest('.ch-toggle'); if(!b) return;
+  toggleChannel(b.dataset.id, b.dataset.en==='1');
+});
+// Column sorting is handled by the shared engine (see initSorting) — every
+// table registers its own accessors, so no per-table click handler is needed.
+$('poolBody').addEventListener('click', (ev)=>{
+  const b=ev.target.closest('.acq-toggle'); if(!b) return;
+  toggleAcquired(b.dataset.dom, b.dataset.acq==='1');
+});
+/* type tree / faceted filters */
+$('poolTree').addEventListener('click',(ev)=>{
+  const n=ev.target.closest('.tree-node'); if(!n) return;
+  const act=n.dataset.act;
+  if(act==='all'){
+    POOL_FILTER.types.clear();
+  }else if(act==='type'){
+    const t=n.dataset.type;
+    if(POOL_FILTER.types.has(t)) POOL_FILTER.types.delete(t); else POOL_FILTER.types.add(t);
+  }else if(act==='group'){
+    const g=TYPE_GROUPS.find(x=>x.key===n.dataset.group); if(!g) return;
+    const types=g.types.slice();
+    const allOn=types.length && types.every(t=>POOL_FILTER.types.has(t));
+    types.forEach(t=>{ if(allOn) POOL_FILTER.types.delete(t); else POOL_FILTER.types.add(t); });
+  }
+  renderPool(POOL||[]);
+});
+$('poolTypeChips').addEventListener('click',(ev)=>{
+  const c=ev.target.closest('.chip'); if(!c) return;
+  const t=c.dataset.type;
+  if(POOL_FILTER.types.has(t)) POOL_FILTER.types.delete(t); else POOL_FILTER.types.add(t);
+  renderPool(POOL||[]);
+});
+document.querySelectorAll('.st-acq,.st-gap').forEach(el=>el.addEventListener('change',()=>{
+  POOL_FILTER.acquired=document.querySelector('.st-acq').checked;
+  POOL_FILTER.gap=document.querySelector('.st-gap').checked;
+  renderPool(POOL||[]);
+}));
+$('poolFilterReset').addEventListener('click',()=>{
+  POOL_FILTER.types.clear(); POOL_FILTER.acquired=true; POOL_FILTER.gap=true;
+  document.querySelector('.st-acq').checked=true;
+  document.querySelector('.st-gap').checked=true;
+  renderPool(POOL||[]);
+});
+$('schedSave').addEventListener('click',schedSave);
+$('schedRun').addEventListener('click',schedRun);
+$('schedAdd').addEventListener('click',schedAddFromForm);
+initSorting();
+initTabs();
+applyLang();
+refreshCenterUI();
+loadProfile(CENTER);
+loadTips(); loadPool(); loadSchedule(); loadChannels();
+</script>
+</body>
+</html>

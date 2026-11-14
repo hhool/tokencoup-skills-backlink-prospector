@@ -1,0 +1,60 @@
+{
+  "version": "1.1.0",
+  "note": "Free/open data providers for the Backlink Prospector. Mirrors seo-page-snapshot's provider model: no paid API is ever required. enabled=false skips a provider. Commercial metrics (DR/DA) are NEVER estimated; they are emitted as status:unavailable with a reason. ${VAR} placeholders are expanded from the environment at request time and are never written to disk.",
+  "cache_dir": "~/.cache/backlink-prospector",
+  "providers": [
+    {
+      "id": "seed_library",
+      "panel": "discovery",
+      "name": "Curated real prospect seed library (no network)",
+      "kind": "local_json",
+      "enabled": true,
+      "path": "seed.json",
+      "license": "Manually verified public sites; audit before outreach.",
+      "metric_note": "Real, manually-verified backlink prospects across types. Always live-validated at analyze time.",
+      "provides": ["url", "type", "authorityTier", "tags"],
+      "note": "Backbone of 'real and valid' results. No API key, no network."
+    },
+    {
+      "id": "bing_discovery",
+      "panel": "discovery",
+      "name": "Bing web search (free, no API key, HTML parse)",
+      "kind": "bing_html",
+      "enabled": true,
+      "endpoint": "https://www.bing.com/search",
+      "license": "Bing results; respect ToS. Best-effort discovery only.",
+      "metric_note": "Discovers live prospect URLs per niche keyword x type template; real URLs are recovered from b_algo redirect wrappers (base64 u= param).",
+      "timeout_seconds": 15,
+      "options": { "locale": "en-US", "per_template": 10, "max_keywords": 2, "max_results": 40 },
+      "provides": ["url", "type", "authorityTier", "tags"],
+      "note": "Free real-time discovery. Degrades gracefully to seed-only if blocked."
+    },
+    {
+      "id": "tranco",
+      "panel": "authority",
+      "name": "Tranco daily popularity rank (free, no API key)",
+      "kind": "tranco",
+      "enabled": true,
+      "endpoint": "https://tranco-list.eu/api/ranks/domain/{domain}",
+      "license": "Tranco research ranking; see https://tranco-list.eu/",
+      "metric_note": "A popularity RANK is not a backlink count or DR. Used only as a free trust signal; mapped onto tranco_global_rank, never onto commercial DR/DA.",
+      "timeout_seconds": 12,
+      "cache_ttl_hours": 24,
+      "provides": ["tranco_global_rank"],
+      "note": "Free authority signal. domain_rating (DR/DA) stays unavailable."
+    },
+    {
+      "id": "local_backlinks",
+      "panel": "gap",
+      "name": "Local backlink export (CSV) for true gap diff",
+      "kind": "csv_text",
+      "enabled": true,
+      "path": "",
+      "options": { "key_column": "domain", "accept_url": true },
+      "metric_note": "Operator-supplied data (e.g. Google Search Console links report, free-tier Ahrefs/SEMrush export, or a self-hosted Common Crawl web-graph export). No network request is made. Domains here mark already_have=true, turning the prospect list into a real gap diff.",
+      "field_map": { "domain": "domain" },
+      "provides": ["existing_domains"],
+      "note": "Paste a CSV/text of existing referring domains (one per line) to compute the true gap. Mirrors seo-page-snapshot local_backlinks_csv."
+    }
+  ]
+}

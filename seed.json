@@ -1,0 +1,353 @@
+[
+  {
+    "url": "https://mashable.com",
+    "type": "industry_media",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "soundboard",
+      "meme soundboard",
+      "tech roundup"
+    ],
+    "note": "科技/生活媒体，常做「最佳 soundboard 应用」盘点，可做测评/客座外链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.techradar.com",
+    "type": "industry_media",
+    "authorityTier": "High",
+    "tags": [
+      "sound",
+      "soundboard",
+      "app roundup"
+    ],
+    "note": "科技测评站，best soundboard apps 盘点，权重高",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.tomsguide.com",
+    "type": "industry_media",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "soundboard",
+      "sound buttons"
+    ],
+    "note": "消费科技指南站，常做 app 盘点与推荐",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.techspot.com",
+    "type": "industry_media",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "audio",
+      "tech media"
+    ],
+    "note": "科技媒体，可做客座/资源外链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.musicianonamission.com",
+    "type": "guest",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "audio",
+      "music production",
+      "guest post"
+    ],
+    "note": "音乐制作博客，接受客座文章",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.productionmusiclive.com",
+    "type": "guest",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "music production",
+      "audio"
+    ],
+    "note": "音乐制作教学站，接受投稿",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://edmprod.com",
+    "type": "guest",
+    "authorityTier": "Low",
+    "tags": [
+      "sound",
+      "edm",
+      "music production",
+      "guest"
+    ],
+    "note": "EDM 制作社区，客座博客",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://freesound.org",
+    "type": "resource",
+    "authorityTier": "High",
+    "tags": [
+      "sound",
+      "sound effects",
+      "free sounds",
+      "samples"
+    ],
+    "note": "免费音效/采样资源平台，资源页天然收录外链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://mixkit.co",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "royalty free music",
+      "sound effects"
+    ],
+    "note": "免费音乐/音效资源站",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.looperman.com",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "samples",
+      "loops",
+      "free"
+    ],
+    "note": "免费采样/loop 社区资源",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://ccmixter.org",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "cc music",
+      "samples",
+      "free"
+    ],
+    "note": "Creative Commons 音乐资源社区",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.head-fi.org",
+    "type": "community",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "audio",
+      "headphones",
+      "forum"
+    ],
+    "note": "音频/耳机论坛，引流与品牌信号",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://vi-control.net",
+    "type": "community",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "virtual instruments",
+      "audio",
+      "forum"
+    ],
+    "note": "虚拟乐器/音频制作论坛",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.sweetwater.com",
+    "type": "partner",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "music gear",
+      "audio equipment",
+      "partner"
+    ],
+    "note": "乐器/音频设备电商，互补品牌合作",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://streamlabs.com",
+    "type": "partner",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "streaming",
+      "soundboard",
+      "partner"
+    ],
+    "note": "直播工具（主播常用 soundboard），互补合作",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.landr.com",
+    "type": "partner",
+    "authorityTier": "Low",
+    "tags": [
+      "sound",
+      "music distribution",
+      "mastering",
+      "partner"
+    ],
+    "note": "音乐分发/母带平台，互补合作",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.namm.org",
+    "type": "authority",
+    "authorityTier": "High",
+    "tags": [
+      "sound",
+      "music industry",
+      "association"
+    ],
+    "note": "国际音乐产品协会，行业权威（极难获取，优先级最高）",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://www.grammy.com",
+    "type": "authority",
+    "authorityTier": "High",
+    "tags": [
+      "sound",
+      "music",
+      "recording academy"
+    ],
+    "note": "格莱美/录音学院官网，权威背书",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://musicbrainz.org",
+    "type": "directory",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "music",
+      "directory"
+    ],
+    "note": "开放音乐元数据目录/导航，可提交收录",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://99sounds.org",
+    "type": "reciprocal",
+    "authorityTier": "Low",
+    "tags": [
+      "sound",
+      "free samples",
+      "reciprocal"
+    ],
+    "note": "免费采样博客，互补非竞品，可双向互链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://samplefocus.com",
+    "type": "reciprocal",
+    "authorityTier": "Low",
+    "tags": [
+      "sound",
+      "samples",
+      "audio",
+      "reciprocal"
+    ],
+    "note": "采样社区，互补非竞品，可双向互链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://freewavesamples.com",
+    "type": "reciprocal",
+    "authorityTier": "Low",
+    "tags": [
+      "sound",
+      "samples",
+      "free",
+      "reciprocal"
+    ],
+    "note": "免费采样站，互补非竞品，可双向互链",
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://myinstants.com",
+    "type": "industry_media",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "soundboard",
+      "meme"
+    ],
+    "note": "知名 soundboard 站（直接竞品，默认排除）",
+    "isCompetitor": true,
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  },
+  {
+    "url": "https://voicemod.net",
+    "type": "partner",
+    "authorityTier": "Medium",
+    "tags": [
+      "sound",
+      "soundboard",
+      "streaming"
+    ],
+    "note": "音效/变声软件（直接竞品，默认排除）",
+    "isCompetitor": true,
+    "domains": [
+      "soundbuttons.cc"
+    ]
+  }
+]

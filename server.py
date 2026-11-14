@@ -1,0 +1,477 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Backlink Prospector - local HTTP service (Python standard library only).
+
+Aligned with seo-page-snapshot's service contract style:
+  - stdlib http.server, no third-party deps
+  - JSON envelope {ok, ...}, bilingual, free-provider-only
+  - never exposes a public interface by default (loopback bind)
+
+Endpoints (all JSON except GET /):
+    GET  /                       frontend page (assets/index.html)
+    GET  /api/health            service metadata
+    POST /api/analyze           body={domain,keywords,competitors,existing,use_bing,use_tranco,persist}
+    POST /api/analyze/csv       same body -> CSV attachment
+    GET  /api/providers         free provider configuration (no secrets)
+    GET  /api/channels          discovery channel list (rotated live search)
+    POST /api/channels          body={id, enabled} toggle a discovery channel
+    GET  /api/profiles          body/query={domain} keyword+competitor profile
+    POST /api/profiles          body={center_domain, keywords, competitors} save profile
+    GET  /api/tips              bilingual type / weight / reciprocal-linking tips
+    GET  /api/store             persistent backlink pool + stats (discovered / acquired / gap)
+    GET  /api/store/csv         pool exported as CSV attachment
+    POST /api/store/sync-existing  body={domains|existing} mark real backlinks acquired
+    POST /api/store/unmark-existing body={domains} revert domains to gap (unmark acquired)
+    GET  /api/schedule         periodic-query scheduler state (config / status / runs)
+    POST /api/schedule         body={enabled,interval_hours,profiles[]} save schedule
+    POST /api/schedule/run     trigger an immediate run of all profiles
+
+Usage:
+    python3 server.py --port 8787
+"""
+import argparse
+import csv
+import datetime as dt
+import io
+import json
+import os
+import re
+import sys
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ASSETS = os.path.join(HERE, "assets")
+PROVIDERS_PATH = os.path.join(HERE, "providers.json")
+TIPS_PATH = os.path.join(HERE, "tips.json")
+HOST, PORT = "127.0.0.1", 8787
+
+sys.path.insert(0, HERE)
+import analyze as an  # noqa: E402
+import store as st  # noqa: E402
+import scheduler as sch  # noqa: E402
+
+# Allow common whitespace (tab / LF / CR) in multi-line textarea fields;
+# only block genuinely unsafe control characters.
+CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def utc_stamp():
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def safe_text(value, limit=300):
+    v = (value or "").strip()
+    if not v or len(v) > limit or CONTROL_RE.search(v):
+        raise ValueError("field is empty, too long, or contains control characters")
+    return v
+
+
+# CSV column order
+CSV_COLS = [
+    ("url", "url"), ("domain", "domain"), ("type_key", "type_key"),
+    ("type_label_zh", "type_label_zh"), ("type_label_en", "type_label_en"),
+    ("authority_tier", "authority_tier"), ("relevance", "relevance"),
+    ("authority_score", "authority_score"), ("obtainability", "obtainability"),
+    ("priority", "priority"), ("valid", "valid"), ("http_status", "http_status"),
+    ("is_gap", "is_gap"), ("is_competitor", "is_competitor"),
+    ("already_have", "already_have"),
+    ("tranco_global_rank", "authority.tranco_global_rank"),
+    ("source", "source"), ("note", "note"),
+]
+
+
+def build_csv(result):
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow([c[0] for c in CSV_COLS])
+    for p in result.get("prospects", []):
+        row = []
+        for _, path in CSV_COLS:
+            if "." in path:
+                a, b = path.split(".", 1)
+                row.append(p.get(a, {}).get(b, ""))
+            else:
+                row.append(p.get(path, ""))
+        w.writerow(row)
+    return "﻿" + buf.getvalue()  # BOM for Excel
+
+
+# CSV column order for the persistent pool
+STORE_CSV_COLS = [
+    "domain", "url", "type_key", "type_label_zh", "authority_tier",
+    "tranco_global_rank", "priority", "valid", "http_status",
+    "acquired", "is_gap", "times_discovered", "first_seen", "last_seen",
+]
+
+
+def build_store_csv(domains):
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(STORE_CSV_COLS)
+    for d in domains:
+        w.writerow([d.get(c, "") for c in STORE_CSV_COLS])
+    return "﻿" + buf.getvalue()  # BOM for Excel
+
+
+def run_analysis(params, center_domain=None):
+    """Execute an analysis and (by default) persist into the backlink pool.
+
+    Shared by the interactive /api/analyze endpoint and the periodic scheduler,
+    so a scheduled run and a manual run have identical side effects.
+
+    Deduplication: the persistent pool itself acts as the existing-backlink
+    library. Domains already in the pool (acquired or just discovered) are
+    marked already_have=true, so re-running an analysis never reports an
+    existing entry as a new gap.
+    
+    Storage isolation: uses domain-specific pool when center_domain is provided.
+
+    IMPORTANT: the scheduler calls run_fn(params) without a positional
+    center_domain, so the domain MUST also be resolved from params here.
+    Otherwise every scheduled run writes into the legacy shared pool and
+    mixes niches together (balance-bike entries landing next to sound ones).
+    """
+    if not center_domain:
+        center_domain = (params.get("center_domain") or "").strip().lower()
+    pool = st.load_store(center_domain)
+    # Auto-dedup: merge the pool's domains into the gap diff (dedup by domain).
+    if str(params.get("use_pool_as_existing", "1")).lower() in ("1", "true", "yes", "on"):
+        pool_domains = list(pool.get("domains", {}).keys())
+        merged_existing = "\n".join(pool_domains + [params.get("existing") or ""])
+        params["existing"] = merged_existing
+    # Keyword fallback: an empty keyword box falls back to the center domain's
+    # own profile, so a domain switch can never run with the previous niche.
+    if not (params.get("keywords") or "").strip() and center_domain:
+        prof = st.load_profile(center_domain)
+        if prof.get("keywords"):
+            params["keywords"] = ", ".join(prof["keywords"])
+    result = an.analyze(params)
+    # Report the real existing-library coverage in the result envelope.
+    result["existing_library"] = {
+        "size": len(pool.get("domains", {})),
+        "acquired": len(pool.get("acquired_domains", [])),
+        "pool_used_as_existing": str(params.get("use_pool_as_existing", "1")).lower() in ("1", "true", "yes", "on"),
+        "matched_domains": sum(1 for p in result.get("prospects", []) if p.get("already_have")),
+    }
+    if str(params.get("persist", "1")).lower() in ("1", "true", "yes", "on"):
+        merged = st.merge_result(pool, result)
+        st.save_store(pool, center_domain)
+        result["pool_merged"] = merged
+        result["pool_stats"] = st.store_stats(pool)
+    return result
+
+
+# Start the periodic-query scheduler (daemon thread). It loads data/schedule.json
+# and runs any enabled profiles on the configured interval, merging into the pool.
+SCHED = sch.Scheduler(run_analysis)
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "BacklinkProspector/1.0"
+
+    def log_message(self, fmt, *args):
+        sys.stderr.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
+
+    def _send(self, status, body, ctype="application/json; charset=utf-8"):
+        data = body if isinstance(body, bytes) else body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def _json(self, status, obj):
+        self._send(status, json.dumps(obj, ensure_ascii=False))
+
+    def _error(self, status, message):
+        self._json(status, {"ok": False, "error": message})
+
+    def do_GET(self):
+        parsed = urllib.parse.urlsplit(self.path)
+        path = parsed.path
+        try:
+            if path in ("/", "/index.html"):
+                idx = os.path.join(ASSETS, "index.html")
+                if not os.path.isfile(idx):
+                    return self._error(500, "frontend asset missing")
+                # Inject a cache-busting version into the HTML so browsers always
+                # fetch the latest inline script (avoids stale cached pages).
+                html = open(idx, encoding="utf-8").read()
+                ver = str(int(os.path.getmtime(idx)))
+                html = html.replace("<head>", '<head><meta name="build" content="%s">' % ver, 1)
+                return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+            if path == "/favicon.ico":
+                return self._send(204, b"", "image/x-icon")
+            if path == "/api/health":
+                return self._json(200, {"ok": True, "skill": an.SKILL,
+                                        "schema_version": an.SCHEMA_VERSION,
+                                        "endpoints": ["/api/health", "/api/analyze",
+                                                      "/api/analyze/csv", "/api/providers",
+                                                      "/api/tips", "/api/store",
+                                                      "/api/store/csv",
+                                                      "/api/store/sync-existing",
+                                                      "/api/profiles",
+                                                      "/api/schedule",
+                                                      "/api/schedule/run"]})
+            if path == "/api/providers":
+                try:
+                    with open(PROVIDERS_PATH, encoding="utf-8") as f:
+                        cfg = json.load(f)
+                except Exception:
+                    cfg = {}
+                return self._json(200, {"ok": True, "config_path": PROVIDERS_PATH,
+                                        "providers": cfg.get("providers", [])})
+            if path == "/api/channels":
+                # Support domain query parameter for domain-specific channels
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                channels = st.load_domain_channels(center_domain)
+                # Load rotation config from global channels.json
+                try:
+                    with open(an.CHANNELS_PATH, encoding="utf-8") as f:
+                        global_cfg = json.load(f)
+                    rotation = global_cfg.get("rotation", {})
+                except Exception:
+                    rotation = {}
+                return self._json(200, {"ok": True,
+                                        "config_path": an.CHANNELS_PATH,
+                                        "rotation": rotation,
+                                        "channels": channels,
+                                        "center_domain": center_domain})
+            if path == "/api/tips":
+                try:
+                    with open(TIPS_PATH, encoding="utf-8") as f:
+                        tips = json.load(f)
+                except Exception as exc:
+                    return self._error(500, "tips.json missing: %s" % exc)
+                return self._json(200, {"ok": True, "tips": tips})
+            if path == "/api/store":
+                # Support domain query parameter for multi-domain isolation
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                pool = st.load_store(center_domain)
+                return self._json(200, {"ok": True,
+                                        "stats": st.store_stats(pool),
+                                        "domains": st.domain_list(pool),
+                                        "center_domain": center_domain})
+            if path == "/api/store/csv":
+                # Support domain query parameter for multi-domain isolation
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                pool = st.load_store(center_domain)
+                csv_text = build_store_csv(st.domain_list(pool))
+                domain_part = center_domain or "pool"
+                fname = "backlink-pool-%s-%s.csv" % (domain_part.replace(".", "_"), utc_stamp())
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition",
+                                 'attachment; filename="%s"' % fname)
+                self.send_header("Content-Length", str(len(csv_text.encode("utf-8"))))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                try:
+                    self.wfile.write(csv_text.encode("utf-8"))
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                return
+            if path == "/api/schedule":
+                return self._json(200, {"ok": True, "snapshot": SCHED.snapshot()})
+            if path == "/api/profiles":
+                center_domain = urllib.parse.parse_qs(parsed.query).get("domain", [None])[0]
+                if center_domain:
+                    prof = st.load_profile(center_domain)
+                    prof["domain"] = center_domain
+                    return self._json(200, {"ok": True, "profile": prof,
+                                            "center_domain": center_domain})
+                return self._json(200, {"ok": True, "profiles": st.list_profiles()})
+            return self._error(404, "unknown path: %s" % path)
+        except Exception as exc:  # noqa: BLE001
+            return self._error(500, "%s: %s" % (type(exc).__name__, str(exc)[:300]))
+
+    def do_POST(self):
+        path = urllib.parse.urlsplit(self.path).path
+        if path not in ("/api/analyze", "/api/analyze/csv", "/api/store/sync-existing",
+                        "/api/store/unmark-existing", "/api/channels",
+                        "/api/profiles", "/api/schedule", "/api/schedule/run"):
+            return self._error(404, "unknown path")
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            raw = self.rfile.read(min(length, 256_000)) if length else b"{}"
+            params = json.loads(raw.decode("utf-8", "replace") or "{}")
+            if not isinstance(params, dict):
+                raise ValueError("JSON body must be an object")
+
+            if path == "/api/store/sync-existing":
+                text = (params.get("domains") or params.get("existing") or "")
+                if not isinstance(text, str):
+                    raise ValueError("domains field must be a string")
+                safe_text(text, 8000)
+                center_domain = params.get("center_domain")
+                pool = st.load_store(center_domain)
+                added = st.sync_existing(pool, re.split(r"[,\n]", text))
+                st.save_store(pool, center_domain)
+                return self._json(200, {"ok": True, "added": added,
+                                        "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/store/unmark-existing":
+                text = params.get("domains")
+                if not isinstance(text, str):
+                    raise ValueError("domains field must be a string")
+                safe_text(text, 8000)
+                center_domain = params.get("center_domain")
+                pool = st.load_store(center_domain)
+                removed = st.unmark_existing(pool, re.split(r"[,\n]", text))
+                st.save_store(pool, center_domain)
+                return self._json(200, {"ok": True, "removed": removed,
+                                        "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/channels":
+                # POST to toggle a channel or save domain-specific config
+                center_domain = params.get("center_domain")
+                
+                # If saving full config for a domain
+                if params.get("channels") and center_domain:
+                    cfg = st.save_domain_channels(params["channels"], center_domain)
+                    return self._json(200, {"ok": True,
+                                            "channels": cfg.get("channels", []),
+                                            "center_domain": center_domain})
+                
+                # Legacy: toggle single channel in global config
+                cid = params.get("id")
+                if not cid:
+                    raise ValueError("channel id required")
+                with open(an.CHANNELS_PATH, encoding="utf-8") as f:
+                    cfg = json.load(f)
+                hit = False
+                for ch in cfg.get("channels", []):
+                    if ch.get("id") == cid:
+                        ch["enabled"] = bool(params.get("enabled", True))
+                        hit = True
+                        break
+                if not hit:
+                    raise ValueError("unknown channel id: %s" % cid)
+                
+                # If center_domain is provided, save to domain-specific config
+                if center_domain:
+                    # Load or create domain channels
+                    domain_channels = st.load_domain_channels(center_domain)
+                    if not domain_channels:
+                        # Use global channels as base
+                        with open(an.CHANNELS_PATH, encoding="utf-8") as f:
+                            global_cfg = json.load(f)
+                        domain_channels = global_cfg.get("channels", [])
+                    
+                    # Update the specific channel
+                    for ch in domain_channels:
+                        if ch.get("id") == cid:
+                            ch["enabled"] = bool(params.get("enabled", True))
+                            break
+                    
+                    cfg = st.save_domain_channels(domain_channels, center_domain)
+                    return self._json(200, {"ok": True,
+                                            "channels": cfg.get("channels", []),
+                                            "center_domain": center_domain})
+                else:
+                    # Legacy: save to global config
+                    tmp = an.CHANNELS_PATH + ".tmp"
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        json.dump(cfg, f, ensure_ascii=False, indent=2)
+                    os.replace(tmp, an.CHANNELS_PATH)
+                    return self._json(200, {"ok": True, "channels": cfg.get("channels", [])})
+
+            if path == "/api/profiles":
+                center_domain = (params.get("center_domain") or "").strip().lower()
+                if not center_domain:
+                    raise ValueError("center_domain is required")
+                if params.get("keywords") is None and params.get("competitors") is None:
+                    raise ValueError("keywords or competitors required")
+                cfg = st.save_profile(center_domain,
+                                      params.get("keywords") or [],
+                                      params.get("competitors") or [],
+                                      params.get("note"))
+                return self._json(200, {"ok": True, "profile": {
+                    "keywords": cfg["keywords"], "competitors": cfg["competitors"],
+                    "note": cfg["note"], "source": "saved",
+                    "domain": center_domain},
+                    "center_domain": center_domain})
+
+            if path == "/api/schedule":
+                cfg = SCHED.save_config(params)
+                return self._json(200, {"ok": True, "config": cfg, "status": SCHED.status})
+
+            if path == "/api/schedule/run":
+                out = SCHED.run_now()
+                return self._json(200, {"ok": out.get("ok", False),
+                                        "last_run": SCHED.config.get("last_run"),
+                                        "status": SCHED.status,
+                                        "runs": SCHED.runs[:20],
+                                        "error": out.get("error")})
+
+            # light validation on the free-text inputs
+            if params.get("domain"):
+                safe_text(params["domain"], 300)
+            if params.get("keywords"):
+                safe_text(params["keywords"], 2000)
+            if params.get("competitors"):
+                safe_text(params["competitors"], 4000)
+            if params.get("existing"):
+                safe_text(params["existing"], 4000)
+
+            center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower()
+            result = run_analysis(params, center_domain or None)
+
+            if path == "/api/analyze/csv":
+                csv_text = build_csv(result)
+                fname = "backlink-prospects-%s-%s.csv" % (
+                    (result["target"].get("registrable_domain") or "domain"), utc_stamp())
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition",
+                                 'attachment; filename="%s"' % fname)
+                self.send_header("Content-Length", str(len(csv_text.encode("utf-8"))))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                try:
+                    self.wfile.write(csv_text.encode("utf-8"))
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                return
+            return self._json(200, {"ok": True, "result": result})
+        except (ValueError, json.JSONDecodeError) as exc:
+            return self._error(400, str(exc))
+        except Exception as exc:  # noqa: BLE001
+            return self._error(500, "%s: %s" % (type(exc).__name__, str(exc)[:300]))
+
+
+def main():
+    global HOST, PORT
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=8787)
+    args = ap.parse_args()
+    HOST, PORT = args.host, args.port
+    if HOST not in ("127.0.0.1", "localhost", "::1"):
+        print("WARNING: binding to a non-loopback interface exposes a URL-fetching endpoint.",
+              file=sys.stderr)
+    srv = ThreadingHTTPServer((HOST, PORT), Handler)
+    print("backlink-prospector service: http://%s:%d" % (HOST, PORT), file=sys.stderr)
+    print("POST /api/analyze  body={domain,keywords,competitors,existing}", file=sys.stderr)
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        print("\nstopped", file=sys.stderr)
+    finally:
+        srv.server_close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

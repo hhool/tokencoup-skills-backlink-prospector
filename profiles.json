@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "note": "Default keyword / competitor profiles per center domain. Edited copies are stored in data/profile-<domain>.json and take priority over these defaults.",
+  "profiles": {
+    "soundbuttons.cc": {
+      "keywords": [
+        "sound",
+        "soundboard",
+        "sound buttons",
+        "sound effects",
+        "meme soundboard",
+        "funny sounds"
+      ],
+      "competitors": [
+        "myinstants.com",
+        "voicemod.net"
+      ],
+      "note": "meme 音效板 / 音效工具"
+    },
+    "balancebiketoddler.com": {
+      "keywords": [
+        "balance bike",
+        "balance bike for toddlers",
+        "kids balance bike",
+        "balance bike reviews",
+        "first ride bike",
+        "balance bike training wheels",
+        "toddler balance bike"
+      ],
+      "competitors": [],
+      "note": "儿童平衡车 / 幼儿自行车评测（竞品待补充）"
+    }
+  }
+}
