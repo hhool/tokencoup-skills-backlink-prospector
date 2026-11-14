@@ -210,6 +210,42 @@ Linking page,Anchor,Date                        # CSV 表头（自动跳过）
 
 ---
 
+## 3.10 存活复查（链接还在吗）
+
+台账里的 `live` 只是一个声明。外链只在"页面还带着它"的那一刻才叫有效，所以每一条 live 记录都要定期回访。默认窗口 7 天（`RECHECK_DAYS`，1–90）。
+
+三种判定，只有两种会改状态：
+
+| 判定 | 依据 | 结果 |
+|---|---|---|
+| 存活 | 页面 2xx，且页面里**还能找到我们的链接**（绝对 href / 相对 href / 域名） | 不动，只记一次检查 |
+| 已失活 | 404 / 410，或页面正常打开但链接不见了 | `state=lost`，域名**退回缺口**，可重新排期（需人工确认后再复用） |
+| 未能判定 | 超时、DNS/TLS 失败、403、429、5xx | 只记一次尝试，**绝不删行**——机器人墙和超时不能替你判定"链接没了" |
+
+要点：
+
+- **导入的记录优先**：`verified_at` 为空的（导出导入、从没实地看过）排在最前，它们才是最不确定的那批。
+- **不消耗日配额**：复查是核对，不是今天的工作量。
+- 每次检查写在记录的 `recheck`（最近一次）与 `checks`（最近 5 次），带 HTTP 状态、判定依据、实际请求到的 URL。
+- 定时任务每次跑完分析会顺带复查 20 条（`recheck` / `recheck_limit` 可关或改），所以只要机器醒着，链接失活最迟一周内会被发现。
+
+```bash
+# 预览：真去探测，但不写任何东西
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"dry_run":true}'
+
+# 正式复查（limit 1-100，days 1-90，timeout 3-30）
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"days":7}'
+
+# 有多少条到期待检
+curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click" | jq .recheck
+```
+
+---
+
 ## 4. 命令行 / API 速查（批量与自动化用）
 
 下列可直接 curl 调用（本地 `8787` 或线上域名）。

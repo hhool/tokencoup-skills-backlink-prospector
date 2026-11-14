@@ -317,6 +317,28 @@ Most wrong gap counts come from a missing third data layer: you already have hun
 
 ---
 
+### D12. Survival recheck — only hard evidence may turn live into lost
+
+`live` is a ledger claim, not a fact. The verdict has three tiers and **only one of them changes state**:
+
+| Verdict | Evidence | Action |
+|---|---|---|
+| Alive | 2xx and our link is still in the HTML | Record only |
+| Gone | 404/410, or 2xx with the link no longer on the page | `live -> lost`, the domain returns to the gap |
+| Inconclusive | timeout / DNS / TLS / 403 / 429 / 5xx | **Record only, never delete the row** |
+
+Three deliberate trade-offs:
+
+1. **403 and timeouts are not "gone"**. Bot walls, flaky CDNs and your own VPS having a bad minute all break a probe; treating that as removal would delete real backlinks (and after `lost` the domain needs a human decision before reuse). Keep the row and retry next window.
+2. **Matching runs strongest to weakest**: absolute href (`mine.example/guide`) -> relative href (`href="/guide"`, the common real-world case) -> bare path (>= 6 chars, so navigation text does not match) -> domain only (weakest, used when no own URL was ever recorded). Whichever tier matched is written to `recheck.found`, so the report does not pretend.
+3. **Imported rows are probed first**. Rows with an empty `verified_at` (GSC/Ahrefs imports) are the least certain part of the ledger.
+
+`lost` only changes the record; it never re-sends anything. Under the 90-day per-domain cadence a `lost` row needs a human confirmation before `submitted` (the state machine already allows `lost -> submitted`). Rechecking consumes no quota. Default window 7 days (`RECHECK_DAYS`); every scheduled analysis run also rechecks 20 rows (`recheck` / `recheck_limit` configurable).
+
+The probe lives in `recheck.py` (fetch + verdict); `store.py` still contains no network calls, and `scheduler.py` calls it through an injected `recheck_fn`, so the scheduler keeps knowing nothing about network policy.
+
+---
+
 ## 3. Free Data Sources (no API keys required)
 
 | Source | Role | Notes |

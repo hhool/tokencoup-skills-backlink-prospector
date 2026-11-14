@@ -210,6 +210,42 @@ API: `POST /api/placements/import` with `{center_domain, text, source, dry_run?,
 
 ---
 
+## 3.10 Survival recheck (is the link still there?)
+
+A `live` row in the ledger is a claim. A backlink is only valid while the page still carries it, so every live row gets revisited on a schedule. Default window: 7 days (`RECHECK_DAYS`, 1–90).
+
+Three verdicts, only two of which change state:
+
+| Verdict | Evidence | Effect |
+|---|---|---|
+| Alive | 2xx **and** our link is still in the HTML (absolute href / relative href / domain) | Nothing changes; the attempt is recorded |
+| Gone | 404 / 410, or the page loads without our link | `state=lost`, the domain **returns to the gap** (reuse needs a human decision) |
+| Inconclusive | timeout, DNS/TLS failure, 403, 429, 5xx | Only the attempt is recorded — **never deletes a row**. A bot wall or a timeout is not proof of removal |
+
+Notes:
+
+- **Imported rows go first**: those with an empty `verified_at` (from an export, never actually visited) are the least certain, so they are probed before anything else.
+- **No daily quota is consumed**: rechecking is verification, not today's work.
+- Each probe is stored on the row as `recheck` (latest) and `checks` (last 5), with the HTTP status, what matched, and the URL actually fetched.
+- Every scheduled analysis run also rechecks 20 rows (`recheck` / `recheck_limit` config), so as long as the machine is awake a dead link is caught within a week.
+
+```bash
+# Preview: really probes, writes nothing
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"dry_run":true}'
+
+# Real recheck (limit 1-100, days 1-90, timeout 3-30)
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"days":7}'
+
+# How many rows are due
+curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click" | jq .recheck
+```
+
+---
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.

@@ -298,6 +298,27 @@ curl -s -X POST http://127.0.0.1:8787/api/placements/import \
   500-row paste cannot close the day's gate. Your own domain, competitors, whitelisted hosts, suppressed hosts and
   duplicates are skipped and counted.</span></p>
 
+  <h3><span class="doc-zh">存活复查（链接还在不在）</span><span class="doc-en">Survival recheck (is the link still there?)</span></h3>
+<pre><code># preview: really probes, writes nothing
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"dry_run":true}'
+
+# real recheck (limit 1-100, days 1-90, timeout 3-30)
+curl -s -X POST http://127.0.0.1:8787/api/placements/recheck \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","limit":20,"days":7}'
+
+# how many rows are due
+curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click" | jq .recheck</code></pre>
+  <p><span class="doc-zh">三档判定：<b>存活</b>（2xx 且页面里还有我们的链接）、<b>已失活</b>（404/410，或页面打开了但链接没了 → 退回缺口）、
+  <b>未能判定</b>（超时 / 403 / 429 / 5xx → 只记录，绝不删行）。导入的记录优先探。复查不消耗日配额；
+  默认 7 天一轮，定时任务每次跑完分析顺带复查 20 条。</span>
+  <span class="doc-en">Three verdicts: <b>alive</b> (2xx and our link is still in the HTML), <b>gone</b> (404/410, or the page
+  loads without the link -> domain returns to the gap), <b>inconclusive</b> (timeout / 403 / 429 / 5xx -> record only,
+  never delete). Imported rows are probed first. Rechecking consumes no quota; the window is 7 days by default and each
+  scheduled run also rechecks 20 rows.</span></p>
+
   <h3><span class="doc-zh">已知域名（下拉数据源）</span><span class="doc-en">Known domains (picker source)</span></h3>
 <pre><code>curl -s "http://127.0.0.1:8787/api/domains"</code></pre>
 

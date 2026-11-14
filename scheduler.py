@@ -26,7 +26,10 @@ DATA_DIR = os.path.join(HERE, "data")
 SCHED_PATH = os.path.join(DATA_DIR, "schedule.json")
 RUNS_PATH = os.path.join(DATA_DIR, "schedule_runs.json")
 
-DEFAULT_CONFIG = {"enabled": False, "interval_hours": 24, "profiles": []}
+DEFAULT_CONFIG = {"enabled": False, "interval_hours": 24, "profiles": [],
+                  # Probe due `live` rows after each profile run: a delivered link
+                  # is only "valid" while the page still carries it.
+                  "recheck": True, "recheck_limit": 20}
 MIN_INTERVAL_H = 0.05   # ~3 minutes, allows quick testing
 MAX_INTERVAL_H = 8760   # 1 year
 TICK_SECONDS = 30
@@ -45,8 +48,11 @@ def _atomic_write(path, obj):
 
 
 class Scheduler:
-    def __init__(self, run_fn):
+    def __init__(self, run_fn, recheck_fn=None):
         self.run_fn = run_fn
+        # Injected by server.py for the same reason as run_fn: the scheduler stays
+        # free of network policy, it only decides when to call.
+        self.recheck_fn = recheck_fn
         self.lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = None
@@ -95,6 +101,14 @@ class Scheduler:
             except (TypeError, ValueError):
                 ih = 24
             self.config["interval_hours"] = max(MIN_INTERVAL_H, min(MAX_INTERVAL_H, ih))
+        if "recheck" in new_cfg:
+            self.config["recheck"] = bool(new_cfg["recheck"])
+        if "recheck_limit" in new_cfg:
+            try:
+                rl = int(new_cfg["recheck_limit"])
+            except (TypeError, ValueError):
+                rl = 20
+            self.config["recheck_limit"] = max(1, min(100, rl))
         if "profiles" in new_cfg and isinstance(new_cfg["profiles"], list):
             clean = []
             for p in new_cfg["profiles"]:
@@ -185,6 +199,17 @@ class Scheduler:
                     rec["pool_merged"] = r.get("pool_merged")
                     rec["pool_total"] = (r.get("pool_stats") or {}).get("total_discovered")
                     rec["error"] = None
+                    if self.recheck_fn and self.config.get("recheck", True):
+                        try:
+                            rk = self.recheck_fn(params.get("center_domain") or "",
+                                                 limit=int(self.config.get("recheck_limit") or 20))
+                            rec["recheck"] = {k: rk.get(k) for k in
+                                              ("checked", "alive", "gone", "unknown", "remaining_due")}
+                            if rk.get("gone"):
+                                rec["recheck_lost"] = [x.get("target_domain")
+                                                       for x in (rk.get("lost") or [])][:10]
+                        except Exception as exc:  # noqa: BLE001 — never fail the run
+                            rec["recheck_error"] = "%s: %s" % (type(exc).__name__, str(exc)[:200])
                 except Exception as exc:  # noqa: BLE001
                     rec["error"] = "%s: %s" % (type(exc).__name__, str(exc)[:300])
                     self.status["last_error"] = rec["error"]

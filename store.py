@@ -1019,6 +1019,10 @@ PLACEMENT_STATES = ("registered", "claimed", "submitted", "live",
                     "rejected", "lost", "error")
 ACTIVE_STATES = ("registered", "claimed", "submitted")
 COOLDOWN_DAYS = 90
+# How old a `live` row's last survival probe may get before it counts as due.
+# 7 days: often enough to notice a removed link within a week, rare enough that a
+# few hundred rows do not hammer other people's servers.
+RECHECK_DAYS = _env_int("RECHECK_DAYS", 7, 1, 90)
 _TS = "%Y-%m-%dT%H:%M:%SZ"
 
 _ALLOWED_TRANSITIONS = {

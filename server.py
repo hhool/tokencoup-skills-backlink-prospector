@@ -64,6 +64,7 @@ HOST, PORT = "127.0.0.1", 8787
 sys.path.insert(0, HERE)
 import analyze as an  # noqa: E402
 import store as st  # noqa: E402
+import recheck as rk  # noqa: E402
 import scheduler as sch  # noqa: E402
 
 # Allow common whitespace (tab / LF / CR) in multi-line textarea fields;
@@ -208,7 +209,18 @@ def run_analysis(params, center_domain=None):
 
 # Start the periodic-query scheduler (daemon thread). It loads data/schedule.json
 # and runs any enabled profiles on the configured interval, merging into the pool.
-SCHED = sch.Scheduler(run_analysis)
+def run_recheck(center_domain, limit=20, days=None, dry_run=False, timeout=10):
+    """Probe due `live` rows for one center domain (injected into the scheduler)."""
+    pool = st.load_store(center_domain or None)
+    report = rk.run(pool, limit=limit, days=days, dry_run=dry_run, timeout=timeout)
+    if not dry_run:
+        st.save_store(pool, center_domain or None)
+    report["stats"] = st.placement_stats(pool)
+    report["center_domain"] = center_domain
+    return report
+
+
+SCHED = sch.Scheduler(run_analysis, recheck_fn=run_recheck)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -279,6 +291,7 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/store/sync-existing",
                                                       "/api/placements/claim-batch",
                                                       "/api/placements/import",
+                                                      "/api/placements/recheck", "/api/placements/recheck",
                                                       "/api/profiles",
                                                       "/api/schedule",
                                                       "/api/schedule/run",
@@ -378,6 +391,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, {"ok": True,
                                         "placements": st.placement_list(pool),
                                         "stats": st.placement_stats(pool),
+                                        "recheck": {"due": rk.due_count(pool),
+                                                    "never_checked": rk.never_checked(pool),
+                                                    "days": st.RECHECK_DAYS},
                                         "center_domain": center_domain})
             if path == "/api/placements/csv":
                 center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
@@ -416,7 +432,7 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/store/unmark-existing", "/api/channels",
                         "/api/profiles", "/api/schedule", "/api/schedule/run",
                         "/api/placements/claim", "/api/placements/claim-batch",
-                        "/api/placements/import",
+                        "/api/placements/import", "/api/placements/recheck",
                         "/api/placements/transition",
                         "/api/placements/suppress",
                         "/api/whitelist", "/api/settings"):
@@ -557,6 +573,36 @@ class Handler(BaseHTTPRequestHandler):
                                         "results": out["results"],
                                         "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
+
+            if path == "/api/placements/recheck":
+                # Survival probe: a `live` row is a claim until someone visits the
+                # page again. `gone` -> lost (domain returns to the gap);
+                # `unknown` (timeout / 403 / 5xx) never deletes a real backlink.
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower() or None
+                try:
+                    limit = int(params.get("limit", 20))
+                except (TypeError, ValueError):
+                    raise ValueError("limit must be an integer")
+                if not 1 <= limit <= 100:
+                    raise ValueError("limit must be between 1 and 100")
+                days = params.get("days")
+                if days is not None:
+                    try:
+                        days = int(days)
+                    except (TypeError, ValueError):
+                        raise ValueError("days must be an integer")
+                    if not 1 <= days <= 90:
+                        raise ValueError("days must be between 1 and 90")
+                try:
+                    timeout = int(params.get("timeout", 10))
+                except (TypeError, ValueError):
+                    raise ValueError("timeout must be an integer")
+                if not 3 <= timeout <= 30:
+                    raise ValueError("timeout must be between 3 and 30")
+                return self._json(200, dict(run_recheck(
+                    center_domain, limit=limit, days=days,
+                    dry_run=bool(params.get("dry_run")), timeout=timeout),
+                    ok=True))
 
             if path == "/api/placements/import":
                 # Turn a GSC / Ahrefs / Common Crawl export into live ledger rows

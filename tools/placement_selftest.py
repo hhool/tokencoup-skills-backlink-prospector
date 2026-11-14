@@ -18,6 +18,7 @@ Sections:
     E  in-app help: per-view tips toggles + the standalone /help page
     F  competitor semantics (excluded hosts vs. admitted competitor backlinks)
     I  existing-backlink import (export -> live rows -> gap report -> undo)
+    J  link survival recheck (ok vs gone vs inconclusive, gap hand-back)
 """
 import json
 import os
@@ -882,6 +883,176 @@ http://
 
 
 
+def section_j():
+    """Link survival recheck: ok / gone / unknown, and what each may change.
+
+    A `live` row is a claim. Only hard evidence (404/410, or the page loads
+    without our link) may turn it into `lost`; a timeout, 403 or 5xx must not
+    delete a backlink you actually own.
+    """
+    print("\n=== J. link survival recheck ===")
+    import threading
+    import recheck as rk
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    PORT = 8899 + (os.getpid() % 90)
+    base = "http://127.0.0.1:%d" % PORT
+    PAGES = {
+        "/ok": (200, "<html><body><a href='https://mine.example/guide'>mine</a></body></html>"),
+        "/removed": (200, "<html><body>article loadsfine but no link here</body></html>"),
+        "/relative": (200, "<html><body><a href='/guide'>mine</a></body></html>"),
+        "/blocked": (403, "<html><body>bot wall</body></html>"),
+        "/boom": (500, "<html><body>boom</body></html>"),
+    }
+
+    class Stub(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            code, html = PAGES.get(self.path.split("?")[0], (404, "<html>gone</html>"))
+            raw = html.encode("utf-8")
+            try:
+                self.send_response(code)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+    srv = ThreadingHTTPServer(("127.0.0.1", PORT), Stub)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    time.sleep(0.4)
+
+    def rstore():
+        return {"domains": {("r%d.example" % i): {"valid": True, "priority": 90 - i,
+                                                  "acquired": True, "type_key": "directory"}
+                            for i in range(6)},
+                "placements": {}, "suppressions": {}, "acquired_domains": [],
+                "whitelist": {}, "settings": {}, "center_domain": "mine.example"}
+
+    def add(store, dom, path, own="https://mine.example/guide", checked=False):
+        url = base + path
+        key = st.placement_key(dom, url)
+        store["placements"][key] = {
+            "id": key, "target_domain": dom, "target_url": url, "placement_type": "link",
+            # live_at is backdated: claimed_on() falls back to it, and a fixture
+            # created "today" would otherwise look like today's claims.
+            "created_at": "2026-01-05T00:00:00Z", "state": "live",
+            "live_at": "2026-01-05T00:00:00Z",
+            "own_url": own, "batch_id": "",
+            "verify": {"landing_url": url, "verify_method": "manual-anchor-check",
+                       "observed_href": "", "rel": "dofollow", "anchor_text": "",
+                       "verified_at": st._now()}}
+        if checked:
+            store["placements"][key]["recheck"] = {"at": st._now(), "status": "ok"}
+        return key
+
+    try:
+        s = rstore()
+        add(s, "r0.example", "/ok")
+        add(s, "r1.example", "/removed")
+        add(s, "r2.example", "/boom")
+        check("a never-probed live row is due", rk.due_count(s) == 3, rk.due_count(s))
+        check("never_checked counts exactly those rows",
+              rk.never_checked(s) == 3, rk.never_checked(s))
+
+        gap_before = st.store_stats(s)["gap"]
+        rep = rk.run(s, limit=10, timeout=5)
+        check("the probe separates alive / gone / inconclusive",
+              (rep["alive"], rep["gone"], rep["unknown"]) == (1, 1, 1), rep)
+        r0 = [r for r in s["placements"].values() if r["target_domain"] == "r0.example"][0]
+        r1 = [r for r in s["placements"].values() if r["target_domain"] == "r1.example"][0]
+        r2 = [r for r in s["placements"].values() if r["target_domain"] == "r2.example"][0]
+        check("an alive link stays live and records the match type",
+              r0["state"] == "live" and r0["recheck"]["status"] == "ok"
+              and r0["recheck"]["found"] == "href", r0.get("recheck"))
+        check("a 200 page without our link is gone, not ok",
+              r1["state"] == "lost" and r1["recheck"]["status"] == "gone", r1.get("recheck"))
+        check("a 5xx is inconclusive and must not delete the row",
+              r2["state"] == "live" and r2["recheck"]["status"] == "unknown", r2.get("recheck"))
+        check("losing a link puts the domain back into the gap",
+              st.store_stats(s)["gap"] == gap_before + 1
+              and s["domains"]["r1.example"]["acquired"] is False,
+              (gap_before, st.store_stats(s)["gap"]))
+        check("rechecking never consumes the daily quota",
+              st.claimed_on(s) == 0 and rep.get("quota_untouched") is True, st.claimed_on(s))
+        check("a checked row is no longer due inside the window",
+              rk.due_count(s) == 0, rk.due_count(s))
+        check("the attempt is kept as history on the row",
+              len(r1.get("checks") or []) == 1
+              and r1["checks"][0]["status"] == "gone", r1.get("checks"))
+
+        # relative href and status-only evidence
+        s2 = rstore()
+        add(s2, "r0.example", "/relative")
+        add(s2, "r1.example", "/ok", own="")
+        rk.run(s2, limit=10, timeout=5)
+        rr0 = [r for r in s2["placements"].values() if r["target_domain"] == "r0.example"][0]
+        rr1 = [r for r in s2["placements"].values() if r["target_domain"] == "r1.example"][0]
+        check("a relative href still counts as the link being present",
+              rr0["state"] == "live"
+              and rr0["recheck"]["found"] in ("href_attr", "path"), rr0.get("recheck"))
+        check("without a recorded own URL only reachability is claimed",
+              rr1["state"] == "live" and rr1["recheck"]["found"] is None, rr1.get("recheck"))
+
+        # 403 is a bot wall, not a removal
+        s3 = rstore()
+        add(s3, "r0.example", "/blocked")
+        rk.run(s3, limit=10, timeout=5)
+        r3 = list(s3["placements"].values())[0]
+        check("403 is inconclusive rather than gone",
+              r3["state"] == "live" and r3["recheck"]["status"] == "unknown", r3.get("recheck"))
+
+        # ordering + limit + dry run
+        s4 = rstore()
+        add(s4, "r0.example", "/removed")
+        add(s4, "r1.example", "/ok")
+        dry = rk.run(s4, limit=1, timeout=5, dry_run=True)
+        check("dry run predicts the loss and writes nothing",
+              dry["dry_run"] is True and dry["checked"] == 1 and dry["gone"] == 1
+              and all(not r.get("recheck") for r in s4["placements"].values())
+              and all(r["state"] == "live" for r in s4["placements"].values()),
+              (dry["checked"], dry["gone"],
+               [bool(r.get("recheck")) for r in s4["placements"].values()]))
+        rep2 = rk.run(s4, limit=1, timeout=5)
+        check("limit bounds one batch and the newest-due rows wait their turn",
+              rep2["checked"] == 1 and rep2["remaining_due"] == 1,
+              (rep2["checked"], rep2["remaining_due"]))
+        s5 = rstore()
+        add(s5, "r0.example", "/ok")
+        list(s5["placements"].values())[0]["verify"]["landing_url"] = ""
+        check("a row without a landing URL is never probed",
+              rk.due_count(s5) == 0, rk.due_count(s5))
+
+        if not NO_WRITE:
+            api_center = TEST_DOMAIN + "-j"
+            code, body = http("/api/placements/recheck",
+                              {"center_domain": api_center, "limit": 0})
+            check("/api/placements/recheck validates the limit",
+                  code == 400 and "between" in str(body.get("error", "")), (code, body.get("error")))
+            code, body = http("/api/placements/recheck",
+                              {"center_domain": api_center, "limit": 5})
+            check("/api/placements/recheck answers an empty ledger cleanly",
+                  code == 200 and body.get("ok") is True and body.get("checked") == 0,
+                  (code, body.get("checked")))
+            code, body = http("/api/placements?domain=%s" % api_center)
+            check("/api/placements exposes the recheck queue",
+                  code == 200 and body.get("recheck", {}).get("days") == st.RECHECK_DAYS,
+                  (code, body.get("recheck")))
+    finally:
+        srv.shutdown()
+        st.prune_queues(TEST_DOMAIN + "-j", keep_days=-1)
+        try:
+            path = st.get_store_path(TEST_DOMAIN + "-j")
+            if os.path.isfile(path):
+                os.remove(path)
+        except OSError:
+            pass
+
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -896,6 +1067,7 @@ if __name__ == "__main__":
     section_g()
     section_h()
     section_i()
+    section_j()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:
