@@ -78,6 +78,11 @@ For each target you act on:
 | 🗃 Pool | candidate pool, type-tree filter, import/unmark existing, **delivery ledger**, pool CSV / ledger CSV |
 | ⚙ Backend · Scheduler | enable auto-runs, set interval, manage profiles, run now, view run history |
 
+**In-app help (no doc needed)**
+- Every tab has a **💡 Tips** button at the top of the view; it expands that view's guidance in place and collapses again on a second click.
+- The top bar's **? Help** button opens a standalone help page: `http://127.0.0.1:8787/help` locally, `https://backlink-prospector.fly.dev/help` in production. Add `?lang=en` for English; the page can also switch language in place.
+- It is organised in seven sections: what it is / five-step loop / panel map / states &amp; rules / API cheatsheet / data &amp; backup / FAQ.
+
 ---
 
 ## 4. CLI / API quick reference (for bulk & automation)

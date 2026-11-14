@@ -242,6 +242,7 @@ python3 server.py --port 8787
 - `POST /api/schedule` → 保存调度配置（body `{enabled, interval_hours, profiles[]}`）
 - `POST /api/schedule/run` → 立即执行所有定时档案（body `{}`）
 - `GET  /api/health` · `GET /api/providers`
+- `GET  /help` → 独立使用帮助页（`assets/help.html`，`?lang=en|zh` 双语）。顶栏「? 使用帮助」进入；每个 Tab 右上角另有 `💡 Tips` 按钮，就地展开对应说明。
 
 请求体（`/api/analyze`）：
 ```json

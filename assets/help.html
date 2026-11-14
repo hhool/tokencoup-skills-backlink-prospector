@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>使用帮助 · Backlink Prospector</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a212b; --panel2:#222b38; --border:#2c3744;
+    --text:#e6edf3; --muted:#8b98a5; --accent:#4ea1ff; --accent2:#7ee787;
+    --warn:#f0883e; --bad:#ff6b6b; --good:#3fb950;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.7}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-size:22px;margin:0}
+  h2{font-size:16px;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--border);color:var(--text)}
+  h2:first-of-type{border-top:0;padding-top:0}
+  h3{font-size:14px;margin:18px 0 6px;color:var(--accent2)}
+  p{margin:8px 0}
+  .sub{color:var(--muted);font-size:13px;margin:4px 0 0}
+  nav.toc{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:18px 0 8px;
+    display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px}
+  nav.toc a{color:var(--accent)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px}
+  code{background:rgba(78,161,255,.14);color:var(--accent);padding:1px 5px;border-radius:4px;font-size:12.5px}
+  pre{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:12.5px}
+  pre code{background:none;color:var(--text);padding:0}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  ul,ol{margin:8px 0 8px 20px;padding:0}
+  li{margin:4px 0}
+  .steps li{margin:6px 0}
+  .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel2);
+    border:1px solid var(--border);color:var(--muted)}
+  .note{background:var(--panel2);border-left:3px solid var(--accent2);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:13px}
+  .topbar{display:flex;gap:10px;align-items:center;margin-left:auto}
+  button{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:8px;
+    padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button:hover{background:rgba(78,161,255,.10)}
+  a.btnlink{display:inline-block;border:1px solid var(--border);border-radius:8px;padding:8px 14px;
+    font-size:13px;font-weight:600;color:var(--text)}
+  a.btnlink:hover{border-color:var(--accent);text-decoration:none}
+  footer{margin-top:40px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);padding-top:14px}
+  /* language switch: one DOM, two content blocks */
+  body.lang-zh .doc-en{display:none}
+  body.lang-en .doc-zh{display:none}
+  @media(max-width:640px){pre{font-size:11.5px}}
+</style>
+</head>
+<body class="lang-zh">
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1><span class="doc-zh">使用帮助 · 外链目标发现器</span><span class="doc-en">Help · Backlink Prospector</span></h1>
+      <p class="sub">
+        <span class="doc-zh">面向运营 / 推广的实操手册。技术设计与接口契约见 README。</span>
+        <span class="doc-en">Operator handbook. Architecture and API contracts live in the README.</span>
+      </p>
+    </div>
+    <div class="topbar">
+      <button id="langBtn">EN</button>
+      <a class="btnlink" href="/" id="backLink"><span class="doc-zh">← 返回应用</span><span class="doc-en">← Back to app</span></a>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#what"><span class="doc-zh">这是什么</span><span class="doc-en">What it is</span></a>
+    <a href="#loop"><span class="doc-zh">五步闭环</span><span class="doc-en">Five-step loop</span></a>
+    <a href="#panels"><span class="doc-zh">面板地图</span><span class="doc-en">Panel map</span></a>
+    <a href="#states"><span class="doc-zh">状态机与规则</span><span class="doc-en">States &amp; rules</span></a>
+    <a href="#api"><span class="doc-zh">API 速查</span><span class="doc-en">API cheatsheet</span></a>
+    <a href="#data"><span class="doc-zh">数据与备份</span><span class="doc-en">Data &amp; backup</span></a>
+    <a href="#faq"><span class="doc-zh">常见问题</span><span class="doc-en">FAQ</span></a>
+  </nav>
+
+  <!-- ============ 这是什么 ============ -->
+  <h2 id="what"><span class="doc-zh">这是什么</span><span class="doc-en">What it is</span></h2>
+
+  <p class="doc-zh">一个围绕某个网站（<b>中心域名</b>，如 <code>soundbuttons.click</code>）寻找<b>真实可用外链目标</b>并做<b>缺口分析</b>的工具。它把「见过」和「已拥有」严格分开，四层数据各司其职：</p>
+  <p class="doc-en">A tool that finds <b>real, usable backlink targets</b> for one site (the <b>center domain</b>, e.g. <code>soundbuttons.click</code>) and analyses the <b>gap</b>. It keeps "seen" strictly apart from "owned" across four layers:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th><span class="doc-zh">层</span><span class="doc-en">Layer</span></th>
+        <th><span class="doc-zh">含义</span><span class="doc-en">Meaning</span></th>
+        <th><span class="doc-zh">谁来写</span><span class="doc-en">Written by</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b><span class="doc-zh">候选池</span><span class="doc-en">Candidate pool</span></b></td>
+        <td><span class="doc-zh">历史上发现过的目标站点，只是"见过"的清单</span><span class="doc-en">Targets discovered so far - merely "seen"</span></td>
+        <td><span class="doc-zh">每次分析自动并入</span><span class="doc-en">Every analysis run</span></td>
+      </tr>
+      <tr>
+        <td><b><span class="doc-zh">已有外链库</span><span class="doc-en">Acquired library</span></b></td>
+        <td><span class="doc-zh">你真实已拿到的外链域名（GSC / Ahrefs / 自建记录）</span><span class="doc-en">Domains you genuinely own (GSC / Ahrefs / your own records)</span></td>
+        <td><span class="doc-zh">你导入</span><span class="doc-en">You import it</span></td>
+      </tr>
+      <tr>
+        <td><b><span class="doc-zh">投放台账</span><span class="doc-en">Delivery ledger</span></b></td>
+        <td><span class="doc-zh">逐条投放记录，是"已交付"的唯一事实源</span><span class="doc-en">One record per placement - the single source of truth for "delivered"</span></td>
+        <td><span class="doc-zh">你认领并推进状态</span><span class="doc-en">You claim and advance it</span></td>
+      </tr>
+      <tr>
+        <td><b><span class="doc-zh">缺口 gap</span><span class="doc-en">Gap</span></b></td>
+        <td><span class="doc-zh">在池里、但既没导入为已有、也没上线投放的目标</span><span class="doc-en">In the pool, yet neither imported as acquired nor live in the ledger</span></td>
+        <td><span class="doc-zh">系统算出</span><span class="doc-en">Computed</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <span class="doc-zh"><b>核心认知：见过 ≠ 已拥有。</b>只有导入为已有、或在台账里带着证据标为 <code>live</code>，才会从缺口里扣掉。</span>
+    <span class="doc-en"><b>Core idea: seen is not owned.</b> Only an acquired import, or a ledger entry marked <code>live</code> with evidence, removes a target from the gap.</span>
+  </div>
+
+  <!-- ============ 五步闭环 ============ -->
+  <h2 id="loop"><span class="doc-zh">标准工作流（五步闭环）</span><span class="doc-en">Standard workflow (five-step loop)</span></h2>
+
+  <ol class="steps">
+    <li>
+      <span class="doc-zh"><b>定中心域名 + 关键词</b>：顶部输入框填目标域名，分析页填品类词（不是品牌词），逗号分隔。不同域名的数据完全隔离。</span>
+      <span class="doc-en"><b>Set the center domain and keywords</b>: type the domain at the top, then category terms (not brand names), comma separated. Each domain has isolated data.</span>
+    </li>
+    <li>
+      <span class="doc-zh"><b>跑分析</b>：点「分析」。候选来自该域名的种子库（<code>seeds/seed-&lt;域名&gt;.json</code>）与可选的 Bing 实时发现。结果按优先级（相关性 + 权威 + 可获取）排序。</span>
+      <span class="doc-en"><b>Run the analysis</b>: click Analyze. Candidates come from that domain's seed library (<code>seeds/seed-&lt;domain&gt;.json</code>) plus optional live Bing discovery. Rows are ranked by priority (relevance + authority + obtainability).</span>
+    </li>
+    <li>
+      <span class="doc-zh"><b>看池子、算真缺口</b>：到「外链池」看统计卡与目录树。还没导入已有外链时，所有非竞品候选都会被算成缺口，这是正常中间态。</span>
+      <span class="doc-en"><b>Read the pool</b>: open Pool for the stat cards and the type tree. Before any import, every non-competitor candidate counts as gap - that is the expected intermediate state.</span>
+    </li>
+    <li>
+      <span class="doc-zh"><b>导入已有外链</b>：把真实已有域名（每行一个）贴进「导入已有外链」，缺口立即重算；误导入可撤销，候选不丢。</span>
+      <span class="doc-en"><b>Import acquired backlinks</b>: paste the domains you really own (one per line) and the gap recalculates immediately. A wrong import is reversible and never loses candidates.</span>
+    </li>
+    <li>
+      <span class="doc-zh"><b>把候选变成已交付</b>：在台账里认领投放位 → 推进 <code>registered → claimed → submitted → live</code>；标 <code>live</code> 必须给落地 URL 与验证方式。不要的域名用「永久排除」。</span>
+      <span class="doc-en"><b>Turn candidates into deliveries</b>: claim a slot, then advance <code>registered → claimed → submitted → live</code>. Marking <code>live</code> requires a landing URL and a verify method. Use "exclude forever" for domains you never want.</span>
+    </li>
+  </ol>
+
+  <!-- ============ 面板地图 ============ -->
+  <h2 id="panels"><span class="doc-zh">面板地图</span><span class="doc-en">Panel map</span></h2>
+
+  <p class="doc-zh">每个视图顶部都有一个 <span class="badge">💡 Tips</span> 按钮，点开就是这个页面里对应的那一段，不用来回切。</p>
+  <p class="doc-en">Every view carries a <span class="badge">💡 Tips</span> button at its top; it opens the matching section of this page so you never have to leave the screen.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th><span class="doc-zh">Tab</span><span class="doc-en">Tab</span></th>
+        <th><span class="doc-zh">用途</span><span class="doc-en">Purpose</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="doc-zh">📊 总体概况</span><span class="doc-en">📊 Overview</span></td>
+        <td><span class="doc-zh">五张统计卡、缺口漏斗、互链占比监控、各类型可获取性对比</span><span class="doc-en">Five stat cards, gap funnel, reciprocal-share monitor, obtainability by type</span></td>
+      </tr>
+      <tr>
+        <td><span class="doc-zh">🔍 分析</span><span class="doc-en">🔍 Analyze</span></td>
+        <td><span class="doc-zh">跑分析、看候选、按列排序与筛选、导出分析 CSV</span><span class="doc-en">Run the analysis, inspect candidates, sort/filter, export the analysis CSV</span></td>
+      </tr>
+      <tr>
+        <td><span class="doc-zh">📖 类型说明 &amp; 权重</span><span class="doc-en">📖 Types &amp; Weights</span></td>
+        <td><span class="doc-zh">10 类外链定义、价值权重、互链风险提示、打分模型</span><span class="doc-en">Ten link types, value weights, reciprocal risk, scoring model</span></td>
+      </tr>
+      <tr>
+        <td><span class="doc-zh">🗃 外链池</span><span class="doc-en">🗃 Pool</span></td>
+        <td><span class="doc-zh">候选池、目录树筛选、导入/撤销已有外链、<b>投放台账</b>、池 CSV 与台账 CSV</span><span class="doc-en">Candidate pool, type tree, import/undo acquired, <b>delivery ledger</b>, pool and ledger CSVs</span></td>
+      </tr>
+      <tr>
+        <td><span class="doc-zh">⚙ 后台服务</span><span class="doc-en">⚙ Backend</span></td>
+        <td><span class="doc-zh">定时自动跑、间隔配置、定时档案、立即运行、运行历史、渠道开关</span><span class="doc-en">Scheduled runs, interval, profiles, run-now, run history, channel switches</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ============ 状态机与规则 ============ -->
+  <h2 id="states"><span class="doc-zh">投放位状态机与排除规则</span><span class="doc-en">Placement states and exclusion rules</span></h2>
+
+  <p class="doc-zh"><b>状态路径：</b><code>registered → claimed → submitted → live</code>，另有 <code>lost</code>（失效待复核）、<code>rejected</code> / <code>error</code>（终态）。</p>
+  <p class="doc-en"><b>State path:</b> <code>registered → claimed → submitted → live</code>, plus <code>lost</code> (expired, pending review) and the terminal <code>rejected</code> / <code>error</code>.</p>
+
+  <ul>
+    <li><span class="doc-zh"><b>live 需要证据</b>：<code>landing_url</code> + <code>verify_method</code>（如 <code>manual_check</code>），只"点了提交"不算。</span><span class="doc-en"><b>live needs evidence</b>: <code>landing_url</code> plus <code>verify_method</code> (e.g. <code>manual_check</code>); "I submitted it" alone is not enough.</span></li>
+    <li><span class="doc-zh"><b>live 永久锁定</b>：同一个投放位不会再被推荐，避免重复投放。</span><span class="doc-en"><b>Live is locked forever</b>: the same slot is never recommended again.</span></li>
+    <li><span class="doc-zh"><b>进行中幂等</b>：重复认领同一投放位不会产生两条记录。</span><span class="doc-en"><b>In-progress is idempotent</b>: re-claiming a slot never duplicates it.</span></li>
+    <li><span class="doc-zh"><b>同域名节奏窗口</b>：90 天内该域名已有 live / submitted，会拦下新的认领并给出原因。</span><span class="doc-en"><b>Per-domain cadence</b>: if the domain already has a live/submitted slot within 90 days, new claims are blocked with a reason.</span></li>
+    <li><span class="doc-zh"><b>排除</b>：显式排除的域名或精确投放位永久剔除；误操作可在台账里撤销。</span><span class="doc-en"><b>Exclusion</b>: an excluded domain or exact slot is dropped permanently; a mistake can be undone from the ledger.</span></li>
+  </ul>
+
+  <!-- ============ API ============ -->
+  <h2 id="api"><span class="doc-zh">API 速查（批量与自动化）</span><span class="doc-en">API cheatsheet (batch and automation)</span></h2>
+
+  <p class="doc-zh">把 <code>http://127.0.0.1:8787</code> 换成线上域名即可对生产操作。</p>
+  <p class="doc-en">Swap <code>http://127.0.0.1:8787</code> for the deployed host to hit production.</p>
+
+  <h3><span class="doc-zh">分析</span><span class="doc-en">Analyze</span></h3>
+<pre><code>curl -s -X POST http://127.0.0.1:8787/api/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","keywords":"soundboard, sound effects",
+       "competitors":"","use_bing":"0","use_tranco":"1","persist":"1"}'</code></pre>
+
+  <h3><span class="doc-zh">导入 / 撤销已有外链</span><span class="doc-en">Import / undo acquired backlinks</span></h3>
+<pre><code>curl -s -X POST http://127.0.0.1:8787/api/store/sync-existing \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","domains":"reddit.com\nnews.ycombinator.com"}'
+
+curl -s -X POST http://127.0.0.1:8787/api/store/unmark-existing \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","domains":"reddit.com"}'</code></pre>
+
+  <h3><span class="doc-zh">批量认领投放位</span><span class="doc-en">Batch claim placements</span></h3>
+<pre><code>curl -s -X POST http://127.0.0.1:8787/api/placements/claim-batch \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","items":[
+        {"target_domain":"a.com","target_url":"https://a.com/post","placement_type":"guest_post"},
+        {"target_domain":"b.com","target_url":"https://b.com/page","placement_type":"resource"}
+      ]}'</code></pre>
+
+  <h3><span class="doc-zh">推进到上线（需证据）</span><span class="doc-en">Advance to live (needs evidence)</span></h3>
+<pre><code>curl -s -X POST http://127.0.0.1:8787/api/placements/transition \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","id":"&lt;placement id&gt;","state":"live",
+       "landing_url":"https://a.com/post","verify_method":"manual_check"}'</code></pre>
+
+  <h3><span class="doc-zh">导出与查看</span><span class="doc-en">Export and inspect</span></h3>
+<pre><code>curl -s "http://127.0.0.1:8787/api/store/csv?domain=soundbuttons.click" -o pool.csv
+curl -s "http://127.0.0.1:8787/api/placements/csv?domain=soundbuttons.click" -o ledger.csv
+curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click"</code></pre>
+
+  <!-- ============ 数据 ============ -->
+  <h2 id="data"><span class="doc-zh">数据与备份</span><span class="doc-en">Data and backup</span></h2>
+
+  <ul>
+    <li><span class="doc-zh">每个域名一份存储：<code>data/store-&lt;中心域名&gt;.json</code>（候选 <code>domains</code>、已有 <code>acquired_domains</code>、台账 <code>placements</code>、排除 <code>suppressions</code>）。</span><span class="doc-en">One store per domain: <code>data/store-&lt;center_domain&gt;.json</code> (<code>domains</code>, <code>acquired_domains</code>, <code>placements</code>, <code>suppressions</code>).</span></li>
+    <li><span class="doc-zh">调度配置 <code>data/schedule.json</code>、运行历史 <code>data/schedule_runs.json</code>、渠道开关 <code>data/channels-&lt;域名&gt;.json</code>。</span><span class="doc-en">Scheduler config <code>data/schedule.json</code>, run history <code>data/schedule_runs.json</code>, channels <code>data/channels-&lt;domain&gt;.json</code>.</span></li>
+    <li><span class="doc-zh">这些都在 <code>data/</code> 下，<b>不进 git</b>；本地与线上（Fly 卷）各自独立。</span><span class="doc-en">All of it lives under <code>data/</code> and is <b>not in git</b>; local and production (Fly volume) are independent.</span></li>
+    <li><span class="doc-zh"><b>种子库</b> <code>seeds/seed-&lt;域名&gt;.json</code> 进 git 并随镜像烘焙，属受控输入，改动需要提交发布。</span><span class="doc-en"><b>Seed libraries</b> <code>seeds/seed-&lt;domain&gt;.json</code> are in git and baked into the image; changing one means committing and deploying.</span></li>
+    <li><span class="doc-zh">备份：整份复制 <code>data/</code> 即可。</span><span class="doc-en">Backup: copy the whole <code>data/</code> directory.</span></li>
+  </ul>
+
+  <!-- ============ FAQ ============ -->
+  <h2 id="faq"><span class="doc-zh">常见问题</span><span class="doc-en">FAQ</span></h2>
+
+  <h3><span class="doc-zh">分析点了没结果？</span><span class="doc-en">Analyze returns nothing?</span></h3>
+  <p class="doc-zh">九成是该域名没有种子库，或线上 Bing 出口被挡。先确认 <code>seeds/seed-&lt;域名&gt;.json</code> 是否存在；线上数据中心出口常被 Bing 拒绝，属正常，种子库是主通道。</p>
+  <p class="doc-en">Usually the domain has no seed library, or live Bing is blocked from the server's egress. Check that <code>seeds/seed-&lt;domain&gt;.json</code> exists; data-centre egress is often refused by Bing, which is normal - seeds are the primary channel.</p>
+
+  <h3><span class="doc-zh">为什么候选全都算缺口？</span><span class="doc-en">Why is every candidate a gap?</span></h3>
+  <p class="doc-zh">因为还没有导入已有外链库。导入之后缺口才会缩小；池里有 51 条而缺口 51，说明确实一条都还没标记为已有。</p>
+  <p class="doc-en">Because nothing has been imported as acquired yet. Until then every candidate counts. A pool of 51 with a gap of 51 simply means nothing is marked as owned.</p>
+
+  <h3><span class="doc-zh">导入错了能撤回吗？</span><span class="doc-en">Can a wrong import be undone?</span></h3>
+  <p class="doc-zh">能。池页的「取消已拥有」或 <code>/api/store/unmark-existing</code>，候选本身不会丢。</p>
+  <p class="doc-en">Yes - use "unmark acquired" on the Pool page or <code>/api/store/unmark-existing</code>. Candidates are never lost.</p>
+
+  <h3><span class="doc-zh">台账里 live 加不上？</span><span class="doc-en">Cannot mark a slot live?</span></h3>
+  <p class="doc-zh">必须同时提供落地页 URL 与验证方式，缺一不可；这是为了防止把"联系过"错记成"已上线"。</p>
+  <p class="doc-en">Both a landing URL and a verify method are required - this prevents "contacted" from being recorded as "published".</p>
+
+  <h3><span class="doc-zh">不同网站的数据会混吗？</span><span class="doc-en">Do different sites share data?</span></h3>
+  <p class="doc-zh">不会。每个中心域名独立存储、独立种子作用域；切换域名即整体隔离。</p>
+  <p class="doc-en">No. Each center domain has its own store and seed scope; switching the domain isolates everything.</p>
+
+  <h3><span class="doc-zh">域名输入框变红了？</span><span class="doc-en">Why is the domain box red?</span></h3>
+  <p class="doc-zh">输入的不是一个完整域名（缺少点或后缀太短）。补全后自动恢复，中心域名不会被半成品字符串覆盖。</p>
+  <p class="doc-en">The value is not a complete hostname (missing a dot, or the TLD is too short). Finish typing and it recovers; the center domain is never overwritten with a partial string.</p>
+
+  <h3><span class="doc-zh">定时任务会一直跑吗？</span><span class="doc-en">Does the scheduler keep running?</span></h3>
+  <p class="doc-zh">它是服务器进程内的线程，服务器停就停。要 7×24 常驻需 systemd / pm2 / nohup；Fly 上机器休眠期间不触发。</p>
+  <p class="doc-en">It is a thread inside the server process, so it stops with the server. For 24x7 use systemd / pm2 / nohup; on Fly nothing fires while the machine is asleep.</p>
+
+  <footer>
+    <span class="doc-zh">同样的内容也可在仓库里读到：<code>USAGE.zh.md</code>（中文）与 <code>USAGE.md</code>（English）。技术细节见 <code>README.zh.md</code> / <code>README.md</code>。</span>
+    <span class="doc-en">The same material ships in the repo as <code>USAGE.md</code> (English) and <code>USAGE.zh.md</code> (Chinese). Technical details: <code>README.md</code> / <code>README.zh.md</code>.</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var qs = new URLSearchParams(location.search);
+  var lang = (qs.get('lang') || 'zh').toLowerCase();
+  if(lang !== 'en') lang = 'zh';
+
+  function render(l){
+    document.body.className = 'lang-' + l;
+    document.documentElement.lang = (l === 'en') ? 'en' : 'zh-CN';
+    document.title = (l === 'en') ? 'Help · Backlink Prospector' : '使用帮助 · 外链目标发现器';
+    document.getElementById('langBtn').textContent = (l === 'en') ? '中文' : 'EN';
+    var back = document.getElementById('backLink');
+    back.setAttribute('href', '/?lang=' + l);
+    // Keep the URL shareable without reloading the page.
+    var u = new URL(location.href);
+    u.searchParams.set('lang', l);
+    history.replaceState(null, '', u.toString());
+  }
+
+  document.getElementById('langBtn').addEventListener('click', function(){
+    var next = (document.body.className.indexOf('lang-en') >= 0) ? 'zh' : 'en';
+    render(next);
+  });
+
+  render(lang);
+})();
+</script>
+</body>
+</html>

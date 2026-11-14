@@ -237,6 +237,82 @@ def section_d():
         b.close()
 
 
+def section_e():
+    """In-app tips + the standalone /help page.
+
+    Read-only: it opens pages, clicks toggles and reads text. Nothing is written,
+    so it also runs under --no-write against production.
+    """
+    print("\n=== E. in-app help ===")
+    cjk = lambda s: any("\u4e00" <= c <= "\u9fff" for c in (s or ""))
+
+    code, body = 0, ""
+    try:
+        body = http_text("/help")
+        code = 200
+    except urllib.error.HTTPError as e:
+        code = e.code
+    check("/help returns 200", code == 200, code)
+    check("/help ships both language blocks",
+          'class="doc-zh"' in body and 'class="doc-en"' in body)
+
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        b = p.chromium.launch(channel="chrome", headless=True)
+        pg = b.new_page(viewport={"width": 1400, "height": 1000})
+        errs = []
+        pg.on("pageerror", lambda e: errs.append(str(e)))
+        pg.goto(BASE + "/", wait_until="networkidle")
+        time.sleep(1.5)
+
+        # one tip toggle per view (the types tab has its own richer tips body)
+        for tab in ("ov", "analyze", "pool", "sched"):
+            pg.click('[data-tab="%s"]' % tab)
+            time.sleep(0.3)
+            check("tip toggle present on %s" % tab,
+                  pg.eval_on_selector_all('[data-tipbtn="%s"]' % tab, "e=>e.length") == 1)
+
+        pg.click('[data-tab="ov"]')
+        time.sleep(0.3)
+        check("tip body starts hidden", pg.is_hidden("#tip-ov"))
+        pg.click('[data-tipbtn="ov"]')
+        time.sleep(0.4)
+        check("clicking the tip reveals it", pg.is_visible("#tip-ov"))
+        check("tip sets aria-expanded",
+              pg.get_attribute('[data-tipbtn="ov"]', "aria-expanded") == "true")
+        check("ZH tip copy is meaningful", "缺口" in pg.inner_text("#tip-ov"))
+
+        # language switch must flip the tip copy too, with no CJK left in EN
+        pg.click("#langToggle")
+        time.sleep(1.2)
+        en_tip = pg.inner_text("#tip-ov")
+        check("EN tip copy is CJK-free", not cjk(en_tip), en_tip[:80])
+        check("EN help link carries lang",
+              "lang=en" in (pg.get_attribute("#helpBtn", "href") or ""))
+
+        # the standalone page, opened the way the app links it
+        pg2 = b.new_page(viewport={"width": 1200, "height": 900})
+        errs2 = []
+        pg2.on("pageerror", lambda e: errs2.append(str(e)))
+        pg2.goto(BASE + "/help?lang=en", wait_until="networkidle")
+        time.sleep(1.0)
+        # The language switcher itself reads "中文" in EN mode by design (a
+        # switcher names the language it switches to), same convention as the
+        # app's own #langToggle exclusion in tools/i18n_audit.py.
+        pg2.eval_on_selector("#langBtn", "e=>e.style.visibility='hidden'")
+        visible = pg2.inner_text("body")
+        pg2.eval_on_selector("#langBtn", "e=>e.style.visibility=''")
+        check("help EN page is CJK-free", not cjk(visible), [c for c in visible if cjk(c)][:5])
+        check("help EN page renders the loop", "Five-step loop" in visible)
+        pg2.click("#langBtn")
+        time.sleep(0.6)
+        check("help toggles back to ZH", "五步闭环" in pg2.inner_text("body"))
+        check("help page updates the URL", "lang=zh" in pg2.url, pg2.url)
+        check("no JS errors (help)", not errs2, errs2[:3])
+        check("no JS errors (app)", not errs, errs[:3])
+        b.close()
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -246,6 +322,7 @@ if __name__ == "__main__":
         section_b()
     section_c()
     section_d()
+    section_e()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

@@ -9,6 +9,7 @@ Aligned with seo-page-snapshot's service contract style:
 
 Endpoints (all JSON except GET /):
     GET  /                       frontend page (assets/index.html)
+    GET  /help                   standalone operator help page (assets/help.html, ?lang=en|zh)
     GET  /api/health            service metadata
     POST /api/analyze           body={domain,keywords,competitors,existing,use_bing,use_tranco,persist}
     POST /api/analyze/csv       same body -> CSV attachment
@@ -243,6 +244,17 @@ class Handler(BaseHTTPRequestHandler):
                 ver = str(int(os.path.getmtime(idx)))
                 html = html.replace("<head>", '<head><meta name="build" content="%s">' % ver, 1)
                 return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+            if path in ("/help", "/help.html"):
+                # Standalone operator help page (bilingual, ?lang=en|zh). Served
+                # as a real document so it can be linked, bookmarked and read
+                # without the SPA's runtime.
+                hp = os.path.join(ASSETS, "help.html")
+                if not os.path.isfile(hp):
+                    return self._error(500, "help asset missing")
+                out = open(hp, encoding="utf-8").read()
+                ver = str(int(os.path.getmtime(hp)))
+                out = out.replace("<head>", '<head><meta name="build" content="%s">' % ver, 1)
+                return self._send(200, out.encode("utf-8"), "text/html; charset=utf-8")
             if path == "/favicon.ico":
                 return self._send(204, b"", "image/x-icon")
             if path == "/api/health":
@@ -256,7 +268,8 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/placements/claim-batch",
                                                       "/api/profiles",
                                                       "/api/schedule",
-                                                      "/api/schedule/run"]})
+                                                      "/api/schedule/run",
+                                                      "/help"]})
             if path == "/api/providers":
                 try:
                     with open(PROVIDERS_PATH, encoding="utf-8") as f:

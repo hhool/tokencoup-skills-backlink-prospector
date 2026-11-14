@@ -296,6 +296,9 @@ python3 server.py --port 8787
 - `POST /api/schedule` → save schedule (body `{enabled, interval_hours, profiles[]}`)
 - `POST /api/schedule/run` → run all profiles now (body `{}`)
 - `GET  /api/health` · `GET /api/providers`
+- `GET  /help` → standalone operator help page (`assets/help.html`; bilingual via
+  `?lang=en|zh`). The app links to it from the top bar, and every tab carries its
+  own `💡 Tips` toggle that expands the matching section inline.
 
 Request body (`/api/analyze`):
 ```json
