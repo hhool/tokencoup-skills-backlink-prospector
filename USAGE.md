@@ -246,6 +246,48 @@ curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click" | jq .r
 
 ---
 
+## 3.11 Entry discovery (submission form / contact address)
+
+The delivery loop needs two values the pool does not carry: **where** a site accepts
+a submission, and **who** to mail. Both are observable from outside without sending
+anything, so `tools/discover_entry.py` observes them once and writes an overlay.
+
+```bash
+# what would be visited (no network)
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json --dry-run --limit 10
+
+# observe 10 domains, honouring robots.txt, cached for 30 days
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
+    --limit 10 --out data/enrichment-soundbuttons.cc.json
+
+# continue a long run without re-fetching what is already done
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
+    --out data/enrichment-soundbuttons.cc.json --resume
+
+# offline self check
+python3 tools/discover_entry.py --selftest
+```
+
+What it decides, and why:
+
+| Question | Rule |
+|---|---|
+| Which pages get read? | home, then same-host links scored by a path lexicon (`/submit`, `/guest-post`, `/write-for-us`, `/advertise`, `/contact`), then at most 3 unlinked probe paths if nothing was found |
+| Is this a submission form? | it must be able to carry **words** (textarea, or a message/subject field) **and** a target (a URL field or an email). `email + website` with no message is a signup box and is rejected |
+| Search / login / newsletter? | rejected: a `q`/`search` form, a password field, or a single-field box |
+| Which field is "your name"? | the field *name* when it means something, otherwise the `<label>`. WPForms writes `wpforms[fields][0]`; the label says "Your Name" |
+| What is a `shape`? | `sha256(method + sorted semantic slots)` with hidden tokens and honeypots excluded. Two sites running the same plugin produce the **same shape**, so one reviewed mapping serves both |
+| Which address? | `mailto:` and Cloudflare `data-cfemail` first, then page prose; on-domain and role addresses rank higher; `noreply@` and placeholder domains are dropped |
+| What if nothing is found? | recorded as observed, with the page count. A miss inside a page budget is **not** a negative - `--max-pages` is the lever, not a conclusion |
+
+Output (`data/enrichment-<center>.json`) is an overlay, not a store rewrite: the
+store stays the source of truth for prospects, and the overlay is folded in at
+export time (`bin/delivery export-snapshot --enrichment ...`) as contract C 1.1.0.
+
+Safety: every request is a `GET`. Nothing is posted, no form is submitted, no mail
+is sent, robots.txt is obeyed (`pages_blocked` counts refusals), and the HTML that
+produced each decision stays in `data/cache/` for audit.
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.

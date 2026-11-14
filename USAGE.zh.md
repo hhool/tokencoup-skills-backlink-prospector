@@ -246,6 +246,42 @@ curl -s "http://127.0.0.1:8787/api/placements?domain=soundbuttons.click" | jq .r
 
 ---
 
+## 3.11 入口发现（投稿表单 / 联系邮箱）
+
+投递环节需要两个池子里没有的值：站点**在哪里**接受投稿，以及**该给谁**发信。这两者都能在不发送任何东西的前提下从外部观测到，所以 `tools/discover_entry.py` 观测一次并写出叠加层。
+
+```bash
+# 只看会访问哪些站，不联网
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json --dry-run --limit 10
+
+# 观测 10 个域名，遵守 robots.txt，结果缓存 30 天
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
+    --limit 10 --out data/enrichment-soundbuttons.cc.json
+
+# 长任务续跑，不重复抓已完成的站
+python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
+    --out data/enrichment-soundbuttons.cc.json --resume
+
+# 离线自检
+python3 tools/discover_entry.py --selftest
+```
+
+判定规则与理由：
+
+| 问题 | 规则 |
+|---|---|
+| 读哪些页？ | 先首页，再按路径词表给同站链接打分（`/submit`、`/guest-post`、`/write-for-us`、`/advertise`、`/contact`），什么都没找到时最多再试 3 个未被链接的常见路径 |
+| 算不算投稿表单？ | 必须既能写**文字**（textarea，或 message/subject 字段），又能给出**目标**（url 字段或邮箱）。`email + website` 且没有正文框的是订阅框，直接排除 |
+| 搜索 / 登录 / 订阅框？ | 排除：`q`/`search` 表单、含 password 字段、只有单个字段的框 |
+| 哪一栏是「你的名字」？ | 字段名有意义就用字段名，否则用 `<label>`。WPForms 写的是 `wpforms[fields][0]`，而标签写着 "Your Name" |
+| `shape` 是什么？ | `sha256(方法 + 排序后的语义槽位)`，排除隐藏令牌与蜜罐字段。同一插件的两个站会得到**相同 shape**，一次人工核对可同时服务两站 |
+| 选哪个邮箱？ | 先 `mailto:` 与 Cloudflare `data-cfemail`，再正文；同域与角色邮箱优先；`noreply@` 与占位域名丢弃 |
+| 什么都没找到？ | 记为「已观测」，并写明读了几页。预算内的落空**不是**否定结论——要加覆盖就调 `--max-pages` |
+
+输出（`data/enrichment-<center>.json`）是叠加层，不改写 store：候选池的事实源仍是 store，叠加层在导出时并入（`bin/delivery export-snapshot --enrichment ...`），作为契约 C 1.1.0 的一部分。
+
+安全：所有请求都是 `GET`。不提交表单、不发信、遵守 robots.txt（被拒次数记在 `pages_blocked`），产生判断的那份 HTML 保留在 `data/cache/` 可复查。
+
 ## 4. 命令行 / API 速查（批量与自动化用）
 
 下列可直接 curl 调用（本地 `8787` 或线上域名）。
