@@ -356,6 +356,37 @@ After a loss the domain is back in the gap, and lifting the 90-day per-domain ca
 
 ---
 
+## 3.15 External wake-up (the machine has to wake up once a day anyway)
+
+The deployment scales to zero: after enough idle time the machine stops, the process ends, and the scheduler thread disappears with it — **no thread, no tick**. So "restock when the cooldown expires" and "run the profiles when the interval elapses" only happen online when a page visit happens to keep it awake.
+
+`POST /api/cron/tick` closes that gap: an external timer wakes the service, and the endpoint does **exactly one turn** of what the loop's first iteration would have done — restock a low shelf, then run the due profiles. Being woken does not make it run twice: `ran` in the response is derived from whether `last_run` actually moved, so of two concurrent callers only one reports `true`. A `force` parameter exists at the scheduler level (for tests); the HTTP route deliberately does not expose it — to run everything right now, use `/api/schedule/run`.
+
+This call spends real quota and the address is public, so **it is off by default** (fail closed):
+
+| Situation | Result |
+|---|---|
+| Server has no `BDL_TRIGGER_TOKEN` | `503`, with a hint on how to set it |
+| Request without a token | `401` |
+| Wrong token | `403` |
+| Correct token | `200` + `{ran, refill, last_run, next_run}` |
+
+```bash
+# One-time setup (use a fresh random value)
+fly secrets set BDL_TRIGGER_TOKEN=$(openssl rand -hex 24) -a backlink-prospector
+
+# Wake it once by hand
+curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \
+  -H "X-BDL-Trigger: $BDL_TRIGGER_TOKEN" \
+  -H 'Content-Type: application/json' -d '{}' | jq '{ran,refill,next_run}'
+```
+
+The repo ships `.github/workflows/tick.yml`: every day at 09:17 Asia/Shanghai (UTC `17 1 * * *`) it knocks on this endpoint once, and it can also be dispatched manually from the Actions page. One step remains to make it work — **store the same value as the repository Actions secret `BDL_TRIGGER_TOKEN`** (Settings → Secrets and variables → Actions). If the app lives at a non-default address, also add the repository variable `BDL_BASE_URL`.
+
+Two operational notes: GitHub disables scheduled workflows after 60 days without a commit to the repo (one manual dispatch re-enables them); and a cold start takes a few seconds, so the workflow retries `000/502/503/504` up to 5 times but fails immediately on 4xx — a wrong token will not fix itself by waiting.
+
+---
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.

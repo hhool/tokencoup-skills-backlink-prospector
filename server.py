@@ -40,6 +40,8 @@ Endpoints (all JSON except GET /):
     GET  /api/schedule         periodic-query scheduler state (config / status / runs)
     POST /api/schedule         body={enabled,interval_hours,profiles[]} save schedule
     POST /api/schedule/run     trigger an immediate run of all profiles
+    POST /api/cron/tick        one scheduler tick for hosts that sleep (needs
+                               the BDL_TRIGGER_TOKEN shared secret)
 
 Usage:
     python3 server.py --port 8787
@@ -47,6 +49,7 @@ Usage:
 import argparse
 import csv
 import datetime as dt
+import hmac
 import io
 import json
 import os
@@ -269,6 +272,30 @@ SCHED = sch.Scheduler(run_analysis, recheck_fn=run_recheck,
                       refill_fn=run_refill, refill_check_fn=refill_check)
 
 
+def trigger_verdict(provided):
+    """Should a /api/cron/tick call be allowed?
+
+    Fail closed on purpose. This endpoint starts real analyses and spends real
+    third-party quota, and the deployment is a public URL — an unauthenticated
+    trigger would let anyone burn the budget. When the secret is not configured
+    we refuse rather than default to open, so forgetting to set it produces a
+    loud 503 instead of a silent hole.
+
+    Returns (ok, status, message).
+    """
+    expected = (os.environ.get("BDL_TRIGGER_TOKEN") or "").strip()
+    if not expected:
+        return (False, 503,
+                "BDL_TRIGGER_TOKEN is not set on the server; refusing to expose an "
+                "unauthenticated trigger. Set it with: fly secrets set BDL_TRIGGER_TOKEN=...")
+    got = (provided or "").strip()
+    if not got:
+        return (False, 401, "missing trigger token (send it as the X-BDL-Trigger header)")
+    if not hmac.compare_digest(got.encode("utf-8", "replace"), expected.encode("utf-8", "replace")):
+        return (False, 403, "trigger token does not match")
+    return (True, 200, "")
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "BacklinkProspector/1.0"
 
@@ -343,6 +370,7 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/profiles",
                                                       "/api/schedule",
                                                       "/api/schedule/run",
+                                                      "/api/cron/tick",
                                                       "/help"]})
             if path == "/api/providers":
                 try:
@@ -496,9 +524,20 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/placements/import", "/api/placements/recheck",
                         "/api/placements/transition",
                         "/api/placements/suppress",
-                        "/api/whitelist", "/api/settings", "/api/refill"):
+                        "/api/whitelist", "/api/settings", "/api/refill",
+                        "/api/cron/tick"):
             return self._error(404, "unknown path")
         try:
+            # Checked before the body is read: an unauthorised caller should not
+            # get as far as having a payload parsed and trusted.
+            if path == "/api/cron/tick":
+                ok, status, msg = trigger_verdict(self.headers.get("X-BDL-Trigger"))
+                if not ok:
+                    return self._error(status, msg)
+                out = SCHED.tick()
+                out["ok"] = True
+                out["trigger"] = "cron"
+                return self._json(200, out)
             length = int(self.headers.get("Content-Length") or 0)
             raw = self.rfile.read(min(length, 256_000)) if length else b"{}"
             params = json.loads(raw.decode("utf-8", "replace") or "{}")

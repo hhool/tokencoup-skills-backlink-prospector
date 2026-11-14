@@ -305,6 +305,41 @@ class Scheduler:
                 self._execute_all()
             self._stop.wait(TICK_SECONDS)
 
+    def tick(self, force=False):
+        """Do one loop iteration on demand — for hosts that sleep.
+
+        A scale-to-zero host keeps no thread alive between requests, so the
+        timer never fires and nothing gets restocked while the machine is
+        stopped. An outside caller (a daily cron hitting /api/cron/tick) does
+        what `_loop` would have done on the same tick, under the same guards:
+        a run only fires when the schedule is enabled and the interval has
+        elapsed, and a refill still refuses to start while something runs.
+
+        `ran` is derived from `last_run` changing, not from the call being
+        attempted: two ticks racing would otherwise both report a run.
+        """
+        refilled = None
+        try:
+            refilled = self._maybe_refill()
+        except Exception as exc:  # noqa: BLE001 — a tick must never raise
+            self.status["last_error"] = "auto refill: %s: %s" % (
+                type(exc).__name__, str(exc)[:200])
+        before = self.config.get("last_run")
+        ran = False
+        try:
+            has_profiles = bool(self.config.get("profiles"))
+            due = force or (self.config.get("enabled") and self._is_due())
+            if has_profiles and due:
+                self._execute_all()
+                ran = self.config.get("last_run") != before
+        except Exception as exc:  # noqa: BLE001
+            self.status["last_error"] = "tick run: %s: %s" % (
+                type(exc).__name__, str(exc)[:200])
+        return {"ran": ran, "refill": refilled,
+                "last_run": self.config.get("last_run"),
+                "next_run": self.status.get("next_run"),
+                "status": dict(self.status)}
+
     def start(self):
         if self._thread and self._thread.is_alive():
             return

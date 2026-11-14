@@ -81,3 +81,14 @@ Covers: no console errors, ≥3 channel rows, domain switch swaps keywords, no c
   `data/schedule.json`, writing into real stores. Set `BP_NO_SCHEDULER=1` or pass
   `Scheduler(..., autostart=False)`. The selftest does exactly that.
 
+## 7. Auto refill / scheduled analysis never runs online
+
+| Symptom | Cause and fix |
+|---|---|
+| Cooldown or interval elapses, nothing happens | Fly scales to zero: a stopped machine has no scheduler thread. Either visit the page to wake it, or deploy the external wake-up (see `USAGE.md` 3.15): `fly secrets set BDL_TRIGGER_TOKEN=...` plus the GitHub Actions job knocking on `POST /api/cron/tick` |
+| `POST /api/cron/tick` returns `503` | The server has no `BDL_TRIGGER_TOKEN`. This is a **deliberate fail closed**: on a public address, no lock means anyone can spend your quota |
+| Returns `401` / `403` | The `X-BDL-Trigger` header is missing or wrong; the value on Fly and the repository Actions secret must be the same |
+| The GitHub Actions job retries and fails | `000/502/503/504` are retried (cold start); 4xx fails immediately — read the response body, it is usually a missing or wrong secret |
+| The scheduled workflow silently stops firing | GitHub disables scheduled workflows after 60 days without a commit; one manual dispatch from the Actions page re-enables it |
+
+

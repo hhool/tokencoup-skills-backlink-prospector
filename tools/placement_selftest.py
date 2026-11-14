@@ -17,8 +17,12 @@ Sections:
     D  real-Chrome rendering of the ledger in ZH / EN / ZH
     E  in-app help: per-view tips toggles + the standalone /help page
     F  competitor semantics (excluded hosts vs. admitted competitor backlinks)
+    G  delivery queue (frozen daily batch, hard quota, per-domain accounting)
+    H  per-domain whitelist (excluded from every backlink number)
     I  existing-backlink import (export -> live rows -> gap report -> undo)
     J  link survival recheck (ok vs gone vs inconclusive, gap hand-back)
+    K  run diff, automatic refill with backoff, dead-link todo
+    L  external trigger (one cron tick, fail-closed shared secret)
 """
 import json
 import os
@@ -1313,6 +1317,116 @@ def section_k():
 
 
 
+def section_l():
+    """One tick on demand: the cron path for a host that sleeps.
+
+    A scale-to-zero machine keeps no scheduler thread alive, so the daily cron
+    must be able to ask for exactly one tick — and only with the shared secret,
+    because that call spends real quota on a public URL. Both halves are
+    asserted here: the guard fails closed, and the tick does the same work the
+    loop would have done without double-running.
+    """
+    print("\n=== L. external trigger (cron tick) ===")
+    import scheduler as sch
+    os.environ["BP_NO_SCHEDULER"] = "1"
+    import server as srv
+    srv.SCHED.stop()
+
+    # ---------------- the guard ----------------
+    saved = os.environ.pop("BDL_TRIGGER_TOKEN", None)
+    try:
+        ok, code, msg = srv.trigger_verdict("anything")
+        check("an unconfigured secret refuses the trigger instead of opening it",
+              ok is False and code == 503 and "BDL_TRIGGER_TOKEN" in msg, (code, msg[:48]))
+        os.environ["BDL_TRIGGER_TOKEN"] = "s3cret-token"
+        check("a missing token is rejected", srv.trigger_verdict(None)[1] == 401,
+              srv.trigger_verdict(None)[1])
+        check("a blank token is rejected", srv.trigger_verdict("   ")[1] == 401,
+              srv.trigger_verdict("   ")[1])
+        check("a wrong token is rejected", srv.trigger_verdict("s3cret-toke")[1] == 403,
+              srv.trigger_verdict("s3cret-toke")[1])
+        check("the right token is accepted", srv.trigger_verdict("s3cret-token")[0] is True)
+        check("surrounding whitespace on the header still matches",
+              srv.trigger_verdict(" s3cret-token ")[0] is True)
+    finally:
+        os.environ.pop("BDL_TRIGGER_TOKEN", None)
+        if saved is not None:
+            os.environ["BDL_TRIGGER_TOKEN"] = saved
+
+    # ---------------- the tick ----------------
+    calls = {"run": 0, "refill": 0}
+
+    def fake_run(p):
+        calls["run"] += 1
+        return {"result": {"totals": {"candidates": 1},
+                           "pool_stats": {"total_discovered": 1}}}
+
+    def fake_refill(p):
+        calls["refill"] += 1
+        return {"added": 5, "inventory_after": 35, "candidates": 5}
+
+    sched = sch.Scheduler(fake_run, refill_fn=fake_refill,
+                          refill_check_fn=lambda c: {"due": False, "inventory": 99,
+                                                     "threshold": 30, "reason": "ok"},
+                          autostart=False)
+    sched._save_runs = lambda: None
+    sched._save_config = lambda: None
+    sched.runs = []
+    sched.config = {"enabled": True, "interval_hours": 24, "auto_refill": True,
+                    "recheck": False, "last_run": st._now(),
+                    "profiles": [{"name": "l", "domain": "l.example"}]}
+    sched._recompute_next()
+
+    out = sched.tick()
+    check("a tick inside the interval does not run the profiles",
+          out["ran"] is False and calls["run"] == 0, (out["ran"], calls["run"]))
+    check("the tick reports when the next run is due", out["next_run"] is not None,
+          out["next_run"])
+
+    sched.config["last_run"] = "2020-01-01T00:00:00Z"
+    out = sched.tick()
+    check("a due tick runs the profiles exactly once",
+          out["ran"] is True and calls["run"] == 1, (out["ran"], calls["run"]))
+    check("the tick advances last_run so the next call is not due",
+          out["last_run"] != "2020-01-01T00:00:00Z", out["last_run"])
+    out = sched.tick()
+    check("a second tick right after does nothing", out["ran"] is False
+          and calls["run"] == 1, (out["ran"], calls["run"]))
+
+    sched.refill_check_fn = lambda c: {"due": True, "inventory": 2, "threshold": 30,
+                                       "reason": "low"}
+    out = sched.tick()
+    check("a tick restocks a low shelf even when no run is due",
+          out["refill"] and out["refill"]["added"] == 5 and calls["refill"] == 1,
+          out["refill"])
+
+    sched.config["enabled"] = False
+    sched.config["last_run"] = "2020-01-01T00:00:00Z"
+    out = sched.tick()
+    check("a disabled schedule does not run from a trigger",
+          out["ran"] is False and calls["run"] == 1, (out["ran"], calls["run"]))
+    out = sched.tick(force=True)
+    check("force overrides the interval and the disabled flag but still needs profiles",
+          out["ran"] is True and calls["run"] == 2, (out["ran"], calls["run"]))
+    sched.config["profiles"] = []
+    out = sched.tick(force=True)
+    check("a trigger with no profiles is a no-op", out["ran"] is False
+          and calls["run"] == 2, (out["ran"], calls["run"]))
+
+    # ---------------- the HTTP surface ----------------
+    if not NO_WRITE:
+        code, body = http("/api/health")
+        check("/api/health advertises the cron trigger",
+              "/api/cron/tick" in (body.get("endpoints") or []),
+              (body.get("endpoints") or [])[-3:])
+        code, body = http("/api/cron/tick", {})
+        # 401 when this server holds a secret, 503 when it holds none. Both are
+        # refusals; a 200 here would mean the endpoint is open to the world.
+        check("a trigger call without the secret is refused",
+              code in (401, 503) and body.get("ok") is False,
+              (code, str(body.get("error"))[:60]))
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -1329,6 +1443,7 @@ if __name__ == "__main__":
     section_i()
     section_j()
     section_k()
+    section_l()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

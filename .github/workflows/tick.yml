@@ -1,0 +1,70 @@
+name: daily-tick
+
+# A scale-to-zero host keeps no scheduler thread alive while the machine is
+# stopped, so the in-process timer never fires on its own. This job wakes the
+# machine once a day and asks it for exactly one scheduler tick — the same work
+# the loop would have done: restock a low pool, then run the profiles whose
+# interval has elapsed.
+#
+# Required repository secret: BDL_TRIGGER_TOKEN (must equal the server's
+# `fly secrets set BDL_TRIGGER_TOKEN=...`). Optional repository variable:
+# BDL_BASE_URL, if the app is not at the default address below.
+
+on:
+  schedule:
+    # 01:17 UTC = 09:17 Asia/Shanghai. Off the hour on purpose: GitHub delays
+    # or drops jobs queued at exactly :00 during peak load.
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Wake the machine and run one tick
+        env:
+          TOKEN: ${{ secrets.BDL_TRIGGER_TOKEN }}
+          BASE: ${{ vars.BDL_BASE_URL || 'https://backlink-prospector.fly.dev' }}
+        run: |
+          set -uo pipefail
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::BDL_TRIGGER_TOKEN is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          url="${BASE%/}/api/cron/tick"
+          attempt=0
+          while :; do
+            attempt=$((attempt + 1))
+            code=$(curl -sS --max-time 900 -o body.json -w '%{http_code}' \
+              -X POST "$url" \
+              -H "X-BDL-Trigger: ${TOKEN}" \
+              -H 'Content-Type: application/json' \
+              -d '{}') || code=000
+            echo "attempt ${attempt}: HTTP ${code}"
+            if [ "${code}" = "200" ]; then
+              cat body.json; echo
+              exit 0
+            fi
+            cat body.json 2>/dev/null; echo
+            # 000 = no connection yet (cold boot), 502/503/504 = the proxy or a
+            # booting machine. Worth retrying. Any 4xx means a wrong secret or
+            # an unset guard, which no amount of waiting will fix.
+            case "${code}" in
+              000|502|503|504)
+                if [ "${attempt}" -ge 5 ]; then
+                  echo "::error::gave up after ${attempt} attempts"
+                  exit 1
+                fi
+                sleep 20
+                ;;
+              *)
+                echo "::error::the trigger was rejected; check BDL_TRIGGER_TOKEN"
+                exit 1
+                ;;
+            esac
+          done

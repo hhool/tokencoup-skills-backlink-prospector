@@ -350,6 +350,37 @@ curl -s "http://127.0.0.1:8787/api/store?domain=soundbuttons.click" | jq .refill
 
 ---
 
+## 3.15 外部唤醒（机器睡着也要每天醒一次）
+
+线上是 scale-to-zero：空闲就把机器停掉，进程结束，调度器线程跟着消失——**没有线程就没人 tick**。所以「冷却到点自动补货」「间隔到点自动跑分析」在线上只会在有人访问页面时碰运气。
+
+`POST /api/cron/tick` 补上这一环：外部定时器把服务叫醒，接口做**恰好一次**它本来该在第一圈循环里做的事——库存低就先补货，到点就跑档案。它不会因为被叫醒就多跑一次：返回里的 `ran` 来自 `last_run` 是否真的变了，两次并发只有一个会报 `true`。`force` 参数存在于调度器层（测试用），HTTP 接口刻意不暴露——想立刻跑一遍请用 `/api/schedule/run`。
+
+它花的是真实配额，部署地址又是公开的，所以**默认是关着的**（fail closed）：
+
+| 情况 | 结果 |
+|---|---|
+| 服务端没设 `BDL_TRIGGER_TOKEN` | `503`，并告诉你该怎么设 |
+| 请求没带令牌 | `401` |
+| 令牌不对 | `403` |
+| 令牌正确 | `200` + `{ran, refill, last_run, next_run}` |
+
+```bash
+# 一次性设置（值用新的随机串）
+fly secrets set BDL_TRIGGER_TOKEN=$(openssl rand -hex 24) -a backlink-prospector
+
+# 手动叫醒一次
+curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \
+  -H "X-BDL-Trigger: $BDL_TRIGGER_TOKEN" \
+  -H 'Content-Type: application/json' -d '{}' | jq '{ran,refill,next_run}'
+```
+
+仓库自带 `.github/workflows/tick.yml`：每天 09:17（Asia/Shanghai，UTC `17 1 * * *`）敲一次这个接口，也能在 Actions 页面手动 dispatch。要让它跑起来只差一步——**把同一个值存进仓库的 Actions secret `BDL_TRIGGER_TOKEN`**（Settings → Secrets and variables → Actions）。地址不是默认域名时再加一个仓库变量 `BDL_BASE_URL`。
+
+两个运维注意点：GitHub 的定时工作流在仓库 60 天无提交后会自动停用（手动 dispatch 一次即可恢复）；冷启动要几秒，工作流里对 `000/502/503/504` 会重试 5 次，而 4xx 直接失败——因为令牌错了等多久都没用。
+
+---
+
 ## 4. 命令行 / API 速查（批量与自动化用）
 
 下列可直接 curl 调用（本地 `8787` 或线上域名）。
