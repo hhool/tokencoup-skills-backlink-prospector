@@ -244,6 +244,8 @@ cannot be confused in an operator handoff.
 `tools/placement_selftest.py` is the regression guard (state machine, HTTP
 409 contract, gap semantics, bilingual real-Chrome rendering):
 `python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/`
+Add `--no-write` when auditing production so the mutating endpoint section is
+skipped and no throwaway ledger file lands on the Fly volume.
 
 ---
 

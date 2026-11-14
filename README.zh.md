@@ -195,6 +195,7 @@ python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/
 
 `tools/placement_selftest.py` 是该契约的回归防线（状态机、HTTP 409、缺口口径、真实 Chrome 双语渲染）：
 `python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/`
+审计线上时加 `--no-write`，跳过会写数据的端点小节，避免在 Fly 卷上留下测试台账文件。
 
 ---
 

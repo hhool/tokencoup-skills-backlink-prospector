@@ -30,6 +30,9 @@ sys.path.insert(0, ROOT)
 import store as st  # noqa: E402
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8787/").rstrip("/")
+# `--no-write` skips the mutating HTTP section, so a production run against
+# Fly leaves no throwaway ledger file on the persistent volume.
+NO_WRITE = "--no-write" in sys.argv[2:]
 # A fresh center domain per run keeps section B idempotent: the ledger is
 # append-only by design, so replaying against the same domain must not be
 # mistaken for a regression.
@@ -207,7 +210,10 @@ def section_d():
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
-    section_b()
+    if NO_WRITE:
+        print("\n=== B. HTTP endpoints === (skipped: --no-write)")
+    else:
+        section_b()
     section_c()
     section_d()
     # Remove only this run's throwaway store file when the server is local.
