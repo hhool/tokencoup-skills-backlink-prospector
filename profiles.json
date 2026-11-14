@@ -18,6 +18,22 @@
       "note": "meme 音效板 / 音效工具",
       "note_en": "Meme soundboard / sound-effect tool"
     },
+    "soundbuttons.click": {
+      "keywords": [
+        "sound",
+        "soundboard",
+        "sound buttons",
+        "sound effects",
+        "meme soundboard",
+        "funny sounds"
+      ],
+      "competitors": [
+        "myinstants.com",
+        "voicemod.net"
+      ],
+      "note": "meme 音效板 / 音效工具（默认主域，含种子库 seeds/seed-soundbuttons.click.json）",
+      "note_en": "Meme soundboard / sound-effect tool (default primary domain, seed library baked in)"
+    },
     "balancebiketoddler.com": {
       "keywords": [
         "balance bike",

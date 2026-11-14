@@ -25,6 +25,7 @@ Endpoints (all JSON except GET /):
     GET  /api/placements       delivery ledger (query: domain) + stats
     GET  /api/placements/csv   ledger exported as CSV attachment (evidence included)
     POST /api/placements/claim      body={target_domain,target_url,placement_type,own_url,batch_id}
+    POST /api/placements/claim-batch body={center_domain,items:[{target_domain,target_url,placement_type,own_url,batch_id}]} claim many slots
     POST /api/placements/transition body={id,state,...} advance a slot; live needs evidence
     POST /api/placements/suppress   body={target_domain|id,reason} permanently exclude
     GET  /api/schedule         periodic-query scheduler state (config / status / runs)
@@ -252,6 +253,7 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/tips", "/api/store",
                                                       "/api/store/csv",
                                                       "/api/store/sync-existing",
+                                                      "/api/placements/claim-batch",
                                                       "/api/profiles",
                                                       "/api/schedule",
                                                       "/api/schedule/run"]})
@@ -356,7 +358,8 @@ class Handler(BaseHTTPRequestHandler):
         if path not in ("/api/analyze", "/api/analyze/csv", "/api/store/sync-existing",
                         "/api/store/unmark-existing", "/api/channels",
                         "/api/profiles", "/api/schedule", "/api/schedule/run",
-                        "/api/placements/claim", "/api/placements/transition",
+                        "/api/placements/claim", "/api/placements/claim-batch",
+                        "/api/placements/transition",
                         "/api/placements/suppress"):
             return self._error(404, "unknown path")
         try:
@@ -412,6 +415,28 @@ class Handler(BaseHTTPRequestHandler):
                     return self._error(409, reason)
                 st.save_store(pool, center_domain or None)
                 return self._json(200, {"ok": True, "placement": out,
+                                        "stats": st.placement_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/placements/claim-batch":
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower()
+                items = params.get("items")
+                if not isinstance(items, list) or not items:
+                    raise ValueError("items must be a non-empty array")
+                if len(items) > 500:
+                    raise ValueError("too many items (max 500)")
+                for it in items:
+                    if isinstance(it, dict):
+                        for f in ("target_domain", "target_url", "placement_type",
+                                  "batch_id", "own_url", "note"):
+                            if it.get(f) not in (None, ""):
+                                safe_text(str(it[f]), 800)
+                pool = st.load_store(center_domain or None)
+                out = st.claim_placements_batch(pool, items)
+                st.save_store(pool, center_domain or None)
+                return self._json(200, {"ok": True, "claimed": out["claimed"],
+                                        "blocked": out["blocked"],
+                                        "results": out["results"],
                                         "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
 

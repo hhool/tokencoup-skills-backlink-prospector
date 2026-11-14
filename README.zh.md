@@ -4,6 +4,10 @@
 后台服务 + CSV 输出 + 前端展现。零第三方依赖（纯 Python 标准库）。
 License: [MIT](LICENSE) · English docs: [README.md](README.md)
 
+> **文档说明（该读哪份）**
+> - **[USAGE.zh.md](USAGE.zh.md)**（英文 [USAGE.md](USAGE.md)）：**用户使用手册**——面向运营 / 推广人员，讲怎么用界面和接口完成"发现候选 → 算缺口 → 投放交付"的闭环。日常操作看这份。
+> - **README.zh.md**（本文）：**技术与架构文档**——模块设计、打分模型、多域名隔离、端点契约、CSV 字段、局限说明。二次开发或排障看这份。
+
 > 本工具在架构与契约上**参考 `seo-page-snapshot`**：仅用免费 / 开放数据源、商业指标（DR/DA）**绝不估算**、双语字段、缺数据即标 `unavailable`。
 
 ---
@@ -191,7 +195,7 @@ python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/
 
 `gap` 现按 `owned_domains = 已上线投放 ∪ acquired_domains ∪ 显式导入` 计算。旧的「整池当已有外链库」行为仍可用 `use_pool_as_existing=1` 复现以便对比，但默认关闭；定时任务显式传 `0`。
 
-新增端点：`GET /api/placements`、`GET /api/placements/csv`、`POST /api/placements/claim`、`/transition`、`/suppress`。台账 CSV 与池 CSV 分开且带证据列，交接给运营时两层不会混淆。
+新增端点：`GET /api/placements`、`GET /api/placements/csv`、`POST /api/placements/claim`、`/claim-batch`、`/transition`、`/suppress`。台账 CSV 与池 CSV 分开且带证据列，交接给运营时两层不会混淆。
 
 `tools/placement_selftest.py` 是该契约的回归防线（状态机、HTTP 409、缺口口径、真实 Chrome 双语渲染）：
 `python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/`
@@ -229,6 +233,7 @@ python3 server.py --port 8787
 - `GET  /api/placements?domain=<domain>` → 投放台账记录 + 统计（见 D7）
 - `GET  /api/placements/csv?domain=<domain>` → 台账 CSV（含证据列）
 - `POST /api/placements/claim` → 领取投放位（被排除时返回 `409` + 原因）
+- `POST /api/placements/claim-batch` → 批量领取（`center_domain` + `items[]`）；按投放位幂等，被排除的行单独回报、不中断整体
 - `POST /api/placements/transition` → 推进状态；`live` 需证据
 - `POST /api/placements/suppress` → 永久排除域名或投放位
 - `GET  /api/profiles?domain=<domain>` → 该域名的关键词/竞品档案

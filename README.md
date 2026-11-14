@@ -4,6 +4,10 @@ Find **real, reachable** backlink prospects for a given domain and run a **backl
 Backend service + CSV export + web UI. Zero third-party dependencies (pure Python standard library).
 License: [MIT](LICENSE) · 中文文档：[README.zh.md](README.zh.md)
 
+> **文档说明（该读哪份）**
+> - **[USAGE.md](USAGE.md)**（中文 [USAGE.zh.md](USAGE.zh.md)）：**用户使用手册**——面向运营 / 推广人员，讲怎么用界面和接口完成"发现候选 → 算缺口 → 投放交付"的闭环。日常操作看这份。
+> - **README.md**（本文）：**技术与架构文档**——模块设计、打分模型、多域名隔离、端点契约、CSV 字段、局限说明。二次开发或排障看这份。
+
 > Architecturally modeled on `seo-page-snapshot`: free/open data sources only, commercial
 > metrics (DR/DA) are **never estimated**, bilingual field labels, and missing data is
 > always reported as `unavailable`.
@@ -237,7 +241,7 @@ library" behaviour is still reproducible with `use_pool_as_existing=1` for
 comparison, but defaults to off; scheduled runs pass `0` explicitly.
 
 Endpoints: `GET /api/placements`, `GET /api/placements/csv`,
-`POST /api/placements/claim`, `/transition`, `/suppress`. The ledger CSV is
+`POST /api/placements/claim`, `/claim-batch`, `/transition`, `/suppress`. The ledger CSV is
 separate from the pool CSV and carries evidence columns, so the two layers
 cannot be confused in an operator handoff.
 
@@ -283,6 +287,7 @@ python3 server.py --port 8787
 - `GET  /api/placements?domain=<domain>` → delivery ledger records + stats (D7)
 - `GET  /api/placements/csv?domain=<domain>` → ledger CSV with evidence columns
 - `POST /api/placements/claim` → claim one slot (`409` + reason when excluded)
+- `POST /api/placements/claim-batch` → claim many slots at once (`center_domain` + `items[]`); idempotent per slot, blocked rows reported, not aborted
 - `POST /api/placements/transition` → advance state; `live` requires evidence
 - `POST /api/placements/suppress` → permanently exclude a domain or slot
 - `GET  /api/profiles?domain=<domain>` → the domain's keyword/competitor profile

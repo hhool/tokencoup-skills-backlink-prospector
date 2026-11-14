@@ -519,6 +519,34 @@ def claim_placement(store, params):
     return rec, None
 
 
+def claim_placements_batch(store, items):
+    """Claim many placement slots at once; idempotent per slot key.
+
+    items: list of param dicts (same keys as claim_placement). Each slot is
+    claimed independently, so a blocked row never aborts the others. Returns
+    {results:[{ok,target_domain,target_url,placement,reason}],claimed,blocked}.
+    """
+    results, claimed, blocked = [], 0, 0
+    if not isinstance(items, list):
+        return {"results": [{"ok": False, "reason": "items must be a list"}],
+                "claimed": 0, "blocked": 1}
+    for it in (items or []):
+        if not isinstance(it, dict):
+            results.append({"ok": False, "reason": "item must be an object"})
+            blocked += 1
+            continue
+        rec, reason = claim_placement(store, it)
+        results.append({"ok": rec is not None,
+                        "target_domain": it.get("target_domain"),
+                        "target_url": it.get("target_url"),
+                        "placement": rec, "reason": reason})
+        if reason:
+            blocked += 1
+        else:
+            claimed += 1
+    return {"results": results, "claimed": claimed, "blocked": blocked}
+
+
 def transition_placement(store, params):
     """Advance a placement. Reaching 'live' requires verifiable evidence."""
     d = _norm_target(params.get("target_domain"))

@@ -116,6 +116,22 @@ def section_a():
           rows and rows[0]["placement_state"] == "live", rows[:1])
     check("stats expose live / in_progress / suppressed",
           all(k in st.placement_stats(s2) for k in ("live", "in_progress", "suppressed")))
+    # P2: batch claim
+    s3 = fresh()
+    batch = [
+        {"target_domain": "a.com", "target_url": "https://a.com/p1", "placement_type": "guest_post"},
+        {"target_domain": "b.com", "target_url": "https://b.com/p2", "placement_type": "resource"},
+        {"target_domain": "a.com", "target_url": "https://a.com/p1", "placement_type": "guest_post"},  # dup
+    ]
+    out = st.claim_placements_batch(s3, batch)
+    check("batch claims distinct slots", out["claimed"] == 2, out)
+    check("batch dedupes repeated slot", out["blocked"] == 1, out)
+    st.suppress_placement(s3, {"target_domain": "b.com", "reason": "refused"})
+    out2 = st.claim_placements_batch(s3, [{"target_domain": "b.com", "target_url": "https://b.com/p2"}])
+    check("batch reports blocked by suppression",
+          out2["blocked"] == 1 and out2["claimed"] == 0, out2)
+    check("batch rejects non-array input",
+          st.claim_placements_batch(s3, "not-a-list")["blocked"] == 1)
 
 
 def section_b():
@@ -145,6 +161,20 @@ def section_b():
     check("ledger CSV has evidence columns",
           all(c in head for c in ("landing_url", "verify_method", "verified_at")), head[:120])
     check("ledger CSV contains the record", len(csv_text.strip().splitlines()) >= 2)
+    items = [
+        {"target_domain": "batch1.com", "target_url": "https://batch1.com/post", "placement_type": "guest_post"},
+        {"target_domain": "batch2.com", "target_url": "https://batch2.com/page", "placement_type": "resource"},
+    ]
+    code, d = http("/api/placements/claim-batch", {"center_domain": TEST_DOMAIN, "items": items})
+    check("POST claim-batch", code == 200 and d["claimed"] == 2 and d["blocked"] == 0,
+          (code, d.get("claimed"), d.get("blocked")))
+    code, d = http("/api/placements/claim-batch", {"center_domain": TEST_DOMAIN,
+              "items": [{"target_domain": "batch1.com", "target_url": "https://batch1.com/post",
+                         "placement_type": "guest_post"},
+                        {"target_domain": "batch3.com", "target_url": "https://batch3.com/x",
+                         "placement_type": "resource"}]})
+    check("claim-batch idempotent on dup", code == 200 and d["claimed"] == 1 and d["blocked"] == 1,
+          (code, d.get("claimed"), d.get("blocked")))
 
 
 def section_c():
