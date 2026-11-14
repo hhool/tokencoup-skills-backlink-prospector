@@ -36,13 +36,17 @@ python3 server.py --port 8787
 ## 2. 标准工作流（五步闭环）
 
 ### 第 1 步 · 选定中心域名 + 关键词
-- 顶部表单填 **目标域名**（如 `soundbuttons.click`）；**关键词**逗号分隔（如 `soundboard, sound effects, meme sounds`）。
+- 顶栏的**中心域名**是可输入下拉：点开能看到本机/线上已知的全部域名，并标注 `池 N · 种子 M · 竞品反链 K`——`.cc` 与 `.click` 这类近似域名一眼可分，不会再落错库。也可直接输入新域名。
+- 页面会记住你**上次使用的域名**，刷新后不会跳回默认值。
+- **关键词**逗号分隔（如 `soundboard, sound effects, meme sounds`），决定相关性打分。
 - 点「从当前表单添加为定时档案」可把这组配置保存，下次切换域名自动带上。
 - 不同域名数据**完全隔离**，互不串台。
 
 ### 第 2 步 · 分析拿候选（🔍 分析）
 - 填好表单后点 **分析**。
 - 候选来源：① 该域名的**种子库**（`seeds/seed-<域名>.json`，已随镜像内置、稳定可靠）；② 可选 Bing 实时发现（数据中心出口常被返回无关缓存，会被相关性闸门拒掉，属加分通道）。
+- 候选来源：③ **竞品外链站**（`seeds/competitor-links-<域名>.json`，由离线 host 图 harvest 生成）——这类行按「证据」准入，不受关键词门限限制，表格里标 `竞品反链: 域名`。
+- **竞品域名本身**（含子域）不算候选、不做 HTTP 校验、不进缺口，只在统计卡下方单独计数（如「竞品 2 个已剔除 · 由竞品外链带来的候选 27 条」）。
 - 结果按 **优先级 priority（0–100）= 相关性 + 权威 + 可获取** 排序，可按表头任意列排序、按类型/最低优先级/仅缺口/仅有效筛选。
 - 默认 `persist=1`，结果**自动并入外链池**并去重累计。
 
@@ -50,7 +54,7 @@ python3 server.py --port 8787
 - 统计卡：**累计发现 / 已拥有 / 缺口 / 缺口且有效**。
 - 左侧**目录树**按 10 种外链类型组织、可多选筛选；右上角可切「已拥有 / 缺口」状态。
 - **导出池 CSV** 按钮下载候选清单。
-- 此时若没导入已有外链，所有非竞品候选都会被算成缺口（正常中间态）。
+- 此时若没导入已有外链，所有候选都会被算成缺口（正常中间态）。
 
 ### 第 4 步 · 导入已有外链，算出真实缺口
 把你在 GSC / Ahrefs / 自建记录里的**真实已有外链域名**（每行一个）贴进「导入已有外链」框，点导入。这些域名被标记 `acquired`，缺口立即重算（例：5 个候选导入 2 个 → 缺口从 5 变 3）。
@@ -82,6 +86,30 @@ python3 server.py --port 8787
 - 每个 Tab 顶部都有 **💡 Tips** 按钮，点一下就地展开该视图的说明（再点收起），不打断操作。
 - 顶栏右上角 **? 使用帮助** 打开独立帮助页：本地 `http://127.0.0.1:8787/help`、线上 `https://backlink-prospector.fly.dev/help`。加 `?lang=en` 为英文版；帮助页内也可一键切换语言。
 - 帮助页内容分七段：这是什么 / 五步闭环 / 面板地图 / 状态机与规则 / API 速查 / 数据与备份 / 常见问题。
+
+---
+
+## 3.5 竞品外链站怎么来（离线 harvest）
+
+「竞品的外链站」是最高价值的候选来源，但它需要一次离线取数：Web Data Commons / Common Crawl 的 host 图有几十 GB，装不进服务镜像。
+
+```bash
+# 1) 从 https://webdatamining.org/ 下载同一 crawl 窗口的 domain-ranks + domain-edges
+# 2) 反向查：谁链接到我的竞品（三趟流式扫描，内存只随命中增长）
+python3 tools/competitor_backlinks.py \
+  --center soundbuttons.click \
+  --competitors myinstants.com,voicemod.net \
+  --ranks /data/wdc/cc-main-2025-may-aug-domain-ranks.txt.gz \
+  --edges /data/wdc/cc-main-2025-may-aug-domain-edges.txt.gz \
+  --out   seeds/competitor-links-soundbuttons.click.json
+```
+
+- 产出随镜像发布（`seeds/` 进 git），线上直接读；也可放 `data/` 作为本机覆盖（不进 git、线上无）。
+- 想要更严格的门槛：`--min-links 3`（至少 3 条链接）；先看结果不落盘：`--dry-run`。
+- 已有边表（`source,target[,count]`）时用 `--from-csv` 直接喂，不必下载全图。
+- 每行自带证据：`via_competitors[]` + `evidence{graph, edges, per_competitor}`；`type` 是按域名猜的（`type_guess=true`），投放前建议人工复核类型。
+
+> 提醒：竞品越多，被扫描的反链面越大，但「有效外链一定变多」不是恒等式——去重、排除表、质量闸门都会削减净增。
 
 ---
 

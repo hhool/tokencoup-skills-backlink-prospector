@@ -18,7 +18,7 @@ License: [MIT](LICENSE) · English docs: [README.md](README.md)
 |---|---|
 | **1. 外链地址类型** | 10 类（含 `reciprocal` 已与 `directory` 分离）：`industry_media` 行业媒体/测评站、`guest` 客座博客、`resource` 资源页/链接列表、`directory` 目录（单向收录）、`community` 社区/论坛、`social` 社媒、`partner` 互补品牌、`authority` 安全/权威机构(.gov/.org)、`digital_pr` 数字 PR、`reciprocal` 互链（双向交换，独立类型）。定义见 `analyze.py` 中 `TYPE_LABEL_ZH/EN` 与 `seed.json` 的 `type` 字段。 |
 | **2. 优先级筛选标准** | 每条目标打分：`relevance`(0–40) + `authority_score`(0–30) + `obtainability`(0–30) = `priority`(0–100)。权威层级 `authorityTier` 来自种子标注 + 免费 Tranco 排名信号。前端支持按类型、最低优先级、仅缺口、仅有效筛选。 |
-| **3. 外链缺口分析** | 候选 = 种子库（真实站点）+ 可选 Bing 实时发现。导入已有外链（GSC/Ahrefs 导出）后，标记 `already_have=true`，未拥有且非竞品者即 `is_gap`（缺口）。竞品域名输入后自动排除。 |
+| **3. 外链缺口分析** | 候选 = 种子库（真实站点）+ 可选 Bing 实时发现 + 竞品外链站（离线 host 图 harvest）。导入已有外链（GSC/Ahrefs 导出）后，标记 `already_have=true`，未拥有者即 `is_gap`（缺口）。**竞品域名整行剔除**（含子域，不计入候选/有效/缺口，也不做 HTTP 校验），竞品的**外链站**反而是高价值候选。 |
 
 ---
 
@@ -203,6 +203,39 @@ python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/
 
 ---
 
+### D8. 竞品模型 —— 竞品本身不是外链站，竞品的外链站才是
+
+同一份「竞品域名」清单，在流水线里被拆成两个完全不同的实体：
+
+| 实体 | 处理 | 计数 |
+|---|---|---|
+| 竞品域名**本身**（含子域，如 `blog.compa.test`） | 校验前直接剔除；不请求 HTTP、不入池、不进缺口 | 只在 `totals.competitor_rows` 单独报告 |
+| 竞品的**外链站**（链接到竞品的站点） | 正常候选，按证据准入，不受关键词门限限制 | 计入 `totals.candidates` / `valid` / `gap`，并标 `source=competitor_backlink` |
+
+「竞品越多 → 有效外链越多」不是恒等式：能保证的只有「被扫描的反链面变大」，净增要按去重与质量闸门后的结果算。
+
+**证据来源（离线 harvest）**：`tools/competitor_backlinks.py` 流式扫描 Web Data Commons / Common Crawl 的 host（或 domain）级边表，做一次反向查询：哪些 host 指向竞品。图有几十 GB，镜像只有几十 MB，所以**离线跑、产出受控文件**、随镜像发布：
+
+```bash
+# 1) 从 https://webdatamining.org/ 取同一 crawl 窗口的 domain-ranks + domain-edges
+# 2) 反向查：谁链接到我的竞品
+python3 tools/competitor_backlinks.py \
+  --center soundbuttons.click \
+  --competitors myinstants.com,voicemod.net \
+  --ranks /data/wdc/cc-main-2025-may-aug-domain-ranks.txt.gz \
+  --edges /data/wdc/cc-main-2025-may-aug-domain-edges.txt.gz \
+  --out   seeds/competitor-links-soundbuttons.click.json
+```
+
+- 三趟流式扫描：ranks 找竞品 id → edges 收「指向竞品的边」并按 source 聚合 → 再扫 ranks 把 source id 还原成域名。内存只随命中数增长。
+- 质量闸门：竞品自身与子域、中心域名、`BLOCKED_DOMAINS`、`NOISE_DOMAINS` 全部丢弃；`--min-links` 可要求至少 N 条链接。
+- 产出即证据：每行带 `via_competitors[]` 与 `evidence{graph, edges, per_competitor}`；`type` 由域名启发式推测并标 `type_guess=true`，等人工确认。
+- 已有边表（`source,target[,count]`）也可用 `--from-csv` 直接喂；`--dry-run` 只报告不落盘。
+
+读取顺序：`data/competitor-links-<域名>.json`（运营覆盖）→ `seeds/competitor-links-<域名>.json`（随镜像）。文件存在才生效，缺失时 `data_sources.competitor_backlinks.status` 为 `empty`，流水线行为与之前一致。
+
+---
+
 ## 2. 免费数据源（无 API Key 即可运行）
 
 | 源 | 作用 | 备注 |
@@ -241,8 +274,9 @@ python3 server.py --port 8787
 - `GET  /api/schedule` → 周期查询调度状态（config / status / runs）
 - `POST /api/schedule` → 保存调度配置（body `{enabled, interval_hours, profiles[]}`）
 - `POST /api/schedule/run` → 立即执行所有定时档案（body `{}`）
+- `GET  /api/domains` → 工作区已知的全部中心域名（合并 profile / seeds / 池 / 竞品反链文件），供顶部下拉使用
 - `GET  /api/health` · `GET /api/providers`
-- `GET  /help` → 独立使用帮助页（`assets/help.html`，`?lang=en|zh` 双语）。顶栏「? 使用帮助」进入；每个 Tab 右上角另有 `💡 Tips` 按钮，就地展开对应说明。
+- `GET  /help` → 独立使用帮助页（`assets/help.html`，`?lang=en|zh` 双语）。顶栏「? 使用帮助」进入；每个 Tab 顶部另有 `💡 Tips` 按钮，就地展开对应说明。
 
 请求体（`/api/analyze`）：
 ```json

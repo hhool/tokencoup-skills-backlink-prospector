@@ -22,6 +22,7 @@ import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "data")
+SEEDS_DIR = os.path.join(HERE, "seeds")  # image-baked, version-controlled inputs
 STORE_PATH = os.path.join(DATA_DIR, "store.json")  # legacy default
 CHANNELS_PATH = os.path.join(HERE, "channels.json")  # global channels config
 PROFILES_PATH = os.path.join(HERE, "profiles.json")  # default keyword/competitor profiles
@@ -110,6 +111,15 @@ def merge_result(store, result):
             e["last_priority"] = p.get("priority")
             e["authority_tier"] = p.get("authority_tier")
             e["is_competitor"] = bool(p.get("is_competitor")) or e.get("is_competitor", False)
+            # Keep the competitor-backlink evidence across runs: "this site links
+            # to compa.test" stays true even when a later seed-only run sees it.
+            vias = set(e.get("via_competitors") or [])
+            vias.update(p.get("via_competitors") or [])
+            if vias:
+                e["via_competitors"] = sorted(vias)
+                e.setdefault("source", p.get("source") or "competitor_backlink")
+            if p.get("evidence") and not e.get("evidence"):
+                e["evidence"] = p.get("evidence")
             if tranco is not None:
                 e.setdefault("authority", {})["tranco_global_rank"] = tranco
             e["acquired"] = d in acquired
@@ -134,6 +144,9 @@ def merge_result(store, result):
                 "times_discovered": 1,
                 "note": p.get("note", ""),
                 "is_competitor": bool(p.get("is_competitor")),
+                "source": p.get("source", "seed"),
+                "via_competitors": p.get("via_competitors") or [],
+                "evidence": p.get("evidence"),
                 "acquired": d in acquired,
             }
             merged += 1
@@ -234,6 +247,8 @@ def domain_list(store):
             "http_status": e.get("http_status"),
             "acquired": e.get("acquired", False),
             "is_gap": not e.get("acquired", False),
+            "source": e.get("source", "seed"),
+            "via_competitors": e.get("via_competitors") or [],
             "first_seen": e.get("first_seen"),
             "last_seen": e.get("last_seen"),
             "times_discovered": e.get("times_discovered", 1),
@@ -431,6 +446,112 @@ def list_profiles():
     except Exception:
         pass
     return out
+
+
+def known_domains():
+    """Every center domain this workspace knows about, for the UI picker.
+
+    A free-text field is how the project ended up with two parallel pools
+    (soundbuttons.cc vs soundbuttons.click) and no way to see which one is
+    which. This aggregates every source of truth so the picker can show what
+    actually exists, with the counts that distinguish them:
+
+      profiles.json / data/profile-*.json : a keyword profile exists
+      seeds/seed-*.json, data/seed-*.json : a curated seed library exists
+      data/competitor-links-*.json        : a competitor harvest exists
+      data/store-*.json                   : a pool exists (with its size)
+
+    Returns a list of dicts sorted by "most data first", then alphabetically.
+    """
+    rows = {}
+
+    def slot(dom):
+        d = (dom or "").strip().lower()
+        if not d or not _looks_like_domain(d):
+            return None
+        return rows.setdefault(d, {"domain": d, "sources": [], "keywords": [],
+                                   "competitors": [], "pool_domains": 0,
+                                   "seed_rows": 0, "competitor_links": 0,
+                                   "placements_live": 0, "updated_at": None})
+
+    # 1) shipped + saved profiles
+    for dom, prof in list_profiles().items():
+        s = slot(dom)
+        if not s:
+            continue
+        s["keywords"] = prof.get("keywords") or []
+        s["competitors"] = prof.get("competitors") or []
+        s["sources"].append("profile")
+
+    # 2) seed libraries (shipped and operator overrides)
+    for base, tag in ((DATA_DIR, "seed"), (SEEDS_DIR, "seed")):
+        try:
+            names = os.listdir(base)
+        except Exception:
+            names = []
+        for fn in names:
+            if not (fn.startswith("seed-") and fn.endswith(".json")):
+                continue
+            dom = fn[len("seed-"):-len(".json")]
+            s = slot(dom)
+            if not s:
+                continue
+            data = load_json_file(os.path.join(base, fn), [])
+            if isinstance(data, dict):
+                data = data.get("sites") or data.get("items") or data.get("rows") or []
+            n = len(data) if isinstance(data, list) else 0
+            s["seed_rows"] = max(s["seed_rows"], n)
+            if tag not in s["sources"]:
+                s["sources"].append(tag)
+
+    # 3) competitor harvests
+    for fn in _listdir(DATA_DIR) + _listdir(SEEDS_DIR):
+        if not (fn.startswith("competitor-links-") and fn.endswith(".json")):
+            continue
+        dom = fn[len("competitor-links-"):-len(".json")]
+        s = slot(dom)
+        if not s:
+            continue
+        data = load_json_file(os.path.join(DATA_DIR, fn), None) or \
+            load_json_file(os.path.join(SEEDS_DIR, fn), None)
+        n = 0
+        if isinstance(data, dict):
+            n = len(data.get("rows") or data.get("sites") or [])
+        elif isinstance(data, list):
+            n = len(data)
+        s["competitor_links"] = max(s["competitor_links"], n)
+        if "competitor_links" not in s["sources"]:
+            s["sources"].append("competitor_links")
+
+    # 4) pools
+    for fn in _listdir(DATA_DIR):
+        if not (fn.startswith("store-") and fn.endswith(".json")):
+            continue
+        dom = fn[len("store-"):-len(".json")]
+        s = slot(dom)
+        if not s:
+            continue
+        data = load_json_file(os.path.join(DATA_DIR, fn), {}) or {}
+        s["pool_domains"] = len(data.get("domains") or {})
+        s["placements_live"] = placement_stats(data).get("live", 0)
+        s["updated_at"] = data.get("updated_at")
+        if "pool" not in s["sources"]:
+            s["sources"].append("pool")
+
+    out = list(rows.values())
+    for r in out:
+        r["label"] = "%s · pool %d · seed %d" % (r["domain"], r["pool_domains"], r["seed_rows"])
+    out.sort(key=lambda r: (r["updated_at"] or "", r["pool_domains"], r["seed_rows"],
+                            r["domain"]), reverse=True)
+    return out
+
+
+def _listdir(path):
+    try:
+        return sorted(os.listdir(path))
+    except Exception:
+        return []
+
 
 
 def load_json_file(path, default):

@@ -20,6 +20,7 @@ Endpoints (all JSON except GET /):
     POST /api/profiles          body={center_domain, keywords, competitors} save profile
     GET  /api/tips              bilingual type / weight / reciprocal-linking tips
     GET  /api/store             persistent backlink pool + stats (discovered / acquired / gap)
+    GET  /api/domains           every center domain this workspace knows (picker source)
     GET  /api/store/csv         pool exported as CSV attachment
     POST /api/store/sync-existing  body={domains|existing} mark real backlinks acquired
     POST /api/store/unmark-existing body={domains} revert domains to gap (unmark acquired)
@@ -263,6 +264,7 @@ class Handler(BaseHTTPRequestHandler):
                                         "endpoints": ["/api/health", "/api/analyze",
                                                       "/api/analyze/csv", "/api/providers",
                                                       "/api/tips", "/api/store",
+                                                      "/api/domains",
                                                       "/api/store/csv",
                                                       "/api/store/sync-existing",
                                                       "/api/placements/claim-batch",
@@ -301,6 +303,10 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as exc:
                     return self._error(500, "tips.json missing: %s" % exc)
                 return self._json(200, {"ok": True, "tips": tips})
+            if path == "/api/domains":
+                # Everything this workspace knows, so the center-domain picker
+                # offers real choices instead of relying on free-text memory.
+                return self._json(200, {"ok": True, "domains": st.known_domains()})
             if path == "/api/store":
                 # Support domain query parameter for multi-domain isolation
                 center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]

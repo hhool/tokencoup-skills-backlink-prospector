@@ -129,16 +129,16 @@
 
   <ol class="steps">
     <li>
-      <span class="doc-zh"><b>定中心域名 + 关键词</b>：顶部输入框填目标域名，分析页填品类词（不是品牌词），逗号分隔。不同域名的数据完全隔离。</span>
-      <span class="doc-en"><b>Set the center domain and keywords</b>: type the domain at the top, then category terms (not brand names), comma separated. Each domain has isolated data.</span>
+      <span class="doc-zh"><b>定中心域名 + 关键词</b>：顶部是可输入下拉，列出已知域名并标注 池/种子/竞品反链 数量（`.cc` 与 `.click` 不会再混）；也可直接输入新域名。分析页填品类词（不是品牌词），逗号分隔。不同域名的数据完全隔离。</span>
+      <span class="doc-en"><b>Set the center domain and keywords</b>: the top field is a typable dropdown listing known domains with pool/seed/comp-link counts (no more mixing .cc with .click); typing a new domain still works. Then category terms (not brand names), comma separated. Each domain has isolated data.</span>
     </li>
     <li>
-      <span class="doc-zh"><b>跑分析</b>：点「分析」。候选来自该域名的种子库（<code>seeds/seed-&lt;域名&gt;.json</code>）与可选的 Bing 实时发现。结果按优先级（相关性 + 权威 + 可获取）排序。</span>
-      <span class="doc-en"><b>Run the analysis</b>: click Analyze. Candidates come from that domain's seed library (<code>seeds/seed-&lt;domain&gt;.json</code>) plus optional live Bing discovery. Rows are ranked by priority (relevance + authority + obtainability).</span>
+      <span class="doc-zh"><b>跑分析</b>：点「分析」。候选来自该域名的种子库（<code>seeds/seed-&lt;域名&gt;.json</code>）、可选的 Bing 实时发现，以及<b>竞品外链站</b>（<code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限）。结果按优先级（相关性 + 权威 + 可获取）排序。</span>
+      <span class="doc-en"><b>Run the analysis</b>: click Analyze. Candidates come from that domain's seed library (<code>seeds/seed-&lt;domain&gt;.json</code>), optional live Bing discovery, and <b>competitor backlink sites</b> (<code>seeds/competitor-links-&lt;domain&gt;.json</code>, admitted by evidence and exempt from the keyword gate). Rows are ranked by priority (relevance + authority + obtainability).</span>
     </li>
     <li>
-      <span class="doc-zh"><b>看池子、算真缺口</b>：到「外链池」看统计卡与目录树。还没导入已有外链时，所有非竞品候选都会被算成缺口，这是正常中间态。</span>
-      <span class="doc-en"><b>Read the pool</b>: open Pool for the stat cards and the type tree. Before any import, every non-competitor candidate counts as gap - that is the expected intermediate state.</span>
+      <span class="doc-zh"><b>看池子、算真缺口</b>：到「外链池」看统计卡与目录树。还没导入已有外链时，所有候选都会被算成缺口，这是正常中间态。</span>
+      <span class="doc-en"><b>Read the pool</b>: open Pool for the stat cards and the type tree. Before any import, every candidate counts as gap - that is the expected intermediate state.</span>
     </li>
     <li>
       <span class="doc-zh"><b>导入已有外链</b>：把真实已有域名（每行一个）贴进「导入已有外链」，缺口立即重算；误导入可撤销，候选不丢。</span>
@@ -199,6 +199,8 @@
     <li><span class="doc-zh"><b>进行中幂等</b>：重复认领同一投放位不会产生两条记录。</span><span class="doc-en"><b>In-progress is idempotent</b>: re-claiming a slot never duplicates it.</span></li>
     <li><span class="doc-zh"><b>同域名节奏窗口</b>：90 天内该域名已有 live / submitted，会拦下新的认领并给出原因。</span><span class="doc-en"><b>Per-domain cadence</b>: if the domain already has a live/submitted slot within 90 days, new claims are blocked with a reason.</span></li>
     <li><span class="doc-zh"><b>排除</b>：显式排除的域名或精确投放位永久剔除；误操作可在台账里撤销。</span><span class="doc-en"><b>Exclusion</b>: an excluded domain or exact slot is dropped permanently; a mistake can be undone from the ledger.</span></li>
+    <li><span class="doc-zh"><b>竞品域名不是外链站</b>：竞品及其子域在候选阶段整行剔除——不做 HTTP 校验、不入池、不计入候选/有效/缺口，只在统计卡下方单独计数。</span><span class="doc-en"><b>A competitor is not a backlink site</b>: competitor hosts and their subdomains are dropped at the candidate stage - no HTTP probe, no pool entry, no candidate/valid/gap count, only a separate line under the stat cards.</span></li>
+    <li><span class="doc-zh"><b>竞品的外链站才是候选</b>：由离线 host 图 harvest 生成（<code>tools/competitor_backlinks.py</code> → <code>seeds/competitor-links-&lt;域名&gt;.json</code>），每行带 <code>via_competitors</code> 与边数证据；类型按域名推测，投放前人工复核。</span><span class="doc-en"><b>Sites that link to a competitor ARE candidates</b>: produced by the offline host-graph harvest (<code>tools/competitor_backlinks.py</code> → <code>seeds/competitor-links-&lt;domain&gt;.json</code>); each row keeps <code>via_competitors</code> and edge counts as evidence, with the type guessed from the hostname for review.</span></li>
   </ul>
 
   <!-- ============ API ============ -->
@@ -235,6 +237,9 @@ curl -s -X POST http://127.0.0.1:8787/api/store/unmark-existing \
   -H 'Content-Type: application/json' \
   -d '{"center_domain":"soundbuttons.click","id":"&lt;placement id&gt;","state":"live",
        "landing_url":"https://a.com/post","verify_method":"manual_check"}'</code></pre>
+
+  <h3><span class="doc-zh">已知域名（下拉数据源）</span><span class="doc-en">Known domains (picker source)</span></h3>
+<pre><code>curl -s "http://127.0.0.1:8787/api/domains"</code></pre>
 
   <h3><span class="doc-zh">导出与查看</span><span class="doc-en">Export and inspect</span></h3>
 <pre><code>curl -s "http://127.0.0.1:8787/api/store/csv?domain=soundbuttons.click" -o pool.csv

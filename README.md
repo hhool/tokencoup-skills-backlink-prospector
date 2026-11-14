@@ -20,7 +20,7 @@ License: [MIT](LICENSE) · 中文文档：[README.zh.md](README.zh.md)
 |---|---|
 | **1. Backlink types** | 10 types (`reciprocal` kept separate from `directory`): `industry_media`, `guest`, `resource`, `directory`, `community`, `social`, `partner`, `authority` (.gov/.org), `digital_pr`, `reciprocal` (two-way link exchange, a distinct type). Defined in `analyze.py` (`TYPE_LABEL_ZH/EN`) and `seed.json`'s `type` field. |
 | **2. Priority scoring** | Each prospect scores `relevance`(0–40) + `authority_score`(0–30) + `obtainability`(0–30) = `priority`(0–100). Authority tier comes from seed annotation plus free Tranco ranking. The UI filters by type, minimum priority, gap-only, valid-only. |
-| **3. Gap analysis** | Candidates = seed library (real, verified sites) + optional live Bing discovery. Import existing backlinks (GSC/Ahrefs export); matched domains are marked `already_have=true`; everything not owned and not a competitor is a `is_gap` prospect. Competitor domains are excluded automatically. |
+| **3. Gap analysis** | Candidates = seed library (real, verified sites) + optional live Bing discovery + competitor backlink sources (offline host-graph harvest). Import existing backlinks (GSC/Ahrefs export); matched domains are marked `already_have=true`; every remaining prospect is a `is_gap` one. Competitor hosts (subdomains included) are dropped as rows entirely - never candidates, never validated, never counted - while sites that LINK TO a competitor are high-value candidates. |
 
 ---
 
@@ -253,6 +253,39 @@ skipped and no throwaway ledger file lands on the Fly volume.
 
 ---
 
+### D8. Competitor model — the competitor is not a backlink site, its backlinks are
+
+One operator-supplied "competitor" list feeds two completely different entities:
+
+| Entity | Treatment | Counting |
+|---|---|---|
+| The competitor host **itself** (subdomains too, e.g. `blog.compa.test`) | Dropped before validation: no HTTP probe, no pool entry, no gap | Reported only as `totals.competitor_rows` |
+| Sites that **link to** a competitor | Ordinary candidates, admitted by evidence and exempt from the keyword gate | Counted in `totals.candidates` / `valid` / `gap`, tagged `source=competitor_backlink` |
+
+"More competitors -> more valid backlinks" is not an identity: what is guaranteed is that more of the inbound surface gets scanned; the net gain depends on dedup and the quality gate.
+
+**Evidence source (offline harvest).** `tools/competitor_backlinks.py` streams the Web Data Commons / Common Crawl host (or domain) edge table and runs one reverse query: which hosts point at my competitors. The graph is tens of GB, the image is ~37 MB, so the harvest runs offline and ships a compact, reviewable file with the image:
+
+```bash
+# 1) download a WDC release (domain-ranks + domain-edges, same crawl window)
+# 2) reverse query: who links to my competitors
+python3 tools/competitor_backlinks.py \
+  --center soundbuttons.click \
+  --competitors myinstants.com,voicemod.net \
+  --ranks /data/wdc/cc-main-2025-may-aug-domain-ranks.txt.gz \
+  --edges /data/wdc/cc-main-2025-may-aug-domain-edges.txt.gz \
+  --out   seeds/competitor-links-soundbuttons.click.json
+```
+
+- Three streaming passes: ranks -> competitor ids, edges -> inbound edges grouped by source, ranks again -> resolve source ids to hostnames. Memory grows with hits, not with the graph.
+- Quality gate: competitor hosts and their subdomains, the center domain, `BLOCKED_DOMAINS` and `NOISE_DOMAINS` are dropped; `--min-links N` requires at least N links.
+- The output IS the evidence: each row carries `via_competitors[]` and `evidence{graph, edges, per_competitor}`. `type` is guessed from the hostname and flagged `type_guess=true` for review.
+- An already-extracted edge list (`source,target[,count]`) works via `--from-csv`; `--dry-run` reports without writing.
+
+Resolution order: `data/competitor-links-<domain>.json` (operator override) then `seeds/competitor-links-<domain>.json` (image-baked). When neither exists, `data_sources.competitor_backlinks.status` is `empty` and behaviour is identical to before.
+
+---
+
 ## 3. Free Data Sources (no API keys required)
 
 | Source | Role | Notes |
@@ -295,6 +328,7 @@ python3 server.py --port 8787
 - `GET  /api/schedule` → scheduler state (config / status / runs)
 - `POST /api/schedule` → save schedule (body `{enabled, interval_hours, profiles[]}`)
 - `POST /api/schedule/run` → run all profiles now (body `{}`)
+- `GET  /api/domains` -> every center domain this workspace knows (profiles / seeds / pools / competitor harvests), feeds the top-bar picker
 - `GET  /api/health` · `GET /api/providers`
 - `GET  /help` → standalone operator help page (`assets/help.html`; bilingual via
   `?lang=en|zh`). The app links to it from the top bar, and every tab carries its

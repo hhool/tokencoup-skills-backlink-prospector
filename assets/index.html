@@ -162,8 +162,10 @@
   <div class="center-dom">
     <span class="badge" data-i18n="center_badge">中心域名 · Center domain</span>
     <span class="lab" data-i18n="center_lab">分析对象（所有 Tab 围绕此域名展开）：</span>
-    <input type="text" id="centerDomain" value="soundbuttons.click" spellcheck="false">
-    <span class="hint" data-i18n="center_hint">切换域名后，分析/外链池/后台档案默认均以该域名为中心</span>
+    <input type="text" id="centerDomain" value="soundbuttons.click" spellcheck="false"
+           list="centerDomainList" autocomplete="off">
+    <datalist id="centerDomainList"></datalist>
+    <span class="hint" data-i18n="center_hint">下拉可选已有域名（带池/种子数量）；也可直接输入新域名</span>
   </div>
 
   <div class="tabs" id="tabs">
@@ -220,7 +222,7 @@
   <div class="tabpane" id="tab-analyze">
     <div class="viewtips">
       <button class="tipbtn" data-tipbtn="analyze" aria-expanded="false" data-i18n="tipbtn_analyze">💡 本页怎么用</button>
-      <div class="tipbody hidden" id="tip-analyze" data-i18n="tip_analyze"><ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名自动排除，不计入缺口；每行一个或逗号分隔。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul></div>
+      <div class="tipbody hidden" id="tip-analyze" data-i18n="tip_analyze"><ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名（含子域）整行剔除：既不占候选/有效/缺口，也不做 HTTP 校验；只在卡片下方单独计数。</li><li>竞品的外链站相反是<b>高价值候选</b>：由离线 host 图 harvest 写入 <code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限限制。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul></div>
     </div>
     <div class="panel">
       <div class="grid">
@@ -263,6 +265,7 @@
       <div class="card gap"><div class="n" id="c_gap">0</div><div class="l" data-i18n="c_gap">缺口 Gap (未拥有)</div></div>
       <div class="card gap"><div class="n" id="c_gapv">0</div><div class="l" data-i18n="c_gapv">缺口且有效 Gap &amp; valid</div></div>
     </div>
+    <p class="note" id="c_comp_note" style="margin:8px 0 0"></p>
 
     <div id="results" class="panel hidden">
       <div class="toolbar">
@@ -536,7 +539,7 @@ const I18N = {
     center_badge:'中心域名 · Center domain',
     ph_existing:'粘贴 GSC / Ahrefs 导出的已有外链域名，每行一个',
     sub:'为某一域名查找真实、有效的可用外链目标地址 · 后台服务 + CSV + 前端 · 仅用免费数据源（Tranco / Bing / 种子库 / 本地外链导入）',
-    center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'切换域名后，分析/外链池/后台档案默认均以该域名为中心',
+    center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'下拉可选已有域名（带池/种子数量）；也可直接输入新域名',
     tab_ov:'📊 总体概况', tab_analyze:'🔍 分析', tab_tips:'📖 类型说明 & 权重', tab_pool:'🗃 外链池 · 已有 vs 空缺', tab_sched:'⚙ 后台服务 · 周期查询',
     ov_total:'累计发现 Discovered', ov_acq:'已拥有 Acquired', ov_gap:'空缺 Gap', ov_gapv:'空缺且有效 Gap & valid', ov_recip:'互链占比 Reciprocal',
     ov_type_title:'外链类型分布', ov_type_sub:'基于外链池累计发现数（按类型）',
@@ -548,13 +551,15 @@ const I18N = {
     c_bing:'Bing 实时发现', c_tranco:'Tranco 权威信号', c_persist:'并入外链池',
     btn_analyze:'分析', btn_csv:'下载 CSV',
     c_cand:'候选地址 Candidates', c_valid:'有效地址 Valid (HTTP reachable)', c_gap:'缺口 Gap (未拥有)', c_gapv:'缺口且有效 Gap & valid',
+    c_comp_note:'竞品 {n} 个已剔除（不计入候选/有效/缺口）· 由竞品外链带来的候选 {m} 条',
+    badge_via:'竞品反链',
     f_type:'类型', f_min:'最低优先级', f_gap:'仅缺口', f_valid:'仅有效',
     h_url:'URL / 域名', h_type:'类型', h_auth:'权威', h_rel:'相关', h_ascore:'权威分', h_obt:'可获取', h_prio:'优先级', h_check:'校验', h_gap:'缺口', h_note:'备注',
     tips_toggle:'▸ 类型说明 & 权重 Tips（含互链说明 / 打分模型 / 周期查询）',
     btn_help:'? 使用帮助',
     tipbtn_ov:'💡 本页怎么看', tipbtn_analyze:'💡 本页怎么用', tipbtn_pool:'💡 本页怎么用', tipbtn_sched:'💡 本页怎么用',
     tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
-    tip_analyze:'<ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名自动排除，不计入缺口；每行一个或逗号分隔。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul>',
+    tip_analyze:'<ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名（含子域）整行剔除：既不占候选/有效/缺口，也不做 HTTP 校验；只在卡片下方单独计数。</li><li>竞品的外链站相反是<b>高价值候选</b>：由离线 host 图 harvest 写入 <code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限限制。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul>',
     tip_pool:'<ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul>',
     tip_sched:'<ul><li>周期查询按间隔自动跑分析，把新候选<b>去重并入外链池</b>，适合「不断扩库」。</li><li>需要进程常驻：本地用 <code>nohup python3 server.py</code>，Fly 上机器休眠期间不会触发。</li><li>改完配置必须点<b>保存配置</b>；「立即运行」只跑一次，不影响定时。</li><li>运行历史里能看到每次新增多少域名；失败会记录原因，先看 <code>/api/health</code>。</li><li>定时任务用的档案来自「分析」页表单，添加后会固定当时的域名/关键词/竞品。</li></ul>',
     pool_title:'外链池 · 已有 vs 空缺 <span class="badge">周期查询不断扩充</span>', pool_load:'加载外链池', pool_csv:'下载池 CSV',
@@ -588,7 +593,7 @@ const I18N = {
     center_badge:'Center domain',
     ph_existing:'Paste existing backlink domains exported from GSC / Ahrefs, one per line',
     sub:'Find real, valid backlink target addresses for a domain · backend service + CSV + frontend · free-only data sources (Tranco / Bing / seed library / local backlink import)',
-    center_lab:'Analysis target (all tabs center on this domain):', center_hint:'After switching, analysis / pool / scheduler profiles all default to this domain',
+    center_lab:'Analysis target (all tabs center on this domain):', center_hint:'Pick a known domain from the list (with pool/seed counts) or type a new one',
     tab_ov:'📊 Overview', tab_analyze:'🔍 Analyze', tab_tips:'📖 Types & Weights', tab_pool:'🗃 Pool · Owned vs Gap', tab_sched:'⚙ Backend · Scheduler',
     ov_total:'Discovered', ov_acq:'Acquired', ov_gap:'Gap', ov_gapv:'Gap & valid', ov_recip:'Reciprocal %',
     ov_type_title:'Backlink type distribution', ov_type_sub:'Cumulative discovered count by type (from pool)',
@@ -600,13 +605,15 @@ const I18N = {
     c_bing:'Bing live discovery', c_tranco:'Tranco authority', c_persist:'Merge into pool',
     btn_analyze:'Analyze', btn_csv:'Download CSV',
     c_cand:'Candidates', c_valid:'Valid (HTTP reachable)', c_gap:'Gap (not owned)', c_gapv:'Gap & valid',
+    c_comp_note:'{n} competitor host(s) excluded (never counted as candidate / valid / gap) · {m} candidate(s) came from competitor backlinks',
+    badge_via:'via competitor',
     f_type:'Type', f_min:'Min priority', f_gap:'Gap only', f_valid:'Valid only',
     h_url:'URL / Domain', h_type:'Type', h_auth:'Authority', h_rel:'Rel', h_ascore:'Auth', h_obt:'Obtain', h_prio:'Priority', h_check:'Check', h_gap:'Gap', h_note:'Note',
     tips_toggle:'▸ Types & Weights Tips (reciprocal / scoring / periodic)',
     btn_help:'? Help',
     tipbtn_ov:'💡 How to read', tipbtn_analyze:'💡 How to use', tipbtn_pool:'💡 How to use', tipbtn_sched:'💡 How to use',
     tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
-    tip_analyze:'<ul><li>Keywords drive the <b>relevance</b> score: use category terms (soundboard, sound buttons), not brand names.</li><li>Competitor domains are excluded automatically and never counted as gap; one per line or comma separated.</li><li>"Existing backlinks" only affects the <b>gap of this run</b> and is not persisted; to mark owned domains for good, import them on the Pool page.</li><li>Tick "merge into pool" to accumulate results on disk; otherwise they are for this view only.</li><li>Zero results? Check whether <code>seeds/seed-&lt;domain&gt;.json</code> exists, then whether live Bing is reachable.</li></ul>',
+    tip_analyze:'<ul><li>Keywords drive the <b>relevance</b> score: use category terms (soundboard, sound buttons), not brand names.</li><li>Competitor hosts (including subdomains) are dropped entirely: they are not candidates, not validated, and not counted in candidate / valid / gap - only in the breakdown line under the cards.</li><li>Sites that LINK TO a competitor are the opposite: high-value candidates, harvested offline from the host graph into <code>seeds/competitor-links-&lt;domain&gt;.json</code>, admitted by evidence and therefore not subject to the keyword gate.</li><li>"Existing backlinks" only affects the <b>gap of this run</b> and is not persisted; to mark owned domains for good, import them on the Pool page.</li><li>Tick "merge into pool" to accumulate results on disk; otherwise they are for this view only.</li><li>Zero results? Check whether <code>seeds/seed-&lt;domain&gt;.json</code> exists, then whether live Bing is reachable.</li></ul>',
     tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting domains (one per line); the gap recalculates immediately and the import is reversible.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li></ul>',
     tip_sched:'<ul><li>The scheduler runs the analysis on an interval and <b>merges new candidates into the pool</b> with dedup.</li><li>It needs a long-running process: <code>nohup python3 server.py</code> locally; on Fly nothing runs while the machine is asleep.</li><li>Click <b>Save config</b> after editing; "Run now" fires a single run and does not change the schedule.</li><li>Run history shows how many domains each run added; failures record a reason, so check <code>/api/health</code> first.</li><li>Scheduled profiles come from the Analyze form and freeze the domain/keywords/competitors captured at that moment.</li></ul>',
     pool_title:'Backlink Pool · Owned vs Gap <span class="badge">expanded by periodic queries</span>', pool_load:'Load pool', pool_csv:'Pool CSV',
@@ -1017,6 +1024,7 @@ function refreshCenterUI(){
   el.style.borderColor='';
   const next = typed || 'soundbuttons.click';
   CENTER = next;
+  try{ localStorage.setItem('bp.center', CENTER); }catch(e){}
   $('domain').value = CENTER;
   updateCenterLabels();
   if(CENTER !== oldCenter){
@@ -1064,6 +1072,25 @@ function svgRatio(el, ratio, warn){
 }
 
 /* ---------- Overview ---------- */
+async function loadDomainPicker(){
+  // A free-text box is how two parallel pools (.cc and .click) appeared with no
+  // way to tell them apart. The datalist now shows what actually exists, with
+  // the counts that distinguish near-identical domains.
+  try{
+    const r=await fetch('/api/domains'); const d=await r.json();
+    if(!d.ok) return;
+    const list=$('centerDomainList'); if(!list) return;
+    list.innerHTML=(d.domains||[]).map(x=>{
+      const bits=[];
+      if(x.pool_domains) bits.push((LANG==='en'?'pool ':'池 ')+x.pool_domains);
+      if(x.seed_rows) bits.push((LANG==='en'?'seed ':'种子 ')+x.seed_rows);
+      if(x.competitor_links) bits.push((LANG==='en'?'comp-links ':'竞品反链 ')+x.competitor_links);
+      const label=bits.length? x.domain+' · '+bits.join(' · ') : x.domain;
+      return `<option value="${esc(x.domain)}" label="${esc(label)}"></option>`;
+    }).join('');
+  }catch(e){ /* picker is a convenience; typing still works */ }
+}
+
 async function loadOverview(){
   try{
     const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)); const d=await r.json();
@@ -1193,6 +1220,16 @@ function render(r){
   $('c_valid').textContent=tot.valid||0;
   $('c_gap').textContent=tot.gap||0;
   $('c_gapv').textContent=tot.gap_valid||0;
+  const nComp=tot.competitor_rows||0, nVia=tot.from_competitors||0;
+  const cn=$('c_comp_note');
+  if(cn){
+    // Say it explicitly: a competitor host is never a backlink target, while a
+    // site that LINKS to a competitor is a first-class candidate.
+    cn.textContent = (nComp||nVia)
+      ? I18N[LANG].c_comp_note.replace('{n}',nComp).replace('{m}',nVia)
+      : '';
+    cn.style.display=(nComp||nVia)?'':'none';
+  }
   $('summary').classList.remove('hidden');
   $('results').classList.remove('hidden');
   const types=new Set(t.prospects.map(p=>p.type_key));
@@ -1246,7 +1283,9 @@ function drawRows(){
                            : (p.type_label_zh||tlabel(p.type_key)||'');
     return `<tr>
       <td><a href="${p.url}" target="_blank" rel="noopener">${p.domain}</a><div class="note">${p.url}</div></td>
-      <td>${esc(tl)}${LANG==='zh'&&p.type_label_en?`<div class="note">${esc(p.type_label_en)}</div>`:''}</td>
+      <td>${esc(tl)}${p.source==='competitor_backlink'
+            ?`<div><span class="pill comp" title="${esc(p.note_en||'')}">${esc(I18N[LANG].badge_via)}: ${esc((p.via_competitors||[]).join(', '))}</span></div>`
+            :''}${LANG==='zh'&&p.type_label_en?`<div class="note">${esc(p.type_label_en)}</div>`:''}</td>
       <td>${p.authority_tier||'—'}<div class="note">Tranco ${tr}</div></td>
       <td>${p.relevance}</td><td>${p.authority_score}</td><td>${p.obtainability}</td>
       <td class="prio">${p.priority}</td>
@@ -1396,7 +1435,10 @@ function poolRow(d){
   const use=`<button class="ghost pl-use" data-dom="${escAttr(d.domain)}" data-url="${escAttr(d.url||'')}" style="padding:3px 10px;font-size:12px;margin-top:4px">${plLabel('pl_use')}</button>`;
   return `<tr>
     <td><a href="${d.url||'#'}" target="_blank" rel="noopener">${d.domain}</a></td>
-    <td>${esc(d.type_key ? tlabel(d.type_key) : (LANG==='en'?(d.type_label_en||d.type_label_zh||''):(d.type_label_zh||'')))}</td>
+    <td>${esc(d.type_key ? tlabel(d.type_key) : (LANG==='en'?(d.type_label_en||d.type_label_zh||''):(d.type_label_zh||'')))}${
+      (d.via_competitors&&d.via_competitors.length)
+        ? `<div><span class="pill comp" title="${escAttr(d.via_competitors.join(', '))}">${esc(I18N[LANG].badge_via)}: ${esc(d.via_competitors.join(', '))}</span></div>`
+        : ''}</td>
     <td>${d.authority_tier||'—'}<div class="note">Tranco ${d.tranco_global_rank!=null?d.tranco_global_rank:'—'}</div></td>
     <td class="prio">${d.priority!=null?d.priority:'—'}</td>
     <td>${val}</td><td>${st}</td>
@@ -1776,7 +1818,7 @@ async function analyze(){
     render(data);
     loadOverview();
     // persist=1 merges into the pool, so the Pool tab / ledger must not stay stale.
-    if($('persist').checked){ await loadPool(); }
+    if($('persist').checked){ await loadPool(); loadDomainPicker(); }
   }catch(e){ showErr('Analyze failed: '+e.message, '分析失败：'+e.message); }
   finally{ $('run').disabled=false; setBusy('run',null); }
 }
@@ -1901,9 +1943,19 @@ $('schedAdd').addEventListener('click',schedAddFromForm);
 initSorting();
 initTabs();
 initViewTips();
+// Restore the last-used center domain BEFORE the first profile load, so a
+// reload does not silently snap back to the shipped default and re-open the
+// wrong pool (.cc vs .click).
+try{
+  const saved=(localStorage.getItem('bp.center')||'').trim().toLowerCase();
+  if(saved && looksLikeDomain(saved)){
+    CENTER=saved; $('centerDomain').value=saved; $('domain').value=saved;
+  }
+}catch(e){}
 applyLang();
 refreshCenterUI();
 loadProfile(CENTER);
+loadDomainPicker();
 loadTips(); loadPool(); loadSchedule(); loadChannels();
 </script>
 </body>

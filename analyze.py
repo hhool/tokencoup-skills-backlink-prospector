@@ -375,6 +375,76 @@ def _merge_bilingual_seeds(rows, reference):
     return rows
 
 
+COMPETITOR_LINKS_PREFIX = "competitor-links-"
+
+
+def _safe_slug(target_domain):
+    return re.sub(r"[^a-z0-9._-]", "_", (target_domain or "").lower()).strip("._")[:100]
+
+
+def _as_text_list(v):
+    if not v:
+        return []
+    if isinstance(v, str):
+        return [v.strip().lower()] if v.strip() else []
+    return [str(x).strip().lower() for x in v if str(x).strip()]
+
+
+def is_competitor_domain(domain, comp_domains):
+    """True for a competitor host OR any of its subdomains.
+
+    blog.myinstants.com is the same publisher as myinstants.com, so a suffix
+    match is required: an exact-only check let competitor pages slip through as
+    ordinary prospects and inflate the candidate / valid counters.
+    """
+    d = (domain or "").lower().replace("www.", "")
+    if not d:
+        return False
+    for c in comp_domains or ():
+        c = (c or "").lower().replace("www.", "")
+        if c and (d == c or d.endswith("." + c)):
+            return True
+    return False
+
+
+def load_competitor_backlinks(target_domain):
+    """Load competitor-backlink candidates harvested from the WDC host graph.
+
+    These rows are admitted by EVIDENCE ("this host links to a site in our
+    niche"), not by a keyword match, so they bypass the keyword gate below.
+    They are ordinary prospects: only the competitor hosts themselves are
+    excluded from the candidate / valid counts.
+
+    Resolution: data/ (operator override) then seeds/ (image-baked).
+    File shape: {"meta": {...}, "rows": [...]} or a bare array.
+    """
+    safe = _safe_slug(target_domain)
+    if not safe:
+        return [], "none", {}
+    for base, label in ((DATA_DIR, "data"), (SEEDS_DIR, "seeds")):
+        p = os.path.join(base, COMPETITOR_LINKS_PREFIX + safe + ".json")
+        if not os.path.isfile(p):
+            continue
+        data = load_json(p, [])
+        meta, rows = {}, []
+        if isinstance(data, dict):
+            meta = data.get("meta") or {}
+            rows = data.get("rows") or data.get("sites") or data.get("items") or []
+        elif isinstance(data, list):
+            rows = data
+        clean = []
+        for r in rows if isinstance(rows, list) else []:
+            if not isinstance(r, dict) or not r.get("url"):
+                continue
+            r = dict(r)
+            r.setdefault("type", "resource")
+            r.setdefault("tags", [])
+            r["source"] = "competitor_backlink"
+            clean.append(r)
+        return clean, "%s/%s%s.json" % (label, COMPETITOR_LINKS_PREFIX, safe), meta
+    return [], "none", {}
+
+
 def load_seed_for(target_domain):
     """Load seed candidates scoped to a center domain.
 
@@ -493,7 +563,16 @@ def score(c, keywords):
     kws = [k.strip().lower() for k in (keywords or "").split(",") if k.strip()]
     hay = (c["url"] + " " + " ".join(c.get("tags", [])) + " " + c.get("note", "")).lower()
     hay_n = _norm_text(hay)
-    if kws:
+    # Competitor evidence wins over a literal keyword: "this host links to a site
+    # already competing in our niche" is relevance itself, and a seed row can
+    # carry the same evidence (enriched, not duplicated). More distinct
+    # competitors citing it = stronger signal.
+    vias = _as_text_list(c.get("via_competitors"))
+    if not vias and c.get("via_competitor"):
+        vias = _as_text_list(c.get("via_competitor"))
+    if vias or c.get("source") == "competitor_backlink":
+        relevance = min(40, 20 + 5 * max(0, len(vias) - 1) + (4 if c.get("evidence") else 0))
+    elif kws:
         # normalised match so 'balance bike' still matches 'forbalancebikes.com'
         matches = sum(1 for k in kws if k in hay or _norm_text(k) in hay_n)
         relevance = min(40, 15 + matches * 8)
@@ -564,7 +643,61 @@ def analyze(input):
             candidates.append(d)
             seen.add(d["url"])
 
-    # 3) build base + concurrent validation
+    # 2b) competitor-backlink evidence (offline WDC harvest, image-baked file).
+    #     Admitted regardless of keywords: the evidence IS the relevance. A host
+    #     already present in the seed library is enriched rather than duplicated.
+    comp_on = prov.get("competitor_backlinks", {}).get("enabled", True)
+    comp_backlinks, comp_scope, comp_meta = [], "none", {}
+    # The harvest file records the competitor set it was built against. If the
+    # operator only re-lists some of them in this run, a harvested row could BE
+    # one of the omitted competitors - so the file's own list is authoritative.
+    harvest_comps = set()
+    competitor_rows, comp_seen = [], set()
+
+    def _note_competitor(dom, url):
+        if dom and dom not in comp_seen:
+            comp_seen.add(dom)
+            competitor_rows.append({"domain": dom, "url": url})
+
+    if comp_on:
+        comp_backlinks, comp_scope, comp_meta = load_competitor_backlinks(target_d)
+        harvest_comps = set(_as_text_list((comp_meta or {}).get("competitors")))
+        by_domain = {}
+        for c in candidates:
+            by_domain.setdefault(domain_of(c["url"]), c)
+        for r in comp_backlinks:
+            rd = domain_of(r["url"])
+            if not rd or (target_d and rd == target_d):
+                continue
+            if is_competitor_domain(rd, comp_domains) or is_competitor_domain(rd, harvest_comps):
+                _note_competitor(rd, r.get("url"))
+                continue
+            if is_blocked(rd):
+                continue
+            hit = by_domain.get(rd)
+            if hit is not None:
+                vias = set(_as_text_list(hit.get("via_competitors")))
+                vias.update(_as_text_list(r.get("via_competitors")))
+                vias.update(_as_text_list(r.get("via_competitor")))
+                vias.discard("")
+                hit["via_competitors"] = sorted(vias)
+                hit["via_competitor"] = hit["via_competitors"][0] if hit["via_competitors"] else None
+                if r.get("evidence"):
+                    prev = hit.get("evidence") or {}
+                    merged = dict(prev)
+                    for k, v in r["evidence"].items():
+                        merged[k] = (v if k not in merged else merged[k] + v) \
+                            if isinstance(v, (int, float)) and isinstance(merged.get(k), (int, float)) else v
+                    hit["evidence"] = merged
+                continue
+            candidates.append(r)
+            by_domain[rd] = r
+
+    # 3) build base + concurrent validation.
+    #    Competitor hosts are dropped BEFORE validation: they are never a
+    #    backlink target, they must not consume HTTP probes, and they must not
+    #    appear in candidate / valid / gap counts. Their count is reported
+    #    separately as competitor_rows.
     base = []
     for c in candidates:
         d = domain_of(c["url"])
@@ -572,9 +705,12 @@ def analyze(input):
             continue
         if is_blocked(d):
             continue
+        if is_competitor_domain(d, comp_domains) or is_competitor_domain(d, harvest_comps) \
+                or c.get("isCompetitor"):
+            _note_competitor(d, c["url"])
+            continue
         rel, auth, obt, prio = score(c, keywords)
-        is_comp = bool(c.get("isCompetitor")) or d in comp_domains
-        base.append({"c": c, "d": d, "is_comp": is_comp, "rel": rel, "auth": auth,
+        base.append({"c": c, "d": d, "rel": rel, "auth": auth,
                      "obt": obt, "prio": prio})
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
@@ -598,7 +734,7 @@ def analyze(input):
         c = b["c"]
         d = b["d"]
         already = d in exist_domains
-        is_gap = (not b["is_comp"]) and (not already)
+        is_gap = not already
         tranco = b.get("tranco")
         prospects.append({
             "url": c["url"],
@@ -619,15 +755,18 @@ def analyze(input):
             "priority": b["prio"],
             "valid": b["val"]["ok"], "http_status": b["val"]["status"],
             "valid_error": b["val"]["error"], "final_url": b["val"]["final_url"],
-            "is_competitor": bool(b["is_comp"]),
+            "is_competitor": False,
             "is_gap": is_gap, "already_have": already,
             "note": c.get("note", ""),
             "note_en": note_en(c),
             "source": c.get("source", "seed"),
+            "via_competitor": c.get("via_competitor"),
+            "via_competitors": c.get("via_competitors") or [],
+            "evidence": c.get("evidence"),
         })
     prospects.sort(key=lambda p: (-p["priority"], not p["valid"]))
 
-    gap_valid = [p for p in prospects if p["is_gap"] and p["valid"] and not p["is_competitor"]]
+    gap_valid = [p for p in prospects if p["is_gap"] and p["valid"]]
     result = {
         "schema_version": SCHEMA_VERSION,
         "skill": SKILL,
@@ -640,11 +779,31 @@ def analyze(input):
             "valid": sum(1 for p in prospects if p["valid"]),
             "gap": sum(1 for p in prospects if p["is_gap"]),
             "gap_valid": len(gap_valid),
+            # Competitor hosts are not backlink targets: reported, never counted
+            # as candidate / valid / gap.
+            "competitor_rows": len(competitor_rows),
+            "competitor_domains": len(comp_domains | harvest_comps),
+            "from_competitors": sum(1 for p in prospects if p.get("source") == "competitor_backlink"),
         },
         "prospects": prospects,
         "data_sources": {
             "seed_library": {"enabled": seed_on, "status": "ok" if seed_on else "disabled",
                              "scope": seed_scope, "rows": len(candidates)},
+            "competitor_backlinks": {
+                "enabled": comp_on,
+                "status": ("ok" if any(p.get("source") == "competitor_backlink" for p in prospects)
+                           else ("empty" if comp_on else "disabled")),
+                "scope": comp_scope,
+                "rows": len(comp_backlinks),
+                "graph": (comp_meta or {}).get("graph"),
+                "harvested_at_utc": (comp_meta or {}).get("generated_at_utc"),
+            },
+            "competitor_exclusion": {
+                "enabled": bool(comp_domains),
+                "status": "ok" if comp_domains else "disabled",
+                "domains": sorted(comp_domains),
+                "excluded_rows": len(competitor_rows),
+            },
             "discovery_channels": {
                 "enabled": bing_on,
                 "status": "ok" if (bing_on and discovered) else ("empty" if bing_on else "disabled"),
@@ -654,10 +813,13 @@ def analyze(input):
             "tranco": {"enabled": tranco_on, "status": "ok" if tranco_on else "disabled"},
             "local_backlinks": {"enabled": bool(exist_domains), "matched_domains": len(exist_domains)},
         },
+        "competitor_rows": competitor_rows,
         "limitations": [
             "Commercial DR/DA and backlink counts are NEVER estimated; emitted as status:unavailable.",
+            "Competitor domains (and their subdomains) are never candidates: they are excluded before validation and reported only as totals.competitor_rows.",
+            "Competitor-backlink candidates are admitted by evidence (a host that links to a competitor), so they bypass the keyword gate; they come from an offline WDC / Common Crawl host-graph harvest baked into seeds/competitor-links-<domain>.json.",
             "Live discovery rotates over free channels (Bing RSS / Bing cite / DuckDuckGo HTML) per channels.json; each is best-effort and degrades to empty when rate-limited.",
-            "Gap is computed from supplied existing backlinks; without import, all non-competitor prospects are candidate gaps to pursue.",
+            "Gap is computed from supplied existing backlinks; without import, every prospect is a candidate gap to pursue.",
             "Authority tier in seed.json is an editorial estimate; Tranco global rank is the only free quantitative signal used.",
             "The seed library is domain-scoped: only rows whose 'domains' contain the center domain (or a per-domain data/seed-<domain>.json) are injected, so one niche never leaks into another.",
             "Seen candidates are not owned backlinks: gap detection uses verified live placements, operator-marked acquisitions and the explicit existing-backlink import only. Pool membership alone never excludes a prospect.",
@@ -666,8 +828,10 @@ def analyze(input):
         # picks this list in ZH mode; CSV / machine consumers keep `limitations`.
         "limitations_zh": [
             "商业 DR/DA 与外链数量一律不估算，统一标记为 status:unavailable。",
+            "竞品域名及其子域永不作为候选：在校验前即剔除，只在 totals.competitor_rows 里计数，不计入候选/有效/缺口。",
+            "竞品外链站由证据准入（该站链接到某个竞品），因此不受关键词门限约束；来源是离线 WDC / Common Crawl host 图 harvest，随镜像发布在 seeds/competitor-links-<域名>.json。",
             "实时发现按 channels.json 在免费渠道（Bing RSS / Bing cite / DuckDuckGo HTML）间轮询；各渠道均为 best-effort，被限流时自动降级为空结果。",
-            "缺口基于你导入的已有外链计算；未导入时，所有非竞品候选都视为待拓展缺口。",
+            "缺口基于你导入的已有外链计算；未导入时，所有候选都视为待拓展缺口。",
             "seed.json 中的 authorityTier 是编辑判断；Tranco 全球排名是唯一使用的免费量化信号。",
             "种子库按域名隔离：仅注入 domains 含当前中心域名的行（或 data/seed-<domain>.json 覆盖文件），避免不同品类互相污染。",
             "见过不等于已拥有：缺口只与台账中已验证上线的投放记录、人工标记已拥有及显式导入的已有外链比对；仅出现在池里不会排除候选。",

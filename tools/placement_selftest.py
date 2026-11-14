@@ -15,6 +15,8 @@ Sections:
     B  HTTP endpoints (uses a throwaway center domain)
     C  gap semantics: seen != owned, legacy switch still reproducible
     D  real-Chrome rendering of the ledger in ZH / EN / ZH
+    E  in-app help: per-view tips toggles + the standalone /help page
+    F  competitor semantics (excluded hosts vs. admitted competitor backlinks)
 """
 import json
 import os
@@ -197,9 +199,12 @@ def section_c():
           nr["existing_library"])
     check("legacy switch still reproduces old behaviour",
           gaps(lr) == 0 and owned(lr) > 0, "gaps=%d owned=%d" % (gaps(lr), owned(lr)))
+    # Position-independent: limitations is an append-friendly list, so assert on
+    # content rather than a hardcoded index.
     check("EN limitation states the new rule",
-          "Seen candidates are not owned" in nr["limitations"][5])
-    check("ZH limitation states the new rule", "见过不等于已拥有" in nr["limitations_zh"][5])
+          any("Seen candidates are not owned" in x for x in nr["limitations"]))
+    check("ZH limitation states the new rule",
+          any("见过不等于已拥有" in x for x in nr["limitations_zh"]))
 
 
 def section_d():
@@ -313,6 +318,127 @@ def section_e():
         b.close()
 
 
+def section_f():
+    """Competitor semantics: a competitor is never a target, its backlinks are.
+
+    Also covers the domain picker endpoint, which exists because free-text
+    entry produced two parallel pools (.cc vs .click) nobody could tell apart.
+    """
+    print("\n=== F. competitor semantics & domain picker ===")
+
+    st_code, st_body = http("/api/domains")
+    check("/api/domains ok", st_code == 200 and st_body.get("ok") is True, st_code)
+    doms = st_body.get("domains") or []
+    check("/api/domains returns rows", bool(doms), len(doms))
+    check("/api/domains rows are complete",
+          all(d.get("domain") and d.get("label") and d.get("sources") for d in doms),
+          doms[:1])
+
+    if NO_WRITE:
+        print("  (harvest + analyze checks skipped: --no-write)")
+        return
+
+    harvest = os.path.join(ROOT, "tools", "competitor_backlinks.py")
+    ranks = os.path.join(ROOT, "tools", "testdata", "wdc-domain-ranks.txt")
+    edges = os.path.join(ROOT, "tools", "testdata", "wdc-domain-edges.txt")
+    out = os.path.join(ROOT, "data", "competitor-links-%s.json" % TEST_DOMAIN)
+    seed = os.path.join(ROOT, "data", "seed-%s.json" % TEST_DOMAIN)
+    try:
+        import subprocess
+        proc = subprocess.run([sys.executable, harvest, "--center", TEST_DOMAIN,
+                               "--competitors", "compa.test,compb.test",
+                               "--ranks", ranks, "--edges", edges, "--out", out],
+                              capture_output=True, text=True)
+        check("harvest tool exits 0", proc.returncode == 0, proc.stderr[-160:])
+        payload = json.load(open(out, encoding="utf-8"))
+        rows, meta = payload["rows"], payload["meta"]
+        check("harvest emits the 4 real sources", len(rows) == 4,
+              [r["url"] for r in rows])
+        check("noise host is dropped", all("youtube" not in r["url"] for r in rows))
+        check("competitor subdomain is not a source",
+              all("compa.test" not in r["url"] for r in rows))
+        check("multi-competitor host keeps both vias",
+              any(len(r["via_competitors"]) == 2 for r in rows),
+              [r["via_competitors"] for r in rows])
+        check("rows carry edge evidence",
+              all(r["evidence"]["edges"] >= 1 for r in rows))
+        check("harvest meta is self-describing",
+              meta.get("center_domain") == TEST_DOMAIN and meta.get("rows") == len(rows))
+
+        # A competitor row in the seed library must never become a candidate.
+        json.dump([
+            {"url": "https://compa.test/tools", "type": "resource", "tags": ["sound"],
+             "authorityTier": "High", "domains": [TEST_DOMAIN],
+             "note": "竞品自己", "note_en": "competitor itself"},
+            {"url": "https://seed-good.test/list", "type": "directory", "tags": ["sound"],
+             "authorityTier": "Medium", "domains": [TEST_DOMAIN],
+             "note": "正常种子", "note_en": "normal seed"},
+            # Deliberately overlaps the harvest output: the row must be enriched
+            # with the evidence, never duplicated.
+            {"url": "https://fansite.test/links", "type": "resource", "tags": ["sound"],
+             "authorityTier": "Low", "domains": [TEST_DOMAIN],
+             "note": "种子也在竞品外链里", "note_en": "seed that is also a competitor backlink"},
+        ], open(seed, "w", encoding="utf-8"), ensure_ascii=False)
+
+        code, d = http("/api/analyze", {"center_domain": TEST_DOMAIN, "domain": TEST_DOMAIN,
+                                        "competitors": "compa.test", "use_bing": "0",
+                                        "use_tranco": "0", "persist": "0"})
+        r = d.get("result") or {}
+        tot = r.get("totals") or {}
+        pros = r.get("prospects") or []
+        check("analyze ok", code == 200 and bool(pros), code)
+        check("competitor host is not a candidate",
+              all(p["domain"] != "compa.test" for p in pros),
+              [p["domain"] for p in pros if p["domain"] == "compa.test"])
+        check("competitor hosts are reported separately",
+              tot.get("competitor_rows") >= 1 and
+              any(c["domain"] == "compa.test" for c in (r.get("competitor_rows") or [])),
+              tot.get("competitor_rows"))
+        check("candidate count excludes competitor rows",
+              tot.get("candidates") == len(pros), (tot.get("candidates"), len(pros)))
+        check("competitor-backlink rows are admitted",
+              tot.get("from_competitors") == 3, tot.get("from_competitors"))
+        check("no duplicate row per domain",
+              len({p["domain"] for p in pros}) == len(pros),
+              [p["domain"] for p in pros])
+        enriched = [p for p in pros if p["domain"] == "fansite.test"]
+        check("overlapping seed row is enriched, not duplicated",
+              len(enriched) == 1 and enriched[0]["source"] == "seed"
+              and enriched[0]["via_competitors"],
+              (enriched[0]["source"], enriched[0]["via_competitors"]) if enriched else None)
+        check("enriched row scores evidence-relevance",
+              enriched and enriched[0]["relevance"] >= 29,
+              enriched[0]["relevance"] if enriched else None)
+        cb = [p for p in pros if p.get("source") == "competitor_backlink"]
+        check("evidence rows carry via_competitors",
+              cb and all(p.get("via_competitors") for p in cb),
+              [p.get("via_competitors") for p in cb][:2])
+        check("evidence rows are still ordinary gaps",
+              all(p["is_gap"] for p in cb))
+        src = (r.get("data_sources") or {}).get("competitor_backlinks") or {}
+        check("data_sources reports the harvest",
+              src.get("status") == "ok" and src.get("rows") == 4, src)
+        check("zh limitations explain competitor exclusion",
+              any("竞品" in x for x in (r.get("limitations_zh") or [])))
+        check("en limitations explain competitor exclusion",
+              any("Competitor" in x for x in (r.get("limitations") or [])))
+
+        # The picker must now offer the throwaway domain with its counts.
+        code2, d2 = http("/api/domains")
+        mine = [x for x in (d2.get("domains") or []) if x["domain"] == TEST_DOMAIN]
+        check("picker lists the analyzed domain", bool(mine), TEST_DOMAIN)
+        if mine:
+            check("picker reports the competitor harvest",
+                  mine[0].get("competitor_links") == 4, mine[0])
+    finally:
+        for p in (out, seed):
+            try:
+                if os.path.isfile(p):
+                    os.remove(p)
+            except OSError:
+                pass
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -323,6 +449,7 @@ if __name__ == "__main__":
     section_c()
     section_d()
     section_e()
+    section_f()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:
