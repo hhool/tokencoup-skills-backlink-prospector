@@ -1121,6 +1121,13 @@ function drawRows(){
     (!fk||p.type_key===fk) && p.priority>=min &&
     (!gapOnly||p.is_gap) && (!validOnly||p.valid)));
   $('f_count').textContent=`${rows.length} / ${LAST.prospects.length}`;
+  if(!rows.length){
+    const hint = LANG==='en'
+      ? `No candidates found. Check the keyword, or add a seed library at seeds/seed-${(CENTER||'domain')}.json.`
+      : `未找到候选。请检查关键词，或为该域名在 seeds/seed-${(CENTER||'domain')}.json 添加种子库。`;
+    $('tbody').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--muted)">${esc(hint)}</td></tr>`;
+    return;
+  }
   $('tbody').innerHTML=rows.map(p=>{
     const val=p.valid?`<span class="pill ok">✓ ${p.http_status}</span>`
                      :`<span class="pill no">✗ ${p.http_status||p.valid_error||'dead'}</span>`;
