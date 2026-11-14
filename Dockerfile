@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy the service (pure stdlib — no pip install needed)
-COPY analyze.py store.py scheduler.py server.py ./
+COPY analyze.py store.py scheduler.py recheck.py server.py ./
 COPY assets/ ./assets/
 COPY seed.json providers.json tips.json channels.json profiles.json ./
 # Per-domain seed libraries (versioned, domain-scoped prospect lists)
