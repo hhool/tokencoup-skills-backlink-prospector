@@ -660,7 +660,7 @@ def analyze(input):
             "Gap is computed from supplied existing backlinks; without import, all non-competitor prospects are candidate gaps to pursue.",
             "Authority tier in seed.json is an editorial estimate; Tranco global rank is the only free quantitative signal used.",
             "The seed library is domain-scoped: only rows whose 'domains' contain the center domain (or a per-domain data/seed-<domain>.json) are injected, so one niche never leaks into another.",
-            "The persistent pool is automatically treated as the existing-backlink library: every run dedups against it (matched domains are marked already_have and excluded from the gap).",
+            "Seen candidates are not owned backlinks: gap detection uses verified live placements, operator-marked acquisitions and the explicit existing-backlink import only. Pool membership alone never excludes a prospect.",
         ],
         # Chinese counterpart of the English-primary limitations above. The UI
         # picks this list in ZH mode; CSV / machine consumers keep `limitations`.
@@ -670,7 +670,7 @@ def analyze(input):
             "缺口基于你导入的已有外链计算；未导入时，所有非竞品候选都视为待拓展缺口。",
             "seed.json 中的 authorityTier 是编辑判断；Tranco 全球排名是唯一使用的免费量化信号。",
             "种子库按域名隔离：仅注入 domains 含当前中心域名的行（或 data/seed-<domain>.json 覆盖文件），避免不同品类互相污染。",
-            "持久化外链池会自动作为已有外链库：每次运行都对它去重（命中域名标记 already_have 并从缺口中排除）。",
+            "见过不等于已拥有：缺口只与台账中已验证上线的投放记录、人工标记已拥有及显式导入的已有外链比对；仅出现在池里不会排除候选。",
         ],
     }
     return result

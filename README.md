@@ -64,7 +64,8 @@ priority = relevance(0–40) + authority(0–30) + obtainability(0–30)
 
 - Every analysis is **merged into the backlink pool** by default (`persist=1`): deduplicated by domain, accumulating `times_discovered`, first/last seen, best validation status and latest priority.
 - Repeated runs keep **growing the prospect list**.
-- Import real existing backlinks (GSC / Ahrefs / a Common Crawl export, one domain per line) → those domains are marked `acquired`; everything else in the pool is an **open gap**.
+- Import real existing backlinks (GSC / Ahrefs / a Common Crawl export, one domain per line) → those domains are marked `acquired`.
+- **Seen is not owned.** Gap detection uses verified live placements, operator-marked acquisitions and the explicit import only; pool membership alone never excludes a prospect. See D7.
 - The Pool panel shows stat cards (discovered / acquired / gap / gap & valid), a per-type distribution, and pool CSV export.
 
 ### D2. Backend scheduler (configurable in the UI)
@@ -104,8 +105,10 @@ seeds/seed-<domain>.json
 python3 tools/migrate_pools.py --domain <domain> --apply --sanitize-legacy
 # End-to-end selftest (real Chrome: channel table / domain switch / no cross-niche leak / sorting)
 python3 tools/selftest.py https://backlink-prospector.fly.dev/
-# Bilingual audit of every runtime-built string (130 checks, incl. in-page language toggle)
+# Bilingual audit of every runtime-built string (157 checks, incl. in-page language toggle)
 python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
+# Delivery ledger: idempotency / evidence gate / exclusion / gap semantics / bilingual UI
+python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/
 ```
 
 > `tools/migrate_pools.py` only **migrates** and **quarantines** (dropped entries go to
@@ -199,6 +202,49 @@ function** is covered by one replay pass:
 ZH → EN → ZH including runtime states (error/busy messages, unsaved edits),
 attribute copy and the DOM-wide zero-CJK assertion (157 assertions).
 
+### D7. Delivery ledger — built once per domain, never reused after success
+
+The pool is a **candidate list** ("seen"), not a record of what has been used.
+The ledger is the single source of truth for "already delivered":
+
+| Layer | Stored in | Meaning | Who writes |
+|---|---|---|---|
+| Candidate pool | `domains{}` in `data/store-<center_domain>.json` | prospect was discovered | analysis runs (append-only by domain) |
+| Delivery ledger | `placements{}` in the same file | one record per delivery slot | operator actions only |
+| Exclusions | `suppressions{}` | domain or exact slot permanently excluded | operator actions only |
+
+`center_domain` is implied by the store filename, so isolation is unchanged and
+no new field crosses niches. A slot key is
+`sha256(target_domain | target_url | placement_type)[:16]` — **not the domain**,
+so different pages on the same site remain usable resources.
+
+State machine: `registered → claimed → submitted → live → lost`, with
+`rejected` / `error` as terminal states. Reaching `live` requires
+`landing_url` + `verify_method` as evidence; "clicked submit" is never success.
+
+Exclusion rules (evaluated on every claim, `409` with a reason when blocked):
+
+1. The exact slot already has a verified live backlink → permanent lock.
+2. The slot is `claimed` / `submitted` → idempotent, no duplicate row.
+3. `lost` → manual review required, never auto-returned to the queue.
+4. `rejected` / `error` → cooldown until `cooldown_until` (default 90 days).
+5. Any `live` / `submitted` on the same `target_domain` within 90 days → cadence window (grouped by domain, never by URL).
+6. Explicit `suppressions` entry (domain or slot) → permanent exclusion.
+
+`gap` is now computed against `owned_domains = live placements ∪
+acquired_domains ∪ explicit import`. The old "whole pool is the existing
+library" behaviour is still reproducible with `use_pool_as_existing=1` for
+comparison, but defaults to off; scheduled runs pass `0` explicitly.
+
+Endpoints: `GET /api/placements`, `GET /api/placements/csv`,
+`POST /api/placements/claim`, `/transition`, `/suppress`. The ledger CSV is
+separate from the pool CSV and carries evidence columns, so the two layers
+cannot be confused in an operator handoff.
+
+`tools/placement_selftest.py` is the regression guard (state machine, HTTP
+409 contract, gap semantics, bilingual real-Chrome rendering):
+`python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/`
+
 ---
 
 ## 3. Free Data Sources (no API keys required)
@@ -232,6 +278,11 @@ python3 server.py --port 8787
 - `GET  /api/store` → pool + stats (discovered / acquired / gap / gap & valid)
 - `GET  /api/store/csv` → pool CSV attachment
 - `POST /api/store/sync-existing` → import existing backlinks (body `{domains}`) to mark `acquired`
+- `GET  /api/placements?domain=<domain>` → delivery ledger records + stats (D7)
+- `GET  /api/placements/csv?domain=<domain>` → ledger CSV with evidence columns
+- `POST /api/placements/claim` → claim one slot (`409` + reason when excluded)
+- `POST /api/placements/transition` → advance state; `live` requires evidence
+- `POST /api/placements/suppress` → permanently exclude a domain or slot
 - `GET  /api/profiles?domain=<domain>` → the domain's keyword/competitor profile
 - `POST /api/profiles` → save a profile (body `{center_domain, keywords, competitors}`)
 - `GET  /api/schedule` → scheduler state (config / status / runs)
@@ -270,6 +321,13 @@ Request body (`/api/analyze`):
 
 - `acquired`: imported as a real existing backlink (`true` = owned).
 - `is_gap`: still an open gap (`acquired` is `false`).
+
+**Ledger CSV (`/api/placements/csv`)** — one row per delivery slot, kept
+separate from the candidate list above:
+`id, target_domain, target_url, placement_type, own_url, state, batch_id, created_at, claimed_at, submitted_at, live_at, lost_at, rejected_at, error_at, cooldown_until, failure_reason, verify_method, landing_url, observed_href, rel, anchor_text, verified_at, note`
+
+- `state`: `live` means a verified backlink and permanently locks the slot.
+- `verify_method` / `landing_url` / `verified_at`: the evidence that makes `live` auditable.
 
 ---
 

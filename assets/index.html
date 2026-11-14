@@ -339,10 +339,47 @@
             <th class="sortable" data-sort="status" data-i18n="ph_status">状态</th>
             <th class="sortable" data-sort="times" data-i18n="ph_times">发现次数</th>
             <th class="sortable" data-sort="seen" data-i18n="ph_seen">首见 / 末见</th>
+            <th data-i18n="ph_placement">投放</th>
             <th data-i18n="ph_edit">编辑</th>
           </tr></thead>
           <tbody id="poolBody"></tbody>
         </table>
+      </div>
+
+      <div class="panel" style="margin-top:14px">
+        <b data-i18n="pl_title">投放台账 · 已上线的投放位不再复用</b>
+        <div class="note" style="margin:6px 0 10px" data-i18n="pl_hint"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1 1 150px"><label><span data-i18n="pl_domain">目标域名</span></label>
+            <input id="plDomain" placeholder="parents.com"></div>
+          <div style="flex:2 1 240px"><label><span data-i18n="pl_url">目标页 URL</span></label>
+            <input id="plUrl" placeholder="https://parents.com/guest-post"></div>
+          <div style="flex:2 1 220px"><label><span data-i18n="pl_own">自家落地页</span></label>
+            <input id="plOwn" placeholder="https://your-site.com/guide"></div>
+          <div style="flex:1 1 170px"><label><span data-i18n="pl_method">验证方式</span></label>
+            <input id="plMethod" placeholder="manual-anchor-check"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+          <button id="plClaim" data-i18n="pl_claim">领取投放位</button>
+          <button id="plLive" class="ghost" data-i18n="pl_live">登记已上线</button>
+          <button id="plExclude" class="ghost" data-i18n="pl_exclude">永久排除</button>
+          <a id="plCsv" class="ghost" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;text-decoration:none" data-i18n="pl_csv">导出台账 CSV</a>
+          <span id="plMsg" class="badge"></span>
+        </div>
+        <div class="note" id="plSummary" style="margin:8px 0 4px"></div>
+        <div style="overflow-x:auto">
+          <table id="plTable" class="hidden">
+            <thead><tr>
+              <th data-i18n="pl_col_domain">域名</th>
+              <th data-i18n="pl_col_state">状态</th>
+              <th data-i18n="pl_col_slot">投放位</th>
+              <th data-i18n="pl_evidence">落地页 / 验证方式</th>
+              <th data-i18n="pl_col_time">时间</th>
+              <th data-i18n="pl_col_action">操作</th>
+            </tr></thead>
+            <tbody id="plBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div style="margin-top:10px">
@@ -463,7 +500,7 @@ const I18N = {
     h_url:'URL / 域名', h_type:'类型', h_auth:'权威', h_rel:'相关', h_ascore:'权威分', h_obt:'可获取', h_prio:'优先级', h_check:'校验', h_gap:'缺口', h_note:'备注',
     tips_toggle:'▸ 类型说明 & 权重 Tips（含互链说明 / 打分模型 / 周期查询）',
     pool_title:'外链池 · 已有 vs 空缺 <span class="badge">周期查询不断扩充</span>', pool_load:'加载外链池', pool_csv:'下载池 CSV',
-    pool_note:'每次分析自动并入外链池（按域名去重、累计发现次数与首见/末见时间）。已有外链库即外链池本身：新分析条目与库内条目按域名自动去重，命中标「已拥有」，不计入缺口。点击下方列表标题可排序；「编辑」列可直接标记/取消已拥有。',
+    pool_note:'每次分析自动并入候选池（按域名去重、累计发现次数与首见/末见时间）。「见过」不等于「已拥有」：缺口只与投放台账中已验证上线的记录、人工标记及显式导入的已有外链比对。点击下方列表标题可排序；「编辑」列可标记已拥有，「选用」可把域名带入下方投放台账。',
     existing_title:'已有外链库 · 条目状态（外链池）',
     ps_total:'累计发现', ps_acq:'已拥有', ps_gap:'空缺', ps_gapv:'空缺且有效', ps_recip:'互链占比',
     imp_label:'导入已有外链（GSC / Ahrefs / Common Crawl 导出，每行一个域名）→ 标记「已拥有」', imp_btn:'导入并标记已拥有',
@@ -472,7 +509,11 @@ const I18N = {
     tree_title:'目录树 · 类型（点击筛选，可多选）', tree_legend:'计数：总数 / 已拥有 / 缺口',
     flt_status:'状态筛选', flt_acquired:'已拥有 Acquired', flt_gap:'缺口 Gap',
     flt_type:'类型筛选（可多选）', flt_reset:'重置筛选',
-    ph_domain:'域名', ph_type:'类型', ph_auth:'权威', ph_prio:'优先级', ph_check:'校验', ph_status:'状态', ph_times:'发现次数', ph_seen:'首见 / 末见', ph_edit:'编辑',
+    ph_domain:'域名', ph_type:'类型', ph_auth:'权威', ph_prio:'优先级', ph_check:'校验', ph_status:'状态', ph_times:'发现次数', ph_seen:'首见 / 末见', ph_edit:'编辑', ph_placement:'投放',
+    pl_title:'投放台账 · 已上线的投放位不再复用', pl_hint:'「领取」占用一个投放位；「登记已上线」必须填写落地页与验证方式作为证据。上线后该位永久锁定，同域名 90 天内不再领取其它位。',
+    pl_domain:'目标域名', pl_url:'目标页 URL', pl_own:'自家落地页', pl_method:'验证方式', pl_claim:'领取投放位', pl_live:'登记已上线', pl_exclude:'永久排除', pl_use:'选用', pl_csv:'导出台账 CSV', pl_exclude_row:'排除',
+    pl_col_domain:'域名', pl_col_state:'状态', pl_col_slot:'投放位', pl_col_time:'时间', pl_col_action:'操作', pl_empty:'暂无投放记录。', pl_evidence:'落地页 / 验证方式',
+    pl_st_live:'已上线', pl_st_submitted:'已提交', pl_st_claimed:'已领取', pl_st_registered:'已登记', pl_st_lost:'已失活', pl_st_rejected:'被拒', pl_st_error:'出错', pl_st_none:'可用', pl_st_suppressed:'已排除',
     sched_title:'后台服务 · 周期查询 <span class="badge">定时自动并入外链池</span>', sched_run:'立即运行', sched_save:'保存配置',
     ch_title:'线上外链发现渠道 · 轮询执行', ch_note:'所有免费发现渠道按顺序轮询执行（channels.json 维护：启用/停用、每渠道查询模板与建议间隔）。分析时逐渠道执行并合并去重；被限流的渠道自动降级为空，不影响其他渠道。', ch_err:'渠道配置加载失败：/api/channels 返回异常。请确认后台服务在线（/api/health）后重试。',
     ch_id:'渠道', ch_kind:'类型', ch_enabled:'状态', ch_interval:'建议间隔', ch_last:'本次结果', ch_action:'操作',
@@ -505,7 +546,7 @@ const I18N = {
     h_url:'URL / Domain', h_type:'Type', h_auth:'Authority', h_rel:'Rel', h_ascore:'Auth', h_obt:'Obtain', h_prio:'Priority', h_check:'Check', h_gap:'Gap', h_note:'Note',
     tips_toggle:'▸ Types & Weights Tips (reciprocal / scoring / periodic)',
     pool_title:'Backlink Pool · Owned vs Gap <span class="badge">expanded by periodic queries</span>', pool_load:'Load pool', pool_csv:'Pool CSV',
-    pool_note:'Every analysis auto-merges into the pool (dedup by domain, accumulates discovery count and first/last seen). The pool itself is the existing-backlink library: new analysis entries are deduped against it (matched domains are marked "acquired" and excluded from the gap). Click column headers to sort; use the "Edit" column to toggle acquired.',
+    pool_note:'Every analysis auto-merges into the candidate pool (dedup by domain, accumulates discovery count and first/last seen). Seen is not owned: gap detection uses verified live placements, operator-marked acquisitions and explicit imports only. Click column headers to sort; use "Edit" to mark acquired, or "Use" to carry a domain into the delivery ledger below.',
     existing_title:'Existing backlink library · entry status (the pool)',
     ps_total:'Discovered', ps_acq:'Acquired', ps_gap:'Gap', ps_gapv:'Gap & valid', ps_recip:'Reciprocal %',
     imp_label:'Import existing backlinks (GSC / Ahrefs / Common Crawl export, one domain per line) → mark "acquired"', imp_btn:'Import & mark acquired',
@@ -514,7 +555,11 @@ const I18N = {
     tree_title:'Type tree · click to filter (multi-select)', tree_legend:'Counts: total / acquired / gap',
     flt_status:'Status filter', flt_acquired:'Acquired', flt_gap:'Gap',
     flt_type:'Type filter (multi-select)', flt_reset:'Reset filters',
-    ph_domain:'Domain', ph_type:'Type', ph_auth:'Authority', ph_prio:'Priority', ph_check:'Check', ph_status:'Status', ph_times:'Times', ph_seen:'First / Last seen', ph_edit:'Edit',
+    ph_domain:'Domain', ph_type:'Type', ph_auth:'Authority', ph_prio:'Priority', ph_check:'Check', ph_status:'Status', ph_times:'Times', ph_seen:'First / Last seen', ph_edit:'Edit', ph_placement:'Placement',
+    pl_title:'Delivery ledger · live slots are never reused', pl_hint:'Claim reserves one slot; registering a live link requires a landing URL and a verification method as evidence. A live slot is locked permanently and no other slot on the same domain can be claimed for 90 days.',
+    pl_domain:'Target domain', pl_url:'Target page URL', pl_own:'Own landing page', pl_method:'Verify method', pl_claim:'Claim slot', pl_live:'Mark live', pl_exclude:'Exclude forever', pl_use:'Use', pl_csv:'Export ledger CSV', pl_exclude_row:'Exclude',
+    pl_col_domain:'Domain', pl_col_state:'State', pl_col_slot:'Slot', pl_col_time:'Time', pl_col_action:'Action', pl_empty:'No delivery records yet.', pl_evidence:'Landing URL / method',
+    pl_st_live:'Live', pl_st_submitted:'Submitted', pl_st_claimed:'Claimed', pl_st_registered:'Registered', pl_st_lost:'Lost', pl_st_rejected:'Rejected', pl_st_error:'Error', pl_st_none:'Available', pl_st_suppressed:'Excluded',
     sched_title:'Backend Service · Scheduled Queries <span class="badge">auto-merge into pool</span>', sched_run:'Run now', sched_save:'Save config',
     ch_title:'Live Discovery Channels · Rotated', ch_note:'All free discovery channels are polled in order (maintained in channels.json: enable/disable, per-channel query templates & suggested interval). Each analysis executes them one by one and merges + dedups; rate-limited channels degrade to empty without affecting others.', ch_err:'Channel config failed to load: /api/channels returned an error. Check that the backend is alive (/api/health) and retry.',
     ch_id:'Channel', ch_kind:'Kind', ch_enabled:'Status', ch_interval:'Interval', ch_last:'Last result', ch_action:'Action',
@@ -745,6 +790,8 @@ function payload(){
 let LAST_PROFILE   = null;   // last /api/profiles payload -> #profileNote
 let LAST_ERR       = null;   // {zh, en} currently visible error banner
 let LAST_IMPORT_MSG= null;   // {zh, en} currently visible import badge
+let LAST_PL_MSG    = null;   // {zh, en} delivery-ledger status badge
+let PLACEMENTS     = null;   // delivery ledger records (the single source of truth)
 const BUSY_BTN     = {};     // element id -> {zh, en} while an action runs
 
 /* showErr takes both languages so the banner can be re-translated later.
@@ -809,6 +856,7 @@ function renderAllDynamic(){
   if(TIPS) renderTips();
   if(LAST) render(LAST);                    // analysis table, filters, sources, limitations
   if(POOL) renderPool(POOL);                // pool stats / tree / chips / rows
+  if(PLACEMENTS) renderPlacements();         // delivery ledger rows + summary (LANG-dependent)
   if(SCHED){
     renderSchedStatus();                    // status pills
     renderSchedRuns();                     // run-history rows
@@ -818,6 +866,7 @@ function renderAllDynamic(){
   loadOverview();                           // SVG chart labels
   if(LAST_ERR) $('err').textContent=LANG==='en'?LAST_ERR.en:LAST_ERR.zh;
   if(LAST_IMPORT_MSG) $('importMsg2').textContent=LANG==='en'?LAST_IMPORT_MSG.en:LAST_IMPORT_MSG.zh;
+  if(LAST_PL_MSG) $('plMsg').textContent=LANG==='en'?LAST_PL_MSG.en:LAST_PL_MSG.zh;
   renderBusyButtons();
   refreshAllSortUI();                      // th.title tooltips for rebuilt tables
 }
@@ -1229,6 +1278,10 @@ function poolRow(d){
   const btn=d.acquired
     ?`<button class="ghost acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="0" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Unmark':'取消已拥有'}</button>`
     :`<button class="acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Mark owned':'标记已拥有'}</button>`;
+  const ps=d.placement_state||'';
+  const pcls=d.suppressed?'no':(ps==='live'?'have':((ps==='lost'||ps==='rejected'||ps==='error')?'no':'gap'));
+  const pstate=`<span class="pill ${pcls}">${esc(d.suppressed?plLabel('pl_st_suppressed'):plStateLabel(ps))}</span>`;
+  const use=`<button class="ghost pl-use" data-dom="${escAttr(d.domain)}" data-url="${escAttr(d.url||'')}" style="padding:3px 10px;font-size:12px;margin-top:4px">${plLabel('pl_use')}</button>`;
   return `<tr>
     <td><a href="${d.url||'#'}" target="_blank" rel="noopener">${d.domain}</a></td>
     <td>${esc(d.type_key ? tlabel(d.type_key) : (LANG==='en'?(d.type_label_en||d.type_label_zh||''):(d.type_label_zh||'')))}</td>
@@ -1237,7 +1290,8 @@ function poolRow(d){
     <td>${val}</td><td>${st}</td>
     <td>${d.times_discovered||1}</td>
     <td class="note">${d.first_seen||''}<br>${d.last_seen||''}</td>
-    <td>${btn}</td>
+    <td>${pstate}</td>
+    <td>${btn}${use}</td>
   </tr>`;
 }
 function sortPoolRows(rows){
@@ -1278,6 +1332,101 @@ async function toggleAcquired(domain, makeAcquired){
 }
 
 let POOL_STATS_CACHE={};
+
+/* ---------- Delivery ledger ----------
+   The ledger is the ONLY fact source for "already delivered and must not be
+   reused". Pool rows are decorated with placement_state from /api/store;
+   records, stats and evidence come from /api/placements. Every string built
+   here depends on LANG, so renderPlacements() is registered in
+   renderAllDynamic() and replays on an in-page language toggle. */
+let PL_STATS = null;
+function plLabel(k){ return I18N[LANG][k] || k; }
+function plStateLabel(state){ return state ? plLabel('pl_st_'+state) : plLabel('pl_st_none'); }
+function setPlMsg(en, zh){
+  LAST_PL_MSG={en:en, zh:zh};
+  $('plMsg').textContent=LANG==='en'?en:zh;
+}
+function plPayload(){
+  return {
+    center_domain:CENTER,
+    target_domain:$('plDomain').value.trim(),
+    target_url:$('plUrl').value.trim(),
+    placement_type:'link',
+    own_url:$('plOwn').value.trim(),
+    verify_method:$('plMethod').value.trim()||'manual-anchor-check'
+  };
+}
+async function plPost(path, body){
+  const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},
+                            body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+  return d;
+}
+function plFail(e){ setPlMsg(e.message, '操作失败：'+e.message); }
+async function loadPlacements(){
+  const r=await fetch('/api/placements?domain='+encodeURIComponent(CENTER));
+  const d=await r.json();
+  if(!d.ok) throw new Error(d.error||'fail');
+  PLACEMENTS=d.placements||[]; PL_STATS=d.stats||{};
+  renderPlacements();
+}
+function renderPlacements(){
+  if(!PLACEMENTS) return;
+  const s=PL_STATS||{};
+  $('plCsv').href='/api/placements/csv?domain='+encodeURIComponent(CENTER);
+  $('plSummary').textContent=(LANG==='en'?'Records ':'记录 ')+(s.total||0)
+    +(LANG==='en'?' · live ':' · 已上线 ')+(s.live||0)
+    +(LANG==='en'?' · in progress ':' · 进行中 ')+(s.in_progress||0)
+    +(LANG==='en'?' · excluded ':' · 已排除 ')+(s.suppressed||0);
+  const rows=PLACEMENTS.map(p=>{
+    const v=p.verify||{}, st=p.state||'';
+    const act=(st==='claimed'||st==='submitted')
+      ? `<button class="pl-row-live" data-id="${escAttr(p.id)}" style="padding:3px 10px;font-size:12px">${plLabel('pl_live')}</button>`
+      : (st==='live' ? '' : `<button class="ghost pl-row-exclude" data-id="${escAttr(p.id)}" style="padding:3px 10px;font-size:12px">${plLabel('pl_exclude_row')}</button>`);
+    const cls=st==='live'?'have':((st==='lost'||st==='rejected'||st==='error')?'no':'gap');
+    return `<tr><td>${esc(p.target_domain||'')}</td>
+      <td><span class="pill ${cls}">${esc(plStateLabel(st))}</span></td>
+      <td class="note">${esc(p.target_url||'')}<br>${esc(p.placement_type||'')}</td>
+      <td class="note">${esc(v.landing_url||'—')}<br>${esc(v.verify_method||'—')}</td>
+      <td class="note">${esc(p.live_at||p.submitted_at||p.claimed_at||p.created_at||'')}</td>
+      <td>${act}</td></tr>`;
+  }).join('');
+  $('plTable').classList.remove('hidden');
+  $('plBody').innerHTML = rows ||
+    `<tr><td colspan="6" class="note">${esc(plLabel('pl_empty'))}</td></tr>`;
+}
+async function plClaim(){
+  const p=plPayload();
+  if(!p.target_domain||!p.target_url){ setPlMsg('Enter target domain and URL','请填写目标域名与 URL'); return; }
+  try{ await plPost('/api/placements/claim',p);
+       setPlMsg('Slot claimed','已领取投放位'); await loadPool(); }
+  catch(e){ plFail(e); }
+}
+async function plMarkLive(extra){
+  const p=plPayload();
+  if(!p.target_domain||!p.target_url){ setPlMsg('Enter target domain and URL','请填写目标域名与 URL'); return; }
+  const body=Object.assign({},p,{state:'live',landing_url:p.target_url,
+    observed_href:p.own_url,rel:'dofollow'},extra||{});
+  try{
+    try{ await plPost('/api/placements/transition',body); }
+    catch(e){
+      if(!/placement not found/.test(e.message)) throw e;
+      await plPost('/api/placements/claim',p);
+      await plPost('/api/placements/transition',body);
+    }
+    setPlMsg('Live link registered; slot locked','已登记上线，投放位已锁定');
+    await loadPool();
+  }catch(e){ plFail(e); }
+}
+async function plExclude(){
+  const dom=$('plDomain').value.trim();
+  if(!dom){ setPlMsg('Enter target domain','请填写目标域名'); return; }
+  try{ await plPost('/api/placements/suppress',
+                    {center_domain:CENTER,target_domain:dom,reason:'operator excluded'});
+       setPlMsg('Domain excluded','已排除该域名'); await loadPool(); }
+  catch(e){ plFail(e); }
+}
 async function loadPool(){
   try{
     const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)); const d=await r.json();
@@ -1286,6 +1435,8 @@ async function loadPool(){
     renderPool(POOL);
     if($('tab-ov').classList.contains('active')) loadOverview();
   }catch(e){ showErr('Pool load failed: '+e.message, '外链池加载失败：'+e.message); }
+  try{ await loadPlacements(); }
+  catch(e){ setPlMsg('Ledger load failed: '+e.message, '台账加载失败：'+e.message); }
 }
 async function importExisting(){
   const txt=$('importExisting').value.trim();
@@ -1565,8 +1716,34 @@ $('chBody').addEventListener('click', (ev)=>{
 // Column sorting is handled by the shared engine (see initSorting) — every
 // table registers its own accessors, so no per-table click handler is needed.
 $('poolBody').addEventListener('click', (ev)=>{
-  const b=ev.target.closest('.acq-toggle'); if(!b) return;
-  toggleAcquired(b.dataset.dom, b.dataset.acq==='1');
+  const b=ev.target.closest('.acq-toggle');
+  if(b){ toggleAcquired(b.dataset.dom, b.dataset.acq==='1'); return; }
+  const u=ev.target.closest('.pl-use');
+  if(u){
+    $('plDomain').value=u.dataset.dom||'';
+    $('plUrl').value=u.dataset.url||'';
+    setPlMsg('Row loaded into ledger','已带入投放台账');
+  }
+});
+$('plClaim').addEventListener('click',plClaim);
+$('plLive').addEventListener('click',()=>plMarkLive());
+$('plExclude').addEventListener('click',plExclude);
+$('plBody').addEventListener('click', async (ev)=>{
+  const live=ev.target.closest('.pl-row-live');
+  if(live){
+    const p=(PLACEMENTS||[]).find(x=>x.id===live.dataset.id);
+    if(p){ $('plDomain').value=p.target_domain||''; $('plUrl').value=p.target_url||'';
+           $('plOwn').value=p.own_url||''; }
+    await plMarkLive({id:live.dataset.id});
+    return;
+  }
+  const ex=ev.target.closest('.pl-row-exclude');
+  if(ex){
+    try{ await plPost('/api/placements/suppress',
+                      {center_domain:CENTER,id:ex.dataset.id,reason:'operator excluded'});
+         setPlMsg('Slot excluded','已排除该投放位'); await loadPool(); }
+    catch(e){ plFail(e); }
+  }
 });
 /* type tree / faceted filters */
 $('poolTree').addEventListener('click',(ev)=>{

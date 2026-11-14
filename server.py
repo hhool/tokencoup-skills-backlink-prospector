@@ -22,6 +22,11 @@ Endpoints (all JSON except GET /):
     GET  /api/store/csv         pool exported as CSV attachment
     POST /api/store/sync-existing  body={domains|existing} mark real backlinks acquired
     POST /api/store/unmark-existing body={domains} revert domains to gap (unmark acquired)
+    GET  /api/placements       delivery ledger (query: domain) + stats
+    GET  /api/placements/csv   ledger exported as CSV attachment (evidence included)
+    POST /api/placements/claim      body={target_domain,target_url,placement_type,own_url,batch_id}
+    POST /api/placements/transition body={id,state,...} advance a slot; live needs evidence
+    POST /api/placements/suppress   body={target_domain|id,reason} permanently exclude
     GET  /api/schedule         periodic-query scheduler state (config / status / runs)
     POST /api/schedule         body={enabled,interval_hours,profiles[]} save schedule
     POST /api/schedule/run     trigger an immediate run of all profiles
@@ -114,17 +119,44 @@ def build_store_csv(domains):
     return "﻿" + buf.getvalue()  # BOM for Excel
 
 
+# Placement ledger CSV: evidence-bearing delivery records, separate from the
+# candidate list above so the two layers can never be confused in a handoff.
+PLACEMENT_CSV_COLS = [
+    "id", "target_domain", "target_url", "placement_type", "own_url", "state",
+    "batch_id", "created_at", "claimed_at", "submitted_at", "live_at",
+    "lost_at", "rejected_at", "error_at", "cooldown_until", "failure_reason",
+    "verify_method", "landing_url", "observed_href", "rel", "anchor_text",
+    "verified_at", "note",
+]
+
+_VERIFY_FIELDS = ("verify_method", "landing_url", "observed_href", "rel",
+                  "anchor_text", "verified_at")
+
+
+def build_placements_csv(store):
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(PLACEMENT_CSV_COLS)
+    for p in st.placement_list(store):
+        row = dict(p)
+        row.update({k: (p.get("verify") or {}).get(k, "") for k in _VERIFY_FIELDS})
+        w.writerow([row.get(c, "") for c in PLACEMENT_CSV_COLS])
+    return "﻿" + buf.getvalue()  # BOM for Excel
+
+
 def run_analysis(params, center_domain=None):
     """Execute an analysis and (by default) persist into the backlink pool.
 
     Shared by the interactive /api/analyze endpoint and the periodic scheduler,
     so a scheduled run and a manual run have identical side effects.
 
-    Deduplication: the persistent pool itself acts as the existing-backlink
-    library. Domains already in the pool (acquired or just discovered) are
-    marked already_have=true, so re-running an analysis never reports an
-    existing entry as a new gap.
-    
+    Deduplication: "already have" now comes from the placement ledger (state
+    == live, with evidence), operator-marked acquisitions and the explicit
+    existing-backlink import. Merely having SEEN a domain in the pool is no
+    longer treated as owning a backlink there. The legacy behaviour that fed
+    the whole pool into `existing` is still available behind
+    use_pool_as_existing=1, but defaults to off.
+
     Storage isolation: uses domain-specific pool when center_domain is provided.
 
     IMPORTANT: the scheduler calls run_fn(params) without a positional
@@ -135,11 +167,11 @@ def run_analysis(params, center_domain=None):
     if not center_domain:
         center_domain = (params.get("center_domain") or "").strip().lower()
     pool = st.load_store(center_domain)
-    # Auto-dedup: merge the pool's domains into the gap diff (dedup by domain).
-    if str(params.get("use_pool_as_existing", "1")).lower() in ("1", "true", "yes", "on"):
-        pool_domains = list(pool.get("domains", {}).keys())
-        merged_existing = "\n".join(pool_domains + [params.get("existing") or ""])
-        params["existing"] = merged_existing
+    legacy = str(params.get("use_pool_as_existing", "0")).lower() in ("1", "true", "yes", "on")
+    owned = sorted(st.owned_domains(pool))
+    seen = list(pool.get("domains", {}).keys()) if legacy else []
+    params["existing"] = "\n".join(
+        part for part in ("\n".join(owned), "\n".join(seen), params.get("existing") or "") if part)
     # Keyword fallback: an empty keyword box falls back to the center domain's
     # own profile, so a domain switch can never run with the previous niche.
     if not (params.get("keywords") or "").strip() and center_domain:
@@ -149,9 +181,11 @@ def run_analysis(params, center_domain=None):
     result = an.analyze(params)
     # Report the real existing-library coverage in the result envelope.
     result["existing_library"] = {
-        "size": len(pool.get("domains", {})),
+        "size": len(owned) + len(seen),
         "acquired": len(pool.get("acquired_domains", [])),
-        "pool_used_as_existing": str(params.get("use_pool_as_existing", "1")).lower() in ("1", "true", "yes", "on"),
+        "live_placements": st.placement_stats(pool)["live"],
+        "seen": len(pool.get("domains", {})),
+        "pool_used_as_existing": legacy,
         "matched_domains": sum(1 for p in result.get("prospects", []) if p.get("already_have")),
     }
     if str(params.get("persist", "1")).lower() in ("1", "true", "yes", "on"):
@@ -279,6 +313,30 @@ class Handler(BaseHTTPRequestHandler):
                 except (BrokenPipeError, ConnectionResetError):
                     pass
                 return
+            if path == "/api/placements":
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                pool = st.load_store(center_domain)
+                return self._json(200, {"ok": True,
+                                        "placements": st.placement_list(pool),
+                                        "stats": st.placement_stats(pool),
+                                        "center_domain": center_domain})
+            if path == "/api/placements/csv":
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                pool = st.load_store(center_domain)
+                csv_text = build_placements_csv(pool)
+                fname = "backlink-placements-%s-%s.csv" % (
+                    (center_domain or "pool").replace(".", "_"), utc_stamp())
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition", 'attachment; filename="%s"' % fname)
+                self.send_header("Content-Length", str(len(csv_text.encode("utf-8"))))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                try:
+                    self.wfile.write(csv_text.encode("utf-8"))
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+                return
             if path == "/api/schedule":
                 return self._json(200, {"ok": True, "snapshot": SCHED.snapshot()})
             if path == "/api/profiles":
@@ -297,7 +355,9 @@ class Handler(BaseHTTPRequestHandler):
         path = urllib.parse.urlsplit(self.path).path
         if path not in ("/api/analyze", "/api/analyze/csv", "/api/store/sync-existing",
                         "/api/store/unmark-existing", "/api/channels",
-                        "/api/profiles", "/api/schedule", "/api/schedule/run"):
+                        "/api/profiles", "/api/schedule", "/api/schedule/run",
+                        "/api/placements/claim", "/api/placements/transition",
+                        "/api/placements/suppress"):
             return self._error(404, "unknown path")
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -330,6 +390,29 @@ class Handler(BaseHTTPRequestHandler):
                 st.save_store(pool, center_domain)
                 return self._json(200, {"ok": True, "removed": removed,
                                         "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path in ("/api/placements/claim", "/api/placements/transition",
+                        "/api/placements/suppress"):
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower()
+                for f in ("target_domain", "target_url", "placement_type", "batch_id",
+                          "own_url", "landing_url", "verify_method", "observed_href",
+                          "rel", "anchor_text", "failure_reason", "note", "reason",
+                          "id", "state"):
+                    if params.get(f) not in (None, ""):
+                        safe_text(str(params[f]), 800)
+                pool = st.load_store(center_domain or None)
+                if path.endswith("/claim"):
+                    out, reason = st.claim_placement(pool, params)
+                elif path.endswith("/transition"):
+                    out, reason = st.transition_placement(pool, params)
+                else:
+                    out, reason = st.suppress_placement(pool, params)
+                if reason:
+                    return self._error(409, reason)
+                st.save_store(pool, center_domain or None)
+                return self._json(200, {"ok": True, "placement": out,
+                                        "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
 
             if path == "/api/channels":

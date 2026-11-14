@@ -159,7 +159,10 @@ class Scheduler:
             "existing": prof.get("existing", ""),
             "use_bing": "1" if prof.get("use_bing") else "0",
             "use_tranco": "1" if prof.get("use_tranco", True) else "0",
-            "persist": "1",  # scheduled runs always feed the pool
+            "persist": "1",  # scheduled runs feed the CANDIDATE pool only
+            # Explicit: discovery must never be mistaken for "already have".
+            # The ledger (state == live), not the pool, decides gap membership.
+            "use_pool_as_existing": "0",
         }
 
     def _execute_all(self):

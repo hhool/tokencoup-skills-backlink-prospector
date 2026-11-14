@@ -60,7 +60,8 @@ priority = relevance(0–40) + authority(0–30) + obtainability(0–30)
 
 - 每次分析**自动并入「外链池」**（默认 `persist=1`）：按域名去重，累计 `times_discovered`、首见/末见时间、最佳校验状态与最新优先级。
 - 重复运行不断**扩充外链地址列表**。
-- 导入真实已有外链（GSC / Ahrefs / 自建 Common Crawl 导出，每行一个域名）→ 标记 `acquired`（已拥有）；池中其余即**空缺(gap)**待拓展。
+- 导入真实已有外链（GSC / Ahrefs / 自建 Common Crawl 导出，每行一个域名）→ 标记 `acquired`（已拥有）。
+- **「见过」不等于「已拥有」**：缺口只与台账中已验证上线的投放、人工标记及显式导入比对；仅出现在池里不会排除候选。详见 D7。
 - 前端「外链池」面板展示：累计发现 / 已拥有 / 空缺 / 空缺且有效 统计卡、按类型分布、可导出池 CSV。
 
 ### D2. 后台服务 · 周期查询（前端可配置）
@@ -98,8 +99,10 @@ seeds/seed-<domain>.json
 python3 tools/migrate_pools.py --domain <domain> --apply --sanitize-legacy
 # 端到端自测（真实 Chrome：渠道表渲染 / 域名切换换词 / 结果不串域名 / 全站列表排序）
 python3 tools/selftest.py https://backlink-prospector.fly.dev/
-# 动态输出中英文审计（130 项断言，含「数据加载完成后原地切语言」场景）
+# 动态输出中英文审计（157 项断言，含「数据加载完成后原地切语言」场景）
 python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
+# 投放台账：幂等 / 证据门 / 排除规则 / 缺口口径 / 双语界面
+python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/
 ```
 
 > `tools/migrate_pools.py` 只**迁移**与**隔离**（写入 `data/store.quarantine-<ts>.json` 存档），不静默删除任何数据。
@@ -163,6 +166,36 @@ python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
 
 `tools/i18n_audit.py` 用真实 Chrome 加载全部 Tab，按 ZH → EN → ZH 逐项审计，并覆盖错误/运行中消息、未保存输入、属性文案与全 DOM 零 CJK 断言，共 157 项断言，是该契约的回归防线。
 
+### D7. 投放台账 —— 按域名建库，成功投放后不再复用
+
+外链池是**候选清单**（「见过」），不是「已使用」记录。台账是「已投递」的唯一事实源：
+
+| 层 | 存储位置 | 含义 | 谁可写 |
+|---|---|---|---|
+| 候选池 | `data/store-<center_domain>.json` 的 `domains{}` | 发现过某个目标 | 分析运行（按域名幂等合并） |
+| 投放台账 | 同文件的 `placements{}` | 每个投放位一条记录 | 仅运营动作 |
+| 排除表 | `suppressions{}` | 域名或精确投放位永久排除 | 仅运营动作 |
+
+`center_domain` 由存储文件名隐含，隔离方式不变，新增记录不带跨品类字段。投放位主键为 `sha256(target_domain | target_url | placement_type)[:16]`，**不是域名**——同一站点的不同页面仍是可利用资源。
+
+状态机：`registered → claimed → submitted → live → lost`，`rejected` / `error` 为终态。进入 `live` 必须提供 `landing_url` + `verify_method` 作为证据；「点了提交」不算成功。
+
+每次领取都会重新判定排除规则，命中即返回 `409` 并附原因：
+
+1. 该投放位已有验证上线的外链 → 永久锁定。
+2. 该位处于 `claimed` / `submitted` → 幂等，不重复插行。
+3. `lost` → 必须人工复核，绝不自动回到可投队列。
+4. `rejected` / `error` → 冷却至 `cooldown_until`（默认 90 天）。
+5. 同一 `target_domain` 在 90 天内已有 `live` / `submitted` → 节奏窗口（按域名分组，绝不按 URL 分组）。
+6. `suppressions` 中显式排除的域名或投放位 → 永久排除。
+
+`gap` 现按 `owned_domains = 已上线投放 ∪ acquired_domains ∪ 显式导入` 计算。旧的「整池当已有外链库」行为仍可用 `use_pool_as_existing=1` 复现以便对比，但默认关闭；定时任务显式传 `0`。
+
+新增端点：`GET /api/placements`、`GET /api/placements/csv`、`POST /api/placements/claim`、`/transition`、`/suppress`。台账 CSV 与池 CSV 分开且带证据列，交接给运营时两层不会混淆。
+
+`tools/placement_selftest.py` 是该契约的回归防线（状态机、HTTP 409、缺口口径、真实 Chrome 双语渲染）：
+`python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/`
+
 ---
 
 ## 2. 免费数据源（无 API Key 即可运行）
@@ -192,6 +225,11 @@ python3 server.py --port 8787
 - `GET  /api/store` → 外链池 + 统计（累计发现 / 已拥有 / 空缺 / 空缺且有效）
 - `GET  /api/store/csv` → 外链池 CSV 附件
 - `POST /api/store/sync-existing` → 导入已有外链（body `{domains}`）标记 `acquired`
+- `GET  /api/placements?domain=<domain>` → 投放台账记录 + 统计（见 D7）
+- `GET  /api/placements/csv?domain=<domain>` → 台账 CSV（含证据列）
+- `POST /api/placements/claim` → 领取投放位（被排除时返回 `409` + 原因）
+- `POST /api/placements/transition` → 推进状态；`live` 需证据
+- `POST /api/placements/suppress` → 永久排除域名或投放位
 - `GET  /api/profiles?domain=<domain>` → 该域名的关键词/竞品档案
 - `POST /api/profiles` → 保存档案（body `{center_domain, keywords, competitors}`）
 - `GET  /api/schedule` → 周期查询调度状态（config / status / runs）
@@ -229,6 +267,12 @@ python3 server.py --port 8787
 
 - `acquired`：是否已导入为真实已有外链（`true`=已拥有）。
 - `is_gap`：是否仍为空缺（`acquired` 为 `false`）。
+
+**台账 CSV（`/api/placements/csv`）** —— 每个投放位一行，与上面的候选清单分开：
+`id, target_domain, target_url, placement_type, own_url, state, batch_id, created_at, claimed_at, submitted_at, live_at, lost_at, rejected_at, error_at, cooldown_until, failure_reason, verify_method, landing_url, observed_href, rel, anchor_text, verified_at, note`
+
+- `state`：`live` 表示链接已验证上线，该投放位永久锁定。
+- `verify_method` / `landing_url` / `verified_at`：使 `live` 可审计的证据。
 
 ---
 

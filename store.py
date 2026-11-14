@@ -15,6 +15,7 @@ Storage isolation: pools are now isolated per center domain (e.g., soundbuttons.
 balancebiketoddler.com.json) to avoid cross-contamination when switching domains.
 """
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -61,12 +62,15 @@ def load_store(center_domain=None):
         data.setdefault("schema_version", SCHEMA_VERSION)
         data.setdefault("domains", {})
         data.setdefault("acquired_domains", [])
+        data.setdefault("placements", {})
+        data.setdefault("suppressions", {})
         data.setdefault("runs", 0)
         data.setdefault("center_domain", center_domain)
         return data
     except Exception:
         return {"schema_version": SCHEMA_VERSION, "updated_at": _now(),
-                "domains": {}, "acquired_domains": [], "runs": 0, "center_domain": center_domain}
+                "domains": {}, "acquired_domains": [], "placements": {},
+                "suppressions": {}, "runs": 0, "center_domain": center_domain}
 
 
 def save_store(store, center_domain=None):
@@ -207,13 +211,17 @@ def store_stats(store):
         "runs": store.get("runs", 0),
         "updated_at": store.get("updated_at"),
         "acquired_domains": store.get("acquired_domains", []),
+        "placements": placement_stats(store),
     }
 
 
 def domain_list(store):
     """Return pool domains as a flat list (sorted by priority desc)."""
     out = []
+    idx = placement_index(store)
+    sup = store.get("suppressions", {})
     for d, e in store.get("domains", {}).items():
+        best = idx.get(_norm_target(d))
         out.append({
             "domain": d,
             "url": e.get("url"),
@@ -229,6 +237,9 @@ def domain_list(store):
             "first_seen": e.get("first_seen"),
             "last_seen": e.get("last_seen"),
             "times_discovered": e.get("times_discovered", 1),
+            "placement_state": best.get("state") if best else None,
+            "placement_id": best.get("id") if best else None,
+            "suppressed": _norm_target(d) in sup,
         })
     out.sort(key=lambda x: (-(x.get("priority") or 0), not x.get("valid")))
     return out
@@ -393,6 +404,210 @@ def load_json_file(path, default):
             return json.load(f)
     except Exception:
         return default
+
+
+# ---------------------------------------------------------------------------
+# Placement ledger: the single source of truth for "already delivered".
+#
+# Two layers, deliberately NOT mixed:
+#   domains{}      - "seen" candidates. Never an exclusion reason on its own.
+#   placements{}   - delivery records. Only state == "live" (with evidence)
+#                    counts as a successfully used backlink.
+# center_domain is implied by the store file (store-<domain>.json), so ledger
+# rows carry no center_domain field and cross-niche isolation stays intact.
+# ---------------------------------------------------------------------------
+PLACEMENT_STATES = ("registered", "claimed", "submitted", "live",
+                    "rejected", "lost", "error")
+ACTIVE_STATES = ("registered", "claimed", "submitted")
+COOLDOWN_DAYS = 90
+_TS = "%Y-%m-%dT%H:%M:%SZ"
+
+_ALLOWED_TRANSITIONS = {
+    "registered": ("claimed",),
+    # claimed -> live is allowed for backfilling a delivery that already went
+    # live; it still requires landing_url + verify_method as evidence.
+    "claimed": ("submitted", "live", "rejected", "error"),
+    "submitted": ("live", "rejected", "error"),
+    "live": ("lost",),
+    "lost": ("submitted",),
+    "rejected": (),
+    "error": (),
+}
+_STATE_TS = {"submitted": "submitted_at", "live": "live_at", "lost": "lost_at",
+             "rejected": "rejected_at", "error": "error_at"}
+
+
+def _norm_target(value):
+    """Normalize a URL or domain so the same slot always yields the same key."""
+    v = (value or "").strip().lower().split("#", 1)[0]
+    return v[:-1] if v.endswith("/") else v
+
+
+def placement_key(target_domain, target_url, placement_type="link"):
+    """Idempotency key for one delivery slot (never a whole domain)."""
+    raw = "|".join((_norm_target(target_domain), _norm_target(target_url),
+                    (placement_type or "link").strip().lower()))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def live_domains(store):
+    """Domains holding at least one verified live backlink."""
+    return {p.get("target_domain") for p in store.get("placements", {}).values()
+            if p.get("state") == "live" and p.get("target_domain")}
+
+
+def owned_domains(store):
+    """Domains that must be treated as 'already have' by gap analysis."""
+    return live_domains(store) | set(store.get("acquired_domains", []))
+
+
+def placement_block_reason(store, target_domain, target_url, placement_type="link"):
+    """Why this slot must not be claimed, or None when claiming is allowed."""
+    now = dt.datetime.now(dt.timezone.utc)
+    d = _norm_target(target_domain)
+    key = placement_key(d, target_url, placement_type)
+    sup = store.get("suppressions", {})
+    for scope in (d, key):
+        if scope in sup:
+            return "suppressed: " + str(sup[scope].get("reason") or "operator excluded")
+    rows = store.get("placements", {})
+    cur = rows.get(key)
+    if cur:
+        s = cur.get("state")
+        if s == "live":
+            return "slot already has a verified live backlink"
+        if s in ACTIVE_STATES:
+            return "slot already " + str(s)
+        if s == "lost":
+            return "link lost: manual review required before reuse"
+        cd = cur.get("cooldown_until")
+        if cd and cd > now.strftime(_TS):
+            return "cooldown until " + cd
+    cutoff = (now - dt.timedelta(days=COOLDOWN_DAYS)).strftime(_TS)
+    for p in rows.values():
+        if _norm_target(p.get("target_domain")) != d or p.get("state") not in ("live", "submitted"):
+            continue
+        stamp = p.get("live_at") or p.get("submitted_at") or ""
+        if stamp and stamp >= cutoff:
+            return "domain cadence: %d-day window after %s" % (COOLDOWN_DAYS, p.get("state"))
+    return None
+
+
+def claim_placement(store, params):
+    """Claim one delivery slot. Idempotent by key -> (record, block_reason)."""
+    d = _norm_target(params.get("target_domain"))
+    u = _norm_target(params.get("target_url"))
+    t = (params.get("placement_type") or "link").strip().lower()
+    if not d or not u:
+        return None, "target_domain and target_url are required"
+    reason = placement_block_reason(store, d, u, t)
+    if reason:
+        return None, reason
+    key = placement_key(d, u, t)
+    rows = store.setdefault("placements", {})
+    rec = rows.get(key) or {
+        "id": key, "target_domain": d, "target_url": u, "placement_type": t,
+        "created_at": _now(), "state": "registered", "evidence": [],
+    }
+    rec["state"] = "claimed"
+    rec["claimed_at"] = _now()
+    rec["batch_id"] = str(params.get("batch_id") or "").strip()[:120]
+    rec["own_url"] = str(params.get("own_url") or rec.get("own_url") or "").strip()[:500]
+    if params.get("note"):
+        rec["note"] = str(params["note"])[:500]
+    rows[key] = rec
+    return rec, None
+
+
+def transition_placement(store, params):
+    """Advance a placement. Reaching 'live' requires verifiable evidence."""
+    d = _norm_target(params.get("target_domain"))
+    u = _norm_target(params.get("target_url"))
+    t = (params.get("placement_type") or "link").strip().lower()
+    key = str(params.get("id") or placement_key(d, u, t))
+    rows = store.setdefault("placements", {})
+    rec = rows.get(key)
+    if not rec:
+        return None, "placement not found: " + key
+    nxt = str(params.get("state") or "").strip().lower()
+    cur = rec.get("state")
+    if nxt not in _ALLOWED_TRANSITIONS.get(cur, ()):
+        return None, "illegal transition %s -> %s" % (cur, nxt)
+    if nxt == "live":
+        landing = str(params.get("landing_url") or "").strip()
+        method = str(params.get("verify_method") or "").strip()
+        if not landing or not method:
+            return None, "live requires landing_url and verify_method as evidence"
+        rec["verify"] = {
+            "landing_url": landing[:500], "verify_method": method[:120],
+            "observed_href": str(params.get("observed_href") or "")[:500],
+            "rel": str(params.get("rel") or "")[:60],
+            "anchor_text": str(params.get("anchor_text") or "")[:300],
+            "verified_at": _now(),
+        }
+    rec["state"] = nxt
+    if _STATE_TS.get(nxt):
+        rec[_STATE_TS[nxt]] = _now()
+    if nxt in ("rejected", "error"):
+        rec["failure_reason"] = str(params.get("failure_reason") or "")[:300]
+        try:
+            days = max(0, int(params.get("cooldown_days", COOLDOWN_DAYS)))
+        except (TypeError, ValueError):
+            days = COOLDOWN_DAYS
+        rec["cooldown_until"] = (dt.datetime.now(dt.timezone.utc)
+                                 + dt.timedelta(days=days)).strftime(_TS)
+    if params.get("note"):
+        rec.setdefault("evidence", []).append({"at": _now(), "note": str(params["note"])[:300]})
+    rows[key] = rec
+    return rec, None
+
+
+def suppress_placement(store, params):
+    """Permanently exclude a domain or one exact slot, or remove that exclusion."""
+    scope = str(params.get("id") or "").strip() or _norm_target(params.get("target_domain"))
+    if not scope:
+        return None, "target_domain or id is required"
+    sup = store.setdefault("suppressions", {})
+    if params.get("remove"):
+        sup.pop(scope, None)
+        return {"scope": scope, "removed": True}, None
+    reason = str(params.get("reason") or "operator excluded").strip()[:300]
+    sup[scope] = {"reason": reason, "at": _now()}
+    return {"scope": scope, "reason": reason}, None
+
+
+def placement_stats(store):
+    by_state = {}
+    for p in store.get("placements", {}).values():
+        s = p.get("state", "unknown")
+        by_state[s] = by_state.get(s, 0) + 1
+    return {"total": len(store.get("placements", {})), "by_state": by_state,
+            "live": by_state.get("live", 0),
+            "in_progress": sum(by_state.get(s, 0) for s in ACTIVE_STATES),
+            "suppressed": len(store.get("suppressions", {})),
+            "live_domains": len(live_domains(store))}
+
+
+def placement_list(store):
+    out = list(store.get("placements", {}).values())
+    out.sort(key=lambda p: p.get("created_at") or "", reverse=True)
+    return out
+
+
+def placement_index(store):
+    """target_domain -> best record, for O(n+m) pool-row decoration."""
+    rank = {"live": 0, "submitted": 1, "claimed": 2, "registered": 3,
+            "lost": 4, "rejected": 5, "error": 6}
+    idx = {}
+    for p in store.get("placements", {}).values():
+        d = _norm_target(p.get("target_domain"))
+        if not d:
+            continue
+        best = idx.get(d)
+        if best is None or (rank.get(p.get("state"), 9), p.get("created_at") or "") < \
+                           (rank.get(best.get("state"), 9), best.get("created_at") or ""):
+            idx[d] = p
+    return idx
 
 
 if __name__ == "__main__":
