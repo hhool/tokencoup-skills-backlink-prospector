@@ -317,6 +317,10 @@ python3 tools/competitor_backlinks.py \
 
 这个接口花的是真实配额，地址又是公开的，所以**没配 `BDL_TRIGGER_TOKEN` 就返回 503 而不是默默开放**（fail closed）。令牌错 403、没带 401。仓库自带 `.github/workflows/tick.yml` 每天敲两次（tick 自己判断到没到点，多敲不重复跑）。
 
+### D17. 全站 API 鉴权：锁唤醒接口，也要锁旁门
+
+`/api/cron/tick` 加了锁，但 `/api/refill`、`/api/schedule/run` 这些旁门同样花配额。设了 `BDL_API_TOKEN` 之后，**所有 `/api` 调用**都必须带 `X-BDL-Token` 头；页面、`/help`、`/api/health` 保持开放（健康检查不能带密钥，UI 也要能加载到弹窗那一步）。前端用一个 fetch monkey-patch 统一注入头，401 时弹一次输入框存进 localStorage——30 处 fetch 一处都没改。不设该变量则一切照旧（本地开发零负担）。
+
 ---
 
 ## 2. 免费数据源（无 API Key 即可运行）

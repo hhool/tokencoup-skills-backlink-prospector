@@ -252,6 +252,7 @@
         <button id="qRefill" class="ghost qmini" data-i18n="q_refill">补候选</button></span>
       <span class="qstat"><b id="q_inv">0</b><span data-i18n="q_inv">库存 inventory</span></span>
       <span class="qstat" id="qAutoWrap"><b id="qAuto">—</b><span data-i18n="q_auto">补货 refill</span></span>
+      <span class="qstat down hidden" id="qTrig" data-i18n="q_trigger_off">⚠ 外部唤醒未配置</span>
       <button id="qClaim" data-i18n="q_claim">领取本批</button>
     </div>
     <p class="note" id="qNote" style="margin:0 0 14px"></p>
@@ -616,6 +617,37 @@
 </div>
 
 <script>
+// ---- API token, injected into every fetch by one wrapper ----
+// When the server holds BDL_API_TOKEN, each /api call must carry it in the
+// X-BDL-Token header. Pages load open, so the first 401 is the moment to ask
+// the operator for the value once and remember it in localStorage. The wrapper
+// sits above every call in the file, so the 30 fetch sites stay untouched.
+let TOKEN_PROMPTED = false;
+function promptApiToken(){
+  if (TOKEN_PROMPTED) return;
+  TOKEN_PROMPTED = true;
+  const v = prompt((new URLSearchParams(location.search).get('lang') === 'en')
+    ? 'This API is token-protected. Paste the BDL_API_TOKEN value:'
+    : '该 API 已开启令牌保护，请粘贴 BDL_API_TOKEN 的值：');
+  if (v && v.trim()) { localStorage.setItem('bdlToken', v.trim()); location.reload(); }
+}
+(function(){
+  const raw = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    init = Object.assign({}, init || {});
+    const tok = localStorage.getItem('bdlToken') || '';
+    if (tok) {
+      const h = new Headers(init.headers || {});
+      if (!h.has('X-BDL-Token')) h.set('X-BDL-Token', tok);
+      init.headers = h;
+    }
+    return raw(input, init).then(function(r){
+      if (r.status === 401) promptApiToken();
+      return r;
+    });
+  };
+})();
+
 const $ = (id) => document.getElementById(id);
 // ?lang=en lets the standalone help page link back into the same language.
 let LAST = null, TIPS = null, POOL = null,
@@ -641,6 +673,7 @@ const I18N = {
     q_claim:'领取本批',
     q_refill:'补候选', q_quota_full:'配额已满', q_quota_saved:'配额已改为 {q} 条/天',
     q_auto:'补货 refill', q_auto_due:'就绪', q_auto_ok:'充足', q_auto_none:'无档案',
+    q_trigger_off:'⚠ 外部唤醒未配置',
     lost_title:'失活外链待办', lost_go:'去台账处理', lost_days:'近 {d} 天失活',
     lost_hint:'外链已失活：域名退回缺口，可重新排期',
     diff_title:'上次分析变化', diff_add:'新增候选', diff_bad:'转为无效',
@@ -723,6 +756,7 @@ const I18N = {
     q_claim:'Claim batch',
     q_refill:'Get more', q_quota_full:'Quota reached', q_quota_saved:'Quota set to {q}/day',
     q_auto:'auto-refill', q_auto_due:'due', q_auto_ok:'stocked', q_auto_none:'no profile',
+    q_trigger_off:'⚠ wake-up not configured',
     lost_title:'Dead backlinks', lost_go:'Open ledger', lost_days:'lost in {d}d',
     lost_hint:'Link is gone: the domain returns to the gap and can be re-pitched',
     diff_title:'Last run changed', diff_add:'new candidates', diff_bad:'went invalid',
@@ -1311,6 +1345,13 @@ function renderRefill(rf){
       +(LANG==='en'?' / threshold ':' / 阈值 ')+rf.threshold
       +(LANG==='en'?' · cooldown ':' · 冷却 ')+rf.cooldown_h+'h'
       +(rf.last&&rf.last.ts?((LANG==='en'?' · last ':' · 上次 ')+rf.last.ts):'');
+  }
+  const trig=$('qTrig');
+  if(trig){
+    trig.classList.toggle('hidden', rf.trigger_configured!==false);
+    trig.title = (LANG==='en'
+      ? 'A scale-to-zero host has no scheduler thread while asleep. Set BDL_TRIGGER_TOKEN on the server and as the repo Actions secret so the daily cron can knock.'
+      : 'scale-to-zero 机器睡着就没有调度线程。在服务端与仓库 Actions secret 各配一次 BDL_TRIGGER_TOKEN，每日定时才叫得醒。');
   }
 }
 
@@ -1924,7 +1965,19 @@ function wlToggleBtn(domain){
 function renderPlacements(){
   if(!PLACEMENTS) return;
   const s=PL_STATS||{};
-  $('plCsv').href='/api/placements/csv?domain='+encodeURIComponent(CENTER);
+  // An <a href> cannot carry the X-BDL-Token header, so when the API is
+  // token-protected the direct link would 401. Download through fetch instead.
+  $('plCsv').onclick=async function(ev){
+    ev.preventDefault();
+    try{
+      const res=await fetch('/api/placements/csv?domain='+encodeURIComponent(CENTER));
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const blob=await res.blob();
+      const fn=res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]||'placements.csv';
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click();
+      URL.revokeObjectURL(a.href);
+    }catch(e){ showErr('Ledger CSV download failed: '+e.message, '台账 CSV 下载失败：'+e.message); }
+  };
   $('plSummary').textContent=(LANG==='en'?'Records ':'记录 ')+(s.total||0)
     +(LANG==='en'?' · live ':' · 已上线 ')+(s.live||0)
     +(LANG==='en'?' · in progress ':' · 进行中 ')+(s.in_progress||0)

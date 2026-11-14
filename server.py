@@ -296,6 +296,41 @@ def trigger_verdict(provided):
     return (True, 200, "")
 
 
+OPEN_PATHS = ("/", "/index.html", "/help", "/help.html", "/favicon.ico", "/api/health")
+
+
+def api_token_verdict(provided):
+    """Should this /api call be allowed through?
+
+    Opt-in hardening for a public deployment. With no BDL_API_TOKEN configured
+    the API stays open — that is the local, single-operator case, and the
+    selftest would otherwise need the secret too. Once the variable is set,
+    every /api call must carry the same value in the X-BDL-Token header.
+
+    Pages and /api/health always stay open: the health check must keep passing
+    with no header at all, and the UI has to load far enough to ask for the
+    token when a call comes back 401. /api/cron/tick is also exempt — it has
+    its own secret (BDL_TRIGGER_TOKEN) and its own verdict.
+
+    Returns (ok, status, message).
+    """
+    expected = (os.environ.get("BDL_API_TOKEN") or "").strip()
+    if not expected:
+        return (True, 200, "")
+    got = (provided or "").strip()
+    if not got:
+        return (False, 401,
+                "the API is token-protected: send the BDL_API_TOKEN value as the X-BDL-Token header")
+    if not hmac.compare_digest(got.encode("utf-8", "replace"), expected.encode("utf-8", "replace")):
+        return (False, 403, "API token does not match")
+    return (True, 200, "")
+
+
+def trigger_configured():
+    return bool((os.environ.get("BDL_TRIGGER_TOKEN") or "").strip())
+
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "BacklinkProspector/1.0"
 
@@ -327,6 +362,10 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
         try:
+            if path not in OPEN_PATHS:
+                ok, status, msg = api_token_verdict(self.headers.get("X-BDL-Token"))
+                if not ok:
+                    return self._error(status, msg)
             if path in ("/", "/index.html"):
                 idx = os.path.join(ASSETS, "index.html")
                 if not os.path.isfile(idx):
@@ -444,7 +483,11 @@ class Handler(BaseHTTPRequestHandler):
                                         # Supply side of the queue: how much shelf
                                         # is left, and whether we are allowed to
                                         # restock it right now.
-                                        "refill": st.refill_state(pool, center_domain),
+                                        "refill": dict(st.refill_state(pool, center_domain),
+                                                       # The overview can only warn about
+                                                       # a missing wake-up call if it
+                                                       # knows the trigger is unarmed.
+                                                       trigger_configured=trigger_configured()),
                                         # What the last run changed in the pool.
                                         "diff": st.run_diff(pool),
                                         "center_domain": center_domain})
@@ -528,6 +571,13 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/cron/tick"):
             return self._error(404, "unknown path")
         try:
+            # Token gate before anything else: an unauthorised caller should not
+            # get as far as having a payload parsed and trusted. The cron tick
+            # is exempt — its own shared secret is checked below.
+            if path != "/api/cron/tick":
+                ok, status, msg = api_token_verdict(self.headers.get("X-BDL-Token"))
+                if not ok:
+                    return self._error(status, msg)
             # Checked before the body is read: an unauthorised caller should not
             # get as far as having a payload parsed and trusted.
             if path == "/api/cron/tick":

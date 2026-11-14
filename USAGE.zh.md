@@ -389,6 +389,33 @@ curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \
 
 ---
 
+## 3.16 全站 API 鉴权（可选，公开部署建议开）
+
+`/api/cron/tick` 有了自己的锁之后，其余 `/api` 仍是旁门：`/api/refill`、`/api/schedule/run`、`/api/analyze` 都在花配额。设一个 `BDL_API_TOKEN` 就全锁上：
+
+| 请求 | 结果 |
+|---|---|
+| 页面 `/`、`/help`、`/api/health` | **永远开放**（健康检查不能带密钥；UI 要能加载到弹窗那一步） |
+| 其余 `/api/*`，带 `X-BDL-Token: <值>` | 正常 |
+| 其余 `/api/*`，没带头 | `401` |
+| 头的值不对 | `403` |
+
+```bash
+fly secrets set BDL_API_TOKEN=$(openssl rand -hex 24) -a backlink-prospector
+```
+
+**前端怎么带**：`index.html` 顶部用一个 fetch monkey-patch 给每个请求注入 `X-BDL-Token`（值存在 localStorage 的 `bdlToken` 里）。第一次 401 会弹一次输入框，填一次就行；之后全自动。CSV 导出也走 fetch（台账导出按钮从 `<a href>` 改成了点击下载，因为 `<a>` 带不了头）。
+
+**不设这个变量 = 一切照旧**：本地开发、selftest 都不用管它。线上 selftest 加 `--token=<值>` 即可：
+
+```bash
+python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/ --no-write --token=<BDL_API_TOKEN>
+```
+
+顺带：`/api/store` 的 `refill` 块现在带 `trigger_configured`。为 false 时概览页队列条上会出现「⚠ 外部唤醒未配置」的警示格——scale-to-zero 机器睡着叫不醒，这事应该被看见。
+
+---
+
 ## 4. 命令行 / API 速查（批量与自动化用）
 
 下列可直接 curl 调用（本地 `8787` 或线上域名）。

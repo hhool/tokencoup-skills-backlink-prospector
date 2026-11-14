@@ -91,4 +91,14 @@ Covers: no console errors, ≥3 channel rows, domain switch swaps keywords, no c
 | The GitHub Actions job retries and fails | `000/502/503/504` are retried (cold start); 4xx fails immediately — read the response body, it is usually a missing or wrong secret |
 | The scheduled workflow silently stops firing | GitHub disables scheduled workflows after 60 days without a commit; one manual dispatch from the Actions page re-enables it |
 
+## 8. Every API call suddenly 401 / 403
 
+Once `BDL_API_TOKEN` is set, all `/api` calls except the pages, `/help`, `/api/health` and `/api/cron/tick` must carry the `X-BDL-Token` header.
+
+| Symptom | Fix |
+|---|---|
+| The page opens a "this API is token-protected" prompt | Paste the `BDL_API_TOKEN` value (stored in localStorage, once); to fix a typo, clear `localStorage.bdlToken` and reload |
+| 401 everywhere but no prompt | The prompt fires once per page load to avoid loops — reload the page |
+| The selftest 401s across the board | Add `--token=<BDL_API_TOKEN>`; unnecessary for a local server without the variable |
+| Health check failing, machine restarting | Should not happen — `/api/health` is always open; if it does, the deployed code is stale |
+| Want auth off temporarily | `fly secrets unset BDL_API_TOKEN -a backlink-prospector` (back to open mode after restart) |

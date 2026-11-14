@@ -367,6 +367,10 @@ The deployed app scales to zero, so when the machine stops the scheduler thread 
 
 That call spends real quota and the address is public, so **without `BDL_TRIGGER_TOKEN` it answers 503 instead of silently staying open** (fail closed). Wrong token 403, no token 401. The repo ships `.github/workflows/tick.yml`, which knocks twice a day (the tick decides due-ness itself, so extra knocks never double-run).
 
+### D17. Whole-API auth: lock the side doors too
+
+The tick has a lock, but `/api/refill` and `/api/schedule/run` spend quota just as well. Once `BDL_API_TOKEN` is set, **every `/api` call** must carry the value in the `X-BDL-Token` header; pages, `/help` and `/api/health` stay open (the health check sends no header, and the UI must load far enough to ask). The frontend injects the header through a single fetch monkey-patch and prompts once on 401, storing the value in localStorage — none of the 30 fetch sites changed. Unset, everything behaves as before (zero burden locally).
+
 ---
 
 ## 3. Free Data Sources (no API keys required)

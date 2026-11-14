@@ -37,10 +37,15 @@ sys.path.insert(0, ROOT)
 
 import store as st  # noqa: E402
 
-BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8787/").rstrip("/")
+BASE = next((a for a in sys.argv[1:] if not a.startswith("--")),
+            "http://127.0.0.1:8787/").rstrip("/")
 # `--no-write` skips the mutating HTTP section, so a production run against
 # Fly leaves no throwaway ledger file on the persistent volume.
 NO_WRITE = "--no-write" in sys.argv[2:]
+# `--token=xxx` sends X-BDL-Token on every /api call, for a deployment that
+# holds BDL_API_TOKEN. Health and the pages stay open either way.
+API_TOKEN = next((a.split("=", 1)[1] for a in sys.argv[2:]
+                  if a.startswith("--token=")), "")
 # A fresh center domain per run keeps section B idempotent: the ledger is
 # append-only by design, so replaying against the same domain must not be
 # mistaken for a regression.
@@ -55,21 +60,26 @@ def check(name, cond, detail=""):
         FAILS.append(name)
 
 
-def http(path, body=None):
+def http(path, body=None, with_token=True):
+    headers = {"Content-Type": "application/json"}
+    if API_TOKEN and with_token:
+        headers["X-BDL-Token"] = API_TOKEN
     req = urllib.request.Request(
         BASE + path,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
     )
     try:
         with OPENER.open(req, timeout=240) as f:
             return f.status, json.load(f)
     except urllib.error.HTTPError as e:
-        return e.code, json.load(e)
+        return e.code, json.loads(e.read().decode("utf-8", "replace") or "{}")
 
 
 def http_text(path):
-    with OPENER.open(BASE + path, timeout=60) as f:
+    headers = {"X-BDL-Token": API_TOKEN} if API_TOKEN else {}
+    req = urllib.request.Request(BASE + path, headers=headers)
+    with OPENER.open(req, timeout=60) as f:
         return f.read().decode("utf-8-sig")
 
 
@@ -220,6 +230,12 @@ def section_d():
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome", headless=True)
         pg = b.new_page(viewport={"width": 1400, "height": 1000})
+        if API_TOKEN:
+            # A token-protected server would 401 every fetch and the UI would
+            # open its token prompt — which headless Chrome auto-dismisses.
+            # Seed the same localStorage key the wrapper reads before any
+            # page script runs, so the run exercises the protected path.
+            pg.add_init_script("localStorage.setItem('bdlToken', %s);" % json.dumps(API_TOKEN))
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(BASE + "/", wait_until="networkidle")
@@ -271,6 +287,8 @@ def section_e():
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome", headless=True)
         pg = b.new_page(viewport={"width": 1400, "height": 1000})
+        if API_TOKEN:
+            pg.add_init_script("localStorage.setItem('bdlToken', %s);" % json.dumps(API_TOKEN))
         errs = []
         pg.on("pageerror", lambda e: errs.append(str(e)))
         pg.goto(BASE + "/", wait_until="networkidle")
@@ -1425,6 +1443,39 @@ def section_l():
         check("a trigger call without the secret is refused",
               code in (401, 503) and body.get("ok") is False,
               (code, str(body.get("error"))[:60]))
+
+        # ---------------- the API token gate ----------------
+        ok, code, _ = srv.api_token_verdict(None)
+        check("an unconfigured BDL_API_TOKEN keeps the API open",
+              ok is True and code == 200, (ok, code))
+        saved_tok = os.environ.pop("BDL_API_TOKEN", None)
+        try:
+            os.environ["BDL_API_TOKEN"] = "api-s3cret"
+            check("a configured token rejects a missing header",
+                  srv.api_token_verdict(None)[1] == 401, srv.api_token_verdict(None)[1])
+            check("a configured token rejects a wrong header",
+                  srv.api_token_verdict("nope")[1] == 403, srv.api_token_verdict("nope")[1])
+            check("the right header passes",
+                  srv.api_token_verdict("api-s3cret")[0] is True)
+            check("the open-path list keeps health and the pages reachable",
+                  all(p in srv.OPEN_PATHS for p in ("/", "/help", "/api/health")),
+                  srv.OPEN_PATHS)
+        finally:
+            os.environ.pop("BDL_API_TOKEN", None)
+            if saved_tok is not None:
+                os.environ["BDL_API_TOKEN"] = saved_tok
+        if API_TOKEN:
+            code, body = http("/api/store?domain=x", with_token=False)
+            check("a token-protected server refuses an /api call without the header",
+                  code == 401 and body.get("ok") is False,
+                  (code, str(body.get("error"))[:50]))
+            code, body = http("/api/health", with_token=False)
+            check("health answers without a header even on a locked server",
+                  code == 200 and body.get("ok") is True, code)
+        code, body = http("/api/store?domain=x")
+        check("an /api call carries the wake-up configuration flag",
+              code == 200 and "trigger_configured" in (body.get("refill") or {}),
+              (code, (body.get("refill") or {}).keys()))
 
 
 if __name__ == "__main__":

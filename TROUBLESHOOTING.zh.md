@@ -79,3 +79,14 @@ python3 tools/selftest.py https://backlink-prospector.fly.dev/
 | GitHub Actions 里 job 一直重试后失败 | `000/502/503/504` 会重试（冷启动），4xx 直接失败——先看返回体里的错误信息，多半是 secret 没配或配错 |
 | 定时工作流忽然不再触发 | GitHub 会在仓库 60 天无提交后停用 scheduled workflow；去 Actions 页面手动 dispatch 一次即可恢复 |
 
+## 8. API 突然全部 401 / 403
+
+设了 `BDL_API_TOKEN` 之后，除页面、`/help`、`/api/health` 和 `/api/cron/tick` 外的所有 `/api` 调用都要带 `X-BDL-Token` 头。
+
+| 现象 | 处理 |
+|---|---|
+| 页面打开后弹「该 API 已开启令牌保护」输入框 | 粘贴 `BDL_API_TOKEN` 的值（存 localStorage，只需一次）；填错就清 `localStorage.bdlToken` 再刷新 |
+| 浏览器一直 401 但不弹框 | 弹框只在每页第一次 401 时出现（防循环），刷新一次页面即可再弹 |
+| selftest 全线 401 | 加 `--token=<BDL_API_TOKEN>`；本地服务没配该变量则不用加 |
+| 健康检查失败、机器被重启 | 不应发生——`/api/health` 永远开放；若出现说明代码版本不对 |
+| 想临时关掉鉴权 | `fly secrets unset BDL_API_TOKEN -a backlink-prospector`（重启后回到开放模式） |

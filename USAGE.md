@@ -401,6 +401,33 @@ Two operational notes: GitHub disables scheduled workflows after 60 days without
 
 ---
 
+## 3.16 Whole-API auth (optional, recommended for a public deployment)
+
+The tick got its own lock, but the rest of `/api` is still a row of side doors: `/api/refill`, `/api/schedule/run` and `/api/analyze` all spend quota. One `BDL_API_TOKEN` locks them all:
+
+| Request | Result |
+|---|---|
+| Pages `/`, `/help`, `/api/health` | **always open** (the health check sends no header; the UI must load far enough to ask) |
+| Any other `/api/*` with `X-BDL-Token: <value>` | normal |
+| Any other `/api/*` without the header | `401` |
+| Wrong value | `403` |
+
+```bash
+fly secrets set BDL_API_TOKEN=$(openssl rand -hex 24) -a backlink-prospector
+```
+
+**How the frontend carries it**: a fetch monkey-patch at the top of `index.html` injects `X-BDL-Token` into every request (the value lives in localStorage as `bdlToken`). The first 401 opens one prompt; fill it in once and everything after is automatic. CSV exports go through fetch too (the ledger export button changed from `<a href>` to a click-download, because an anchor cannot carry the header).
+
+**Unset, nothing changes**: local development and the selftest ignore it. For a locked deployment, hand the token to the selftest:
+
+```bash
+python3 tools/placement_selftest.py https://backlink-prospector.fly.dev/ --no-write --token=<BDL_API_TOKEN>
+```
+
+Also: the `refill` block of `/api/store` now carries `trigger_configured`. When false, the overview's queue bar shows a "⚠ wake-up not configured" chip — a scale-to-zero host that cannot be woken is worth seeing.
+
+---
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.
