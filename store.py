@@ -217,6 +217,112 @@ def unmark_existing(store, domains):
 
 
 # ---------------------------------------------------------------------------
+# Run history: what actually changed since the last analysis.
+#
+# `times_discovered` cannot answer "what is new since yesterday" — it only says
+# a domain was seen again. So every persisted run leaves a compact snapshot, and
+# the diff between two snapshots is the answer an operator needs ("+12 new,
+# 3 went 404, 1 recovered") before deciding whether tomorrow's batch is real.
+# ---------------------------------------------------------------------------
+RUN_LOG_KEEP = 10          # snapshots kept per center domain
+RUN_SNAPSHOT_MAX = 20000   # domains per snapshot; beyond this only totals are kept
+
+
+def _parse_ts(stamp):
+    """Parse one of our own ISO timestamps into an aware UTC datetime."""
+    s = str(stamp or "").strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        v = dt.datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if v.tzinfo is None:
+        v = v.replace(tzinfo=dt.timezone.utc)
+    return v
+
+
+def record_run(store, label=""):
+    """Snapshot the pool after a run, so the next run can be diffed against it."""
+    doms = store.get("domains", {})
+    names = sorted(doms)
+    truncated = len(names) > RUN_SNAPSHOT_MAX
+    snap = {
+        "ts": _now(),
+        "run": store.get("runs", 0),
+        "label": str(label or "")[:80],
+        "total": len(names),
+        "valid": sum(1 for e in doms.values() if e.get("valid")),
+        "acquired": sum(1 for e in doms.values() if e.get("acquired")),
+        # The invalid list is small and buys the most useful diff line of all:
+        # a domain that stopped verifying is a lost candidate, not a new one.
+        "invalid": sorted(d for d, e in doms.items() if not e.get("valid")),
+        "domains": [] if truncated else names,
+        "total_only": truncated,
+    }
+    log = store.setdefault("run_log", [])
+    if not isinstance(log, list):
+        log = store["run_log"] = []
+    log.append(snap)
+    del log[:-RUN_LOG_KEEP]
+    return snap
+
+
+def run_diff(store, back=1):
+    """Compare the latest run snapshot with the one `back` runs earlier."""
+    log = [x for x in (store.get("run_log") or []) if isinstance(x, dict)]
+    if len(log) < 2:
+        return {"ok": True, "comparable": False, "runs": len(log),
+                "reason": "need two recorded runs",
+                "latest": log[-1] if log else None, "previous": None}
+    try:
+        back = max(1, min(len(log) - 1, int(back or 1)))
+    except (TypeError, ValueError):
+        back = 1
+    cur, prev = log[-1], log[-1 - back]
+    delta = {k: (cur.get(k) or 0) - (prev.get(k) or 0) for k in ("total", "valid", "acquired")}
+
+    def brief(snap):
+        # The snapshot stores a full name list for diffing; the response must not:
+        # /api/store would otherwise grow by megabytes once a pool gets large.
+        return {k: snap.get(k) for k in ("ts", "run", "label", "total", "valid",
+                                         "acquired", "total_only")}
+
+    base = {"ok": True, "runs": len(log), "latest": brief(cur), "previous": brief(prev),
+            "back": back, "delta": delta}
+    if cur.get("total_only") or prev.get("total_only"):
+        # Refusing to invent a name diff is the honest answer: the snapshots
+        # only kept totals, so report counts and say why.
+        base.update({"comparable": False,
+                     "reason": "snapshot truncated above %d domains" % RUN_SNAPSHOT_MAX})
+        return base
+    cur_set = set(cur.get("domains") or [])
+    prev_set = set(prev.get("domains") or [])
+    cur_bad = set(cur.get("invalid") or [])
+    prev_bad = set(prev.get("invalid") or [])
+    added = sorted(cur_set - prev_set)
+    removed = sorted(prev_set - cur_set)
+    # Status flips only mean something for domains present in both snapshots;
+    # an addition that is already invalid is just a bad addition.
+    newly_invalid = sorted((prev_set & cur_bad) - prev_bad)
+    # Recovered = was invalid, now valid and still in the pool. It cannot be
+    # "sorted(prev_bad - cur_bad)" alone: a domain dropped from the pool would
+    # otherwise be reported as recovered.
+    recovered = sorted((prev_bad & cur_set) - cur_bad)
+    base.update({
+        "comparable": True,
+        "added": added[:200], "added_count": len(added),
+        "removed": removed[:200], "removed_count": len(removed),
+        "newly_invalid": newly_invalid[:200], "newly_invalid_count": len(newly_invalid),
+        "recovered": recovered[:200], "recovered_count": len(recovered),
+        "kept": len(cur_set & prev_set),
+    })
+    return base
+
+
+# ---------------------------------------------------------------------------
 # Whitelist: domains the operator does NOT want counted as backlink inventory.
 #
 # Why a separate concept from suppressions: suppressing says "never offer this
@@ -386,6 +492,38 @@ def quota_state(store):
             "date": _quota_date(), "tz_offset": QUOTA_TZ_OFFSET}
 
 
+LOST_WINDOW_DAYS = _env_int("LOST_WINDOW_DAYS", 7, 1, 90)
+
+
+def lost_recent(store, days=None, limit=20):
+    """Backlinks that died inside the window — the overview's todo strip.
+
+    A survival recheck that writes `lost` and nobody ever looks at is the same
+    as no recheck at all: the row leaves the ledger's happy path and the number
+    just quietly drops. Surfacing them next to the queue makes the loss the
+    first thing an operator sees, and gives them the domain to re-pitch.
+    """
+    days = LOST_WINDOW_DAYS if days is None else days
+    now = dt.datetime.now(dt.timezone.utc)
+    cutoff = now - dt.timedelta(days=days)
+    rows = []
+    for p in store.get("placements", {}).values():
+        if p.get("state") != "lost":
+            continue
+        when = _parse_ts(p.get("lost_at"))
+        if when is None or when < cutoff:
+            continue
+        rows.append({
+            "domain": p.get("target_domain") or "",
+            "url": p.get("target_url") or "",
+            "lost_at": p.get("lost_at"),
+            "days_ago": max(0, int((now - when).total_seconds() // 86400)),
+            "note": str((p.get("recheck") or {}).get("note") or "")[:140],
+        })
+    rows.sort(key=lambda x: x.get("lost_at") or "", reverse=True)
+    return rows[:limit], len(rows)
+
+
 def store_stats(store):
     doms = store.get("domains", {})
     # A live placement counts as owned even when the entry predates the
@@ -422,6 +560,7 @@ def store_stats(store):
             pass  # excluded: neither acquired nor gap
         else:
             bt["gap"] += 1
+    lost_list, lost_n = lost_recent(store)
     return {
         "total_discovered": total,
         "acquired": acquired,
@@ -439,6 +578,9 @@ def store_stats(store):
         "acquired_domains": store.get("acquired_domains", []),
         "placements": placement_stats(store),
         "quota": quota_state(store),
+        "lost_recent": lost_n,
+        "lost_days": LOST_WINDOW_DAYS,
+        "lost_list": lost_list,
     }
 
 
@@ -701,6 +843,100 @@ def daily_queue(store, center_domain, date=None, quota=None, refill=False, with_
     if with_items:
         out["items"] = [_queue_row(d, doms[d], store) for d in available]
     return out
+
+
+# ---------------------------------------------------------------------------
+# Supply refill: the queue is a quota, the pool is the shelf behind it.
+#
+# A frozen batch of 100 is worth nothing if the shelf holds 12 candidates: the
+# day after tomorrow the batch is short again. Refilling is therefore a supply
+# problem, not a batch problem — and it costs network calls, so it is rate
+# limited by a persisted cooldown rather than fired on every page load.
+# ---------------------------------------------------------------------------
+REFILL_THRESHOLD = _env_int("REFILL_THRESHOLD", 30, 1, 1000)
+REFILL_COOLDOWN_H = _env_int("REFILL_COOLDOWN_H", 6, 1, 72)
+REFILL_KEEP = 20
+
+
+def inventory_count(store):
+    """Claimable pool rows right now = what tomorrow's batch could be built from."""
+    doms = store.get("domains", {})
+    wl = whitelisted_domains(store)
+    return sum(1 for d, e in doms.items()
+               if queue_block_reason(store, d, e, wl) is None)
+
+
+def refill_state(store, center_domain=None, quota=None, now=None):
+    """Is the shelf low, and may we go shopping? (`due` is the only answer that acts.)"""
+    configured = effective_quota(store)
+    if quota is None:
+        quota = configured
+    inv = inventory_count(store)
+    last = {}
+    for rec in reversed(store.get("refills") or []):
+        if isinstance(rec, dict) and rec.get("ts"):
+            last = rec
+            break
+    # No-progress backoff. Free sources saturate: once the pool stops growing, a
+    # refill every 6 hours is pure noise against other people's servers. Each
+    # consecutive attempt that added nothing doubles the wait (capped at 8x),
+    # and one productive attempt resets it.
+    history = [x for x in (store.get("refills") or []) if isinstance(x, dict)]
+    zero_streak = 0
+    for rec in reversed(history):
+        if rec.get("added") is None or (rec.get("added") or 0) > 0:
+            break
+        zero_streak += 1
+    backoff = min(8, 2 ** zero_streak) if zero_streak else 1
+    cooldown_h = REFILL_COOLDOWN_H * backoff
+    cooldown_left = 0.0
+    if last:
+        when = _parse_ts(last.get("ts"))
+        if when is not None:
+            # Clamp at zero: a timestamp in the future (clock skew, a hand-edited
+            # store) must not produce a cooldown longer than the configured one.
+            age_h = max(0.0, (dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 3600.0)
+            cooldown_left = max(0.0, round(cooldown_h - age_h, 2))
+    low = inv < REFILL_THRESHOLD
+    due = bool(low and cooldown_left <= 0)
+    if not low:
+        reason = "inventory %d >= threshold %d" % (inv, REFILL_THRESHOLD)
+    elif cooldown_left > 0:
+        reason = "cooldown %.1fh left%s" % (cooldown_left,
+                                            "" if backoff == 1 else " (x%d backoff)" % backoff)
+    else:
+        reason = "inventory %d < threshold %d" % (inv, REFILL_THRESHOLD)
+    return {
+        "center_domain": center_domain,
+        "inventory": inv,
+        "quota": quota,
+        "supply_gap": max(0, quota - inv),
+        "threshold": REFILL_THRESHOLD,
+        "cooldown_h": cooldown_h,
+        "base_cooldown_h": REFILL_COOLDOWN_H,
+        "backoff": backoff,
+        "zero_streak": zero_streak,
+        "cooldown_left": cooldown_left,
+        "low": low,
+        "due": due,
+        "reason": reason,
+        "last": last or None,
+        "history": history[-5:],
+    }
+
+
+def mark_refill(store, kind="auto", available=None, added=None, note="", reason=""):
+    """Book one refill attempt. Persisted so a restart cannot reset the cooldown."""
+    rows = store.setdefault("refills", [])
+    if not isinstance(rows, list):
+        rows = store["refills"] = []
+    rec = {"ts": _now(), "kind": str(kind or "auto")[:20],
+           "available": available, "added": added,
+           "threshold": REFILL_THRESHOLD, "cooldown_h": REFILL_COOLDOWN_H,
+           "reason": str(reason or "")[:140], "note": str(note or "")[:200]}
+    rows.append(rec)
+    del rows[:-REFILL_KEEP]
+    return rec
 
 
 def load_domain_channels(center_domain=None):

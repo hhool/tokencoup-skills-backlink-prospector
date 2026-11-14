@@ -288,6 +288,74 @@ Safety: every request is a `GET`. Nothing is posted, no form is submitted, no ma
 is sent, robots.txt is obeyed (`pages_blocked` counts refusals), and the HTML that
 produced each decision stays in `data/cache/` for audit.
 
+## 3.12 Run diff (what the last run actually added)
+
+Watching "discovered: 55" tells you nothing: it cannot separate three genuinely new domains from the same three being seen again. So every persisted run leaves a **snapshot**, and the difference between two snapshots is the answer.
+
+A snapshot holds the domain list, the invalid-domain list and the total/valid/acquired counts. The last 10 are kept; above 20k domains only totals are stored (the diff then says "totals only" instead of inventing a name diff).
+
+Four lines come out:
+
+| Field | Meaning |
+|---|---|
+| `added` / `added_count` | domains that were not in the previous snapshot |
+| `removed` / `removed_count` | domains the previous snapshot had and the pool no longer does |
+| `newly_invalid` | in both snapshots, but failed verification this time (site down / bot wall / 404) |
+| `recovered` | invalid before, verifies again now |
+
+```bash
+# diff of the two most recent runs
+curl -s "http://127.0.0.1:8787/api/runs/diff?domain=soundbuttons.click" | jq .diff
+
+# against the run 3 runs ago (back= 1..9)
+curl -s "http://127.0.0.1:8787/api/runs/diff?domain=soundbuttons.click&back=3" | jq '.diff.added_count'
+```
+
+The dashed strip at the bottom of the overview is exactly this: `Last run changed · new N · went invalid N · back to valid N · pool total N`, followed by a few example domains. `/api/analyze` also returns `run_diff`, so a run immediately shows what it contributed.
+
+---
+
+## 3.13 Auto refill (restock when the shelf runs low)
+
+The queue is "how much work today"; the pool is "what is on the shelf". A 100-row frozen batch is just a number when the shelf holds 12. So besides the manual **Get more** button, the backend restocks by itself:
+
+- **Trigger**: claimable candidates (`inventory` — in-pool, not claimed, not owned, not excluded, verified) below `REFILL_THRESHOLD` (default 30).
+- **Action**: one full analysis using the domain's saved profile (keywords / competitors), merged straight into the pool.
+- **Cooldown**: 6 hours by default (`REFILL_COOLDOWN_H`), persisted in the store so a restart cannot reset it.
+- **No-progress backoff**: if the last refill added nothing, the cooldown doubles (6h → 12h → 24h → 48h, capped at 8x); one productive refill resets it to 6h. Free sources saturate, and one wasted run is enough — there is no reason to hit other people's servers every six hours.
+
+| Switch | Where | Notes |
+|---|---|---|
+| `auto_refill` | `data/schedule.json` / `POST /api/schedule` | default `true`; turn it off to keep only the manual button |
+| `REFILL_THRESHOLD` | env var | low-water mark, default 30 |
+| `REFILL_COOLDOWN_H` | env var | base cooldown in hours, default 6 |
+
+```bash
+# refill now, using the saved profile (400 tells you to save keywords first)
+curl -s -X POST http://127.0.0.1:8787/api/refill \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click"}' | jq '{inventory_before,inventory_after,added}'
+
+# inventory / cooldown / backoff state
+curl -s "http://127.0.0.1:8787/api/store?domain=soundbuttons.click" | jq .refill
+```
+
+The small "auto-refill" cell in the queue bar shows the current state: `due` (may restock now), `12h` (cooling down), `stocked` (enough inventory).
+
+---
+
+## 3.14 Dead-link todo (somebody has to notice)
+
+The survival recheck moves a dead row to `lost` and hands the domain back to the gap — but if nobody looks, that result just sits in the ledger. So the overview opens with a red todo strip that **only appears when something died in the last 7 days**:
+
+- count plus the first five domains;
+- **Open ledger** jumps to the ledger, where the `Lost` pill and the recheck evidence (HTTP status, what matched) live;
+- the window is `LOST_WINDOW_DAYS` (default 7, 1–90).
+
+After a loss the domain is back in the gap, and lifting the 90-day per-domain cadence needs a human decision (`lost -> submitted` is allowed), so this todo is really a "time to re-pitch" list.
+
+---
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.

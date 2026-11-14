@@ -64,6 +64,7 @@ python3 tools/selftest.py https://backlink-prospector.fly.dev/
 - `data/` 被 `.dockerignore` 排除且在 Fly 上挂载为 volume → **镜像内的 `data/` 不可见**。
   因此随代码发布的领域种子库放在 `seeds/`（进镜像），`data/` 只放运行期数据。
 - `profiles.json`、`channels.json`、`seed.json` 必须出现在 Dockerfile 的 `COPY` 列表里，否则会回落到空默认值。
+- **`import server` 会启动调度线程**：`server.py` 在模块级构造 `Scheduler`，构造函数默认 `start()`。测试或一次性脚本导入它时，会按真实的 `data/schedule.json` 跑分析、甚至自动补货，写进真实台账。用环境变量 `BP_NO_SCHEDULER=1`（或 `Scheduler(..., autostart=False)`）关掉。自测里已经这么做了。
 - **新增 `.py` 模块必须同时改 Dockerfile**（第 6 行是显式清单，不是 `COPY . .`）。症状：本地和 selftest 全绿，`fly deploy` 报
   `smoke checks failed: the app appears to be crashing`，`fly logs` 里是 `ModuleNotFoundError: No module named 'xxx'`——
   机器能起来，是 `import` 在模块级失败。改完 `COPY` 再部署即可（源码树里有文件不代表镜像里有）。

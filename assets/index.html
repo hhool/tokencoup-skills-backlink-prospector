@@ -55,7 +55,7 @@
   .badge{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
   .prio{font-weight:700}
   .note{color:var(--muted);font-size:12px}
-  .qbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;background:var(--panel);
+  .qbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--panel);
     border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:0 0 10px}
   .qbar .qlab{font-weight:700;font-size:13px}
   .qbar .qstat{font-size:12px;color:var(--muted)}
@@ -67,6 +67,26 @@
     color:var(--text);border-radius:6px;padding:2px 4px 2px 6px;font-size:13px;font-family:inherit;
     font-variant-numeric:tabular-nums}
   .qbar .qstat.done b{color:var(--bad)}
+  /* Dead-link todo: the one strip allowed to shout, because a lost backlink is
+     money already spent going away. Hidden when there is nothing to say. */
+  .alertbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:rgba(248,81,73,.10);
+    border:1px solid rgba(248,81,73,.45);border-radius:10px;padding:10px 16px;margin:0 0 10px}
+  .alertbar .qlab{font-weight:700;font-size:13px;color:var(--bad)}
+  .alertbar .qstat{font-size:12px;color:var(--muted)}
+  .alertbar .qstat b{color:var(--text);font-size:15px;margin-right:4px;font-variant-numeric:tabular-nums}
+  .alertbar button{margin-left:auto;padding:6px 12px;font-size:12px}
+  .alertbar .lostlist{font-size:12px;color:var(--muted);max-width:100%;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  /* Last-run diff: history, not work, so it stays quieter than the queue bar. */
+  .diffbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;background:var(--panel);
+    border:1px dashed var(--border);border-radius:10px;padding:9px 16px;margin:0 0 10px;
+    font-size:12px;color:var(--muted)}
+  .diffbox .qlab{font-weight:700;font-size:12px;color:var(--text)}
+  .diffbox b{color:var(--text);font-size:14px;margin-right:4px;font-variant-numeric:tabular-nums}
+  .diffbox .up b{color:var(--accent2)}
+  .diffbox .down b{color:var(--bad)}
+  .diffbox .diffsample{font-size:11px;color:var(--muted);max-width:100%;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
   .wlrow td{opacity:.62}
   /* Three actions per row (own / use / whitelist) must stack cleanly instead of
      wrapping into a ragged two-line cell. */
@@ -205,7 +225,7 @@
   <div class="tabpane active" id="tab-ov">
     <div class="viewtips">
       <button class="tipbtn" data-tipbtn="ov" aria-expanded="false" data-i18n="tipbtn_ov">💡 本页怎么看</button>
-      <div class="tipbody hidden" id="tip-ov" data-i18n="tip_ov"><ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>可原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul></div>
+      <div class="tipbody hidden" id="tip-ov" data-i18n="tip_ov"><ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>可原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站。</li><li><b>失活待办</b>（红条）只在近 7 天有链接失活时出现：域名已退回缺口，可重新排期；点「去台账处理」直接跳台账。</li><li><b>上次分析变化</b>对比最近两次运行：新增候选、转为无效、恢复有效、池总量——只看总数看不出「今天的涨是新的还是旧的」。</li><li><b>补货</b>：库存低于阈值时后台会自己再跑一次分析补候选（有冷却；连续扑空会翻倍退避）；「补候选」是手动立即触发。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul></div>
     </div>
     <div class="cards" id="ovCards">
       <div class="card"><div class="n" id="ov_total">0</div><div class="l" data-i18n="ov_total">累计发现 Discovered</div></div>
@@ -216,6 +236,12 @@
     </div>
     <p class="note" id="ovCenter" style="margin:0 0 14px"></p>
 
+    <div class="alertbar hidden" id="lostBar">
+      <span class="qlab" data-i18n="lost_title">失活外链待办</span>
+      <span class="qstat"><b id="lostN">0</b><span id="lostWhen"></span></span>
+      <span class="lostlist" id="lostList"></span>
+      <button id="lostGo" class="ghost" data-i18n="lost_go">去台账处理</button>
+    </div>
     <div class="qbar" id="qbar">
       <span class="qlab" data-i18n="q_title">今日队列 · Daily queue</span>
       <span class="qstat"><input id="qQuota" type="number" min="1" max="2000" step="10" value="100"
@@ -225,9 +251,19 @@
       <span class="qstat short"><b id="q_gap">0</b><span data-i18n="q_gap">供给缺口 gap</span>
         <button id="qRefill" class="ghost qmini" data-i18n="q_refill">补候选</button></span>
       <span class="qstat"><b id="q_inv">0</b><span data-i18n="q_inv">库存 inventory</span></span>
+      <span class="qstat" id="qAutoWrap"><b id="qAuto">—</b><span data-i18n="q_auto">补货 refill</span></span>
       <button id="qClaim" data-i18n="q_claim">领取本批</button>
     </div>
     <p class="note" id="qNote" style="margin:0 0 14px"></p>
+
+    <div class="diffbox hidden" id="diffBox">
+      <span class="qlab" data-i18n="diff_title">上次分析变化</span>
+      <span class="up"><b id="diff_add">0</b><span data-i18n="diff_add">新增候选</span></span>
+      <span class="down"><b id="diff_bad">0</b><span data-i18n="diff_bad">转为无效</span></span>
+      <span class="up"><b id="diff_rec">0</b><span data-i18n="diff_rec">恢复有效</span></span>
+      <span><b id="diff_tot">0</b><span data-i18n="diff_tot">池总量</span></span>
+      <span class="diffsample" id="diffSample"></span>
+    </div>
 
     <div class="ov-grid">
       <div class="chartbox">
@@ -604,6 +640,14 @@ const I18N = {
     q_claimed:'今日已领 claimed', q_gap:'供给缺口 gap', q_inv:'库存 inventory',
     q_claim:'领取本批',
     q_refill:'补候选', q_quota_full:'配额已满', q_quota_saved:'配额已改为 {q} 条/天',
+    q_auto:'补货 refill', q_auto_due:'就绪', q_auto_ok:'充足', q_auto_none:'无档案',
+    lost_title:'失活外链待办', lost_go:'去台账处理', lost_days:'近 {d} 天失活',
+    lost_hint:'外链已失活：域名退回缺口，可重新排期',
+    diff_title:'上次分析变化', diff_add:'新增候选', diff_bad:'转为无效',
+    diff_rec:'恢复有效', diff_tot:'池总量',
+    diff_first:'只记录了一次运行，再跑一次才能对比',
+    diff_toobig:'池子超过快照上限，只能对比总量',
+    diff_none:'池子没有变化',
     q_refill_need:'先在顶部填写中心域名',
     wl_title:'白名单 · 不计入外链统计', wl_add:'加入白名单',
     wl_hint:'加白名单的域名仍留在池里，但总数、缺口、今日队列都不再算它；可随时移出。',
@@ -629,7 +673,7 @@ const I18N = {
     tips_toggle:'▸ 类型说明 & 权重 Tips（含互链说明 / 打分模型 / 周期查询）',
     btn_help:'? 使用帮助',
     tipbtn_ov:'💡 本页怎么看', tipbtn_analyze:'💡 本页怎么用', tipbtn_pool:'💡 本页怎么用', tipbtn_sched:'💡 本页怎么用',
-    tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站；在「外链池」里逐条切换。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
+    tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站；在「外链池」里逐条切换。</li><li><b>失活待办</b>（红条）只在近 7 天有链接失活时出现：域名已退回缺口，可重新排期；点「去台账处理」直接跳台账。</li><li><b>上次分析变化</b>对比最近两次运行：新增候选、转为无效、恢复有效、池总量——只看总数看不出「今天的涨是新的还是旧的」。</li><li><b>补货</b>：库存低于阈值时后台会自己再跑一次分析补候选（有冷却；连续扑空会翻倍退避）；「补候选」是手动立即触发。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
     tip_analyze:'<ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名（含子域）整行剔除：既不占候选/有效/缺口，也不做 HTTP 校验；只在卡片下方单独计数。</li><li>竞品的外链站相反是<b>高价值候选</b>：由离线 host 图 harvest 写入 <code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限限制。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul>',
     tip_pool:'<ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴 URL / 域名 / CSV → 先「预览」看缺口怎么变，再「导入为已拥有」；写错了点「撤销这批」，缺口原样回来。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「复查存活」回访 live 记录：页面 2xx 且还有我们的链接才算活；404/410 或链接没了 → 退回缺口；超时/403/5xx 只记录、不删行。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul>',
     tip_sched:'<ul><li>周期查询按间隔自动跑分析，把新候选<b>去重并入外链池</b>，适合「不断扩库」。</li><li>需要进程常驻：本地用 <code>nohup python3 server.py</code>，Fly 上机器休眠期间不会触发。</li><li>改完配置必须点<b>保存配置</b>；「立即运行」只跑一次，不影响定时。</li><li>运行历史里能看到每次新增多少域名；失败会记录原因，先看 <code>/api/health</code>。</li><li>定时任务用的档案来自「分析」页表单，添加后会固定当时的域名/关键词/竞品。</li></ul>',
@@ -678,6 +722,14 @@ const I18N = {
     q_claimed:'claimed today', q_gap:'supply gap', q_inv:'pool inventory',
     q_claim:'Claim batch',
     q_refill:'Get more', q_quota_full:'Quota reached', q_quota_saved:'Quota set to {q}/day',
+    q_auto:'auto-refill', q_auto_due:'due', q_auto_ok:'stocked', q_auto_none:'no profile',
+    lost_title:'Dead backlinks', lost_go:'Open ledger', lost_days:'lost in {d}d',
+    lost_hint:'Link is gone: the domain returns to the gap and can be re-pitched',
+    diff_title:'Last run changed', diff_add:'new candidates', diff_bad:'went invalid',
+    diff_rec:'back to valid', diff_tot:'pool total',
+    diff_first:'Only one run recorded - run again to get a diff',
+    diff_toobig:'Pool exceeds the snapshot cap; only totals can be compared',
+    diff_none:'No change in the pool',
     q_refill_need:'Enter a center domain first',
     wl_title:'Whitelist · excluded from backlink stats', wl_add:'Add to whitelist',
     wl_hint:'Whitelisted domains stay in the pool but leave every number: totals, gap and the daily queue. Remove them any time.',
@@ -703,7 +755,7 @@ const I18N = {
     tips_toggle:'▸ Types & Weights Tips (reciprocal / scoring / periodic)',
     btn_help:'? Help',
     tipbtn_ov:'💡 How to read', tipbtn_analyze:'💡 How to use', tipbtn_pool:'💡 How to use', tipbtn_sched:'💡 How to use',
-    tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li><b>Daily queue</b> is a <b>work quota</b> (100 by default, editable in the queue bar): the batch is frozen for the day, claimed rows leave it, and it never refills itself. The quota is a <b>hard gate</b> — claims beyond it are rejected. Supply gap = quota − batch; the <b>Get more</b> button runs an analysis in place.</li><li><b>Whitelisted</b> domains stay in the pool but are <b>excluded from every number</b> (totals, gap, queue). Use it for your own network and aggregators; toggle it per row in the Pool tab.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
+    tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li><b>Daily queue</b> is a <b>work quota</b> (100 by default, editable in the queue bar): the batch is frozen for the day, claimed rows leave it, and it never refills itself. The quota is a <b>hard gate</b> — claims beyond it are rejected. Supply gap = quota − batch; the <b>Get more</b> button runs an analysis in place.</li><li><b>Whitelisted</b> domains stay in the pool but are <b>excluded from every number</b> (totals, gap, queue). Use it for your own network and aggregators; toggle it per row in the Pool tab.</li><li><b>Dead backlinks</b> (red strip) appears only when a link died in the last 7 days: the domain is back in the gap and can be re-pitched; <b>Open ledger</b> jumps there.</li><li><b>Last run changed</b> compares the two most recent runs: new candidates, went invalid, back to valid, pool total — a rising total alone cannot tell new growth from old.</li><li><b>auto-refill</b>: below the inventory threshold the backend runs another analysis by itself (rate limited, and it backs off while the pool is not growing). <b>Get more</b> triggers it immediately.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
     tip_analyze:'<ul><li>Keywords drive the <b>relevance</b> score: use category terms (soundboard, sound buttons), not brand names.</li><li>Competitor hosts (including subdomains) are dropped entirely: they are not candidates, not validated, and not counted in candidate / valid / gap - only in the breakdown line under the cards.</li><li>Sites that LINK TO a competitor are the opposite: high-value candidates, harvested offline from the host graph into <code>seeds/competitor-links-&lt;domain&gt;.json</code>, admitted by evidence and therefore not subject to the keyword gate.</li><li>"Existing backlinks" only affects the <b>gap of this run</b> and is not persisted; to mark owned domains for good, import them on the Pool page.</li><li>Tick "merge into pool" to accumulate results on disk; otherwise they are for this view only.</li><li>Zero results? Check whether <code>seeds/seed-&lt;domain&gt;.json</code> exists, then whether live Bing is reachable.</li></ul>',
     tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting URLs, domains or a CSV export: hit <b>Preview</b> to see the gap delta, then <b>Import as owned</b>; a wrong paste is undone with <b>Undo this batch</b> and the gap returns exactly.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li><b>Recheck links</b> revisits live rows: alive means 2xx and our link is still on the page; 404/410 or a page without the link goes back to the gap; timeouts / 403 / 5xx are recorded but never delete a row.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li><li><b>Whitelist</b>: every record (pool / analysis / ledger) toggles in one click. A whitelisted host stays in the pool but leaves every number and the queue; the box at the top accepts a bulk paste.</li></ul>',
     tip_sched:'<ul><li>The scheduler runs the analysis on an interval and <b>merges new candidates into the pool</b> with dedup.</li><li>It needs a long-running process: <code>nohup python3 server.py</code> locally; on Fly nothing runs while the machine is asleep.</li><li>Click <b>Save config</b> after editing; "Run now" fires a single run and does not change the schedule.</li><li>Run history shows how many domains each run added; failures record a reason, so check <code>/api/health</code> first.</li><li>Scheduled profiles come from the Analyze form and freeze the domain/keywords/competitors captured at that moment.</li></ul>',
@@ -1208,6 +1260,60 @@ function todayLocal(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+/* ---------- supply side: dead links, last-run diff, refill state ----------
+   These three answer questions the pool cards cannot: what died, what the last
+   run actually changed, and whether tomorrow's batch has anything behind it. */
+function renderLost(rows, days){
+  const el=$('lostBar'); if(!el) return;
+  rows=rows||[]; days=days||7;
+  el.classList.toggle('hidden', rows.length===0);
+  if(!rows.length) return;
+  $('lostN').textContent=rows.length;
+  $('lostWhen').textContent=I18N[LANG].lost_days.replace('{d}',days);
+  $('lostList').textContent=rows.slice(0,5).map(r=>r.domain).join(', ')
+    +(rows.length>5?' +'+(rows.length-5):'');
+  el.title=I18N[LANG].lost_hint;
+}
+
+function renderDiff(diff){
+  const el=$('diffBox'); if(!el) return;
+  const last=diff&&diff.latest;
+  el.classList.toggle('hidden', !last);
+  if(!last) return;
+  const cmp=diff.comparable===true, t=I18N[LANG];
+  $('diff_add').textContent=cmp?(diff.added_count||0):'—';
+  $('diff_bad').textContent=cmp?(diff.newly_invalid_count||0):'—';
+  $('diff_rec').textContent=cmp?(diff.recovered_count||0):'—';
+  $('diff_tot').textContent=last.total||0;
+  let sample='';
+  if(!cmp){
+    sample=/truncated/.test(String(diff.reason||''))?t.diff_toobig:t.diff_first;
+  }else if(diff.added_count){
+    sample='+ '+(diff.added||[]).slice(0,4).join(', ')+(diff.added_count>4?' …':'');
+  }else if(diff.newly_invalid_count){
+    sample='− '+(diff.newly_invalid||[]).slice(0,4).join(', ');
+  }else{
+    sample=t.diff_none;
+  }
+  $('diffSample').textContent=sample;
+  el.title=(diff.previous&&diff.previous.ts)?((LANG==='en'?'since ':'对比 ')+diff.previous.ts):'';
+}
+
+function renderRefill(rf){
+  if(!rf) return;
+  const b=$('qAuto'), w=$('qAutoWrap'); if(!b) return;
+  const t=I18N[LANG];
+  b.textContent = rf.due ? t.q_auto_due
+                : (rf.low ? (rf.cooldown_left?(+rf.cooldown_left).toFixed(1)+'h':'—') : t.q_auto_ok);
+  if(w){
+    w.classList.toggle('short', !!rf.due);
+    w.title=(LANG==='en'?'inventory ':'库存 ')+rf.inventory
+      +(LANG==='en'?' / threshold ':' / 阈值 ')+rf.threshold
+      +(LANG==='en'?' · cooldown ':' · 冷却 ')+rf.cooldown_h+'h'
+      +(rf.last&&rf.last.ts?((LANG==='en'?' · last ':' · 上次 ')+rf.last.ts):'');
+  }
+}
+
 function renderQueue(){
   const q=QUEUE, el=$('qbar'); if(!q||!el) return;
   const gate = (q.quota_gate!=null?q.quota_gate:q.quota);
@@ -1221,7 +1327,10 @@ function renderQueue(){
   const key = (q.inventory===0 || q.supply_gap>0) ? 'q_note_short' : 'q_note';
   $('qNote').textContent = I18N[LANG][key]
     .replace('{id}',q.batch_id).replace('{b}',q.batch_size)
-    .replace('{i}',q.inventory).replace('{q}',gate);
+    .replace('{i}',q.inventory).replace('{q}',gate)
+    // Appended, never replaced: the batch explanation stays visible even right
+    // after a refill, and the message survives a language switch.
+    + (LAST_Q_MSG?(' · '+LAST_Q_MSG[LANG]):'');
   const b=$('qClaim'); const left = (q.quota_left!=null?q.quota_left:(gate-used));
   b.disabled = q.available===0 || left<=0;
   b.textContent = left<=0 ? I18N[LANG].q_quota_full
@@ -1277,11 +1386,36 @@ async function refillBatch(){
 async function refillCandidates(){
   const dom=(CENTER||'').trim();
   if(!dom){ setImportMsg(I18N.en.q_refill_need, I18N.zh.q_refill_need); return; }
-  if(!$('domain').value.trim()) $('domain').value=dom;
-  showTab('analyze');
-  const b=$('run'); if(b.disabled) return;
-  await analyze();
-  await refillBatch();   // fresh candidates should land in today's batch
+  // The form is the source of truth for keywords, so persist it before asking
+  // the server to run the saved profile (the same profile the scheduler uses).
+  await saveProfile(dom);
+  const b=$('qRefill'); if(b){ b.disabled=true; }
+  setQMsg('finding candidates…','正在补候选…');
+  try{
+    const r=await fetch('/api/refill',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({center_domain:dom})});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    setQMsg('refill: '+d.inventory_before+' → '+d.inventory_after+' candidates',
+            '补货：'+d.inventory_before+' → '+d.inventory_after+' 个候选');
+    await loadOverview(); await loadPool();
+  }catch(e){
+    setQMsg(null,null);
+    showErr('Refill failed: '+e.message,'补候选失败：'+e.message);
+  }finally{
+    if(b){ b.disabled=false; }
+  }
+}
+function setQMsg(en, zh){
+  LAST_Q_MSG = en ? {en:en, zh:zh||en} : null;
+  if(QUEUE) renderQueue();
+}
+
+function jumpToLedger(){
+  showTab('pool');
+  const s=$('plSummary');
+  if(s) s.scrollIntoView({block:'center'});
+  loadPlacements();
 }
 
 /* ---------- whitelist: excluded from every backlink number ---------- */
@@ -1329,6 +1463,9 @@ async function loadOverview(){
     const s=d.stats||{};
     QUEUE=d.queue||QUEUE; renderQueue();
     WL=d.whitelist||WL; WL_SET=new Set(WL.map(x=>x.domain)); renderWhitelist();
+    renderLost(s.lost_list, s.lost_days);
+    renderDiff(d.diff||null);
+    renderRefill(d.refill||null);
     $('ov_total').textContent=s.total_discovered||0;
     $('ov_acq').textContent=s.acquired||0;
     $('ov_gap').textContent=s.gap||0;
@@ -1883,6 +2020,7 @@ async function loadPool(){
   catch(e){ setPlMsg('Ledger load failed: '+e.message, '台账加载失败：'+e.message); }
 }
 let LAST_IMP_REPORT=null;
+let LAST_Q_MSG=null;   // transient queue-bar message ({en, zh})
 function impReport(d){
   const en=LANG==='en', k=d.skipped||{}, s=[];
   const pre=d.dry_run?(en?'[preview, nothing written] ':'【预览，未写入】'):'';
@@ -2270,6 +2408,7 @@ $('schedRun').addEventListener('click',schedRun);
 $('schedAdd').addEventListener('click',schedAddFromForm);
 $('qClaim').addEventListener('click',claimQueue);
 $('qRefill').addEventListener('click',refillCandidates);
+$('lostGo').addEventListener('click',jumpToLedger);
 $('qQuota').addEventListener('change', ev=>saveQuota(ev.target.value));
 $('qQuota').addEventListener('keydown', ev=>{ if(ev.key==='Enter') ev.target.blur(); });
 $('wlAdd').addEventListener('click', async ()=>{

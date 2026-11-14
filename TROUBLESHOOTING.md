@@ -70,3 +70,14 @@ Covers: no console errors, ≥3 channel rows, domain switch swaps keywords, no c
   `seeds/` (baked into the image); `data/` holds runtime state only.
 - `profiles.json`, `channels.json`, `seed.json` must appear in the Dockerfile `COPY`
   list, otherwise the app falls back to empty defaults.
+- **A new `.py` module must be added to the Dockerfile too** — the `COPY` line is an
+  explicit list, not `COPY . .`. Symptom: local runs and the selftest are green,
+  `fly deploy` reports `smoke checks failed: the app appears to be crashing`, and
+  `fly logs` shows `ModuleNotFoundError: No module named 'xxx'` (the machine boots,
+  the module-level import fails).
+- **`import server` starts a scheduler thread**: `server.py` builds `Scheduler` at
+  module level and the constructor calls `start()`. A test or one-off script that
+  imports it will run analyses (and even auto-refills) against the real
+  `data/schedule.json`, writing into real stores. Set `BP_NO_SCHEDULER=1` or pass
+  `Scheduler(..., autostart=False)`. The selftest does exactly that.
+

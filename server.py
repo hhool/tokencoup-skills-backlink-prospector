@@ -201,9 +201,15 @@ def run_analysis(params, center_domain=None):
     }
     if str(params.get("persist", "1")).lower() in ("1", "true", "yes", "on"):
         merged = st.merge_result(pool, result)
+        # Snapshot after the merge so the next run can be diffed against what
+        # this one actually produced (the diff is the operator's "what changed").
+        snap = st.record_run(pool, label=(params.get("run_label") or "analyze"))
         st.save_store(pool, center_domain)
         result["pool_merged"] = merged
         result["pool_stats"] = st.store_stats(pool)
+        result["run_snapshot"] = {"run": snap["run"], "total": snap["total"],
+                                  "valid": snap["valid"], "ts": snap["ts"]}
+        result["run_diff"] = st.run_diff(pool)
     return result
 
 
@@ -220,7 +226,47 @@ def run_recheck(center_domain, limit=20, days=None, dry_run=False, timeout=10):
     return report
 
 
-SCHED = sch.Scheduler(run_analysis, recheck_fn=run_recheck)
+def refill_check(center_domain, quota=None):
+    """Supply state for one center domain (injected into the scheduler)."""
+    pool = st.load_store(center_domain or None)
+    return st.refill_state(pool, center_domain, quota=quota)
+
+
+def run_refill(params, quota=None, kind="auto", runner=None):
+    """Discover more candidates, then book the attempt.
+
+    The analysis *is* the refill — new hosts merged into the pool are exactly what
+    the queue draws from. Booking the attempt is what keeps an empty niche from
+    hammering the network on every scheduler tick.
+    """
+    center = (params.get("center_domain") or "").strip().lower()
+    pool = st.load_store(center or None)
+    before = st.inventory_count(pool)
+    state = st.refill_state(pool, center, quota=quota)
+    run_params = dict(params)
+    run_params["persist"] = "1"
+    run_params.setdefault("run_label", "refill")
+    # `runner` exists so tests can prove the refill bookkeeping without hitting
+    # the network; production always passes nothing and gets run_analysis.
+    result = (runner or run_analysis)(run_params, center or None)
+    pool = st.load_store(center or None)
+    after = st.inventory_count(pool)
+    booked = st.mark_refill(pool, kind=kind, available=after, added=after - before,
+                            reason=state.get("reason"),
+                            note="%+d candidates" % (after - before))
+    st.save_store(pool, center or None)
+    return {"ok": True, "center_domain": center, "kind": kind,
+            "inventory_before": before, "inventory_after": after,
+            "added": after - before,
+            "candidates": (result.get("totals") or {}).get("candidates"),
+            "pool_stats": result.get("pool_stats"),
+            "booked": booked,
+            "refill": st.refill_state(pool, center, quota=quota),
+            "diff": st.run_diff(pool)}
+
+
+SCHED = sch.Scheduler(run_analysis, recheck_fn=run_recheck,
+                      refill_fn=run_refill, refill_check_fn=refill_check)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -285,13 +331,15 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/tips", "/api/store",
                                                       "/api/domains",
                                                       "/api/queue",
+                                                      "/api/runs/diff",
+                                                      "/api/refill",
                                                       "/api/whitelist",
                                                       "/api/settings",
                                                       "/api/store/csv",
                                                       "/api/store/sync-existing",
                                                       "/api/placements/claim-batch",
                                                       "/api/placements/import",
-                                                      "/api/placements/recheck", "/api/placements/recheck",
+                                                      "/api/placements/recheck",
                                                       "/api/profiles",
                                                       "/api/schedule",
                                                       "/api/schedule/run",
@@ -365,6 +413,19 @@ class Handler(BaseHTTPRequestHandler):
                                         "settings": {"daily_quota": st.effective_quota(pool)},
                                         "queue": st.daily_queue(pool, center_domain,
                                                                 date=date, with_items=False),
+                                        # Supply side of the queue: how much shelf
+                                        # is left, and whether we are allowed to
+                                        # restock it right now.
+                                        "refill": st.refill_state(pool, center_domain),
+                                        # What the last run changed in the pool.
+                                        "diff": st.run_diff(pool),
+                                        "center_domain": center_domain})
+            if path == "/api/runs/diff":
+                qs = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                center_domain = qs.get("domain", [None])[0]
+                back = qs.get("back", [1])[0]
+                pool = st.load_store(center_domain)
+                return self._json(200, {"ok": True, "diff": st.run_diff(pool, back=back),
                                         "center_domain": center_domain})
             if path == "/api/store/csv":
                 # Support domain query parameter for multi-domain isolation
@@ -435,7 +496,7 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/placements/import", "/api/placements/recheck",
                         "/api/placements/transition",
                         "/api/placements/suppress",
-                        "/api/whitelist", "/api/settings"):
+                        "/api/whitelist", "/api/settings", "/api/refill"):
             return self._error(404, "unknown path")
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -573,6 +634,32 @@ class Handler(BaseHTTPRequestHandler):
                                         "results": out["results"],
                                         "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
+
+            if path == "/api/refill":
+                # Explicit "go find me more shelf". Runs the domain's saved
+                # profile rather than trusting the request body for keywords:
+                # the same profile the scheduler would have used, so a manual
+                # and an automatic refill cannot diverge.
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower()
+                if not center_domain:
+                    raise ValueError("center_domain is required")
+                prof = st.load_profile(center_domain)
+                keywords = ", ".join(prof.get("keywords") or [])
+                competitors = "\n".join(prof.get("competitors") or [])
+                if not keywords and not competitors:
+                    raise ValueError("no profile for %s: save keywords on the analyze tab first"
+                                     % center_domain)
+                refill_params = {
+                    "domain": center_domain, "center_domain": center_domain,
+                    "keywords": keywords, "competitors": competitors,
+                    "existing": str(params.get("existing") or "")[:20000],
+                    "use_bing": "1" if params.get("use_bing") else "0",
+                    "use_tranco": "1" if params.get("use_tranco", True) else "0",
+                    "persist": "1", "run_label": "refill-manual",
+                }
+                return self._json(200, run_refill(refill_params,
+                                                  quota=params.get("quota"),
+                                                  kind="manual"))
 
             if path == "/api/placements/recheck":
                 # Survival probe: a `live` row is a claim until someone visits the

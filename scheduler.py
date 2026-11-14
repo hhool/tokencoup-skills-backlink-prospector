@@ -29,10 +29,18 @@ RUNS_PATH = os.path.join(DATA_DIR, "schedule_runs.json")
 DEFAULT_CONFIG = {"enabled": False, "interval_hours": 24, "profiles": [],
                   # Probe due `live` rows after each profile run: a delivered link
                   # is only "valid" while the page still carries it.
-                  "recheck": True, "recheck_limit": 20}
+                  "recheck": True, "recheck_limit": 20,
+                  # Restock an empty shelf between runs. The daily batch is useless
+                  # if the pool behind it ran dry, and waiting for the next interval
+                  # can mean a whole day of an empty queue.
+                  "auto_refill": True}
 MIN_INTERVAL_H = 0.05   # ~3 minutes, allows quick testing
 MAX_INTERVAL_H = 8760   # 1 year
 TICK_SECONDS = 30
+# Tests (and one-off tooling) import server.py, which builds a Scheduler at module
+# level. Without this escape hatch that import would start running real analyses
+# against real data in the test process.
+NO_AUTOSTART = str(os.environ.get("BP_NO_SCHEDULER", "")).strip().lower() in ("1", "true", "yes")
 
 
 def _now():
@@ -48,11 +56,16 @@ def _atomic_write(path, obj):
 
 
 class Scheduler:
-    def __init__(self, run_fn, recheck_fn=None):
+    def __init__(self, run_fn, recheck_fn=None, refill_fn=None, refill_check_fn=None,
+                 autostart=None):
         self.run_fn = run_fn
         # Injected by server.py for the same reason as run_fn: the scheduler stays
         # free of network policy, it only decides when to call.
         self.recheck_fn = recheck_fn
+        self.refill_fn = refill_fn
+        # Answers "is the shelf low enough, and may we go shopping yet?" — the
+        # cooldown lives in the store, so a restart cannot reset it.
+        self.refill_check_fn = refill_check_fn
         self.lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = None
@@ -62,7 +75,9 @@ class Scheduler:
                        "started_at": _now()}
         self._recompute_next()
         # Auto-start the loop thread (daemon: dies with the process).
-        self.start()
+        start_now = (not NO_AUTOSTART) if autostart is None else bool(autostart)
+        if start_now:
+            self.start()
 
     # ---------- persistence ----------
     def _load_config(self):
@@ -101,6 +116,8 @@ class Scheduler:
             except (TypeError, ValueError):
                 ih = 24
             self.config["interval_hours"] = max(MIN_INTERVAL_H, min(MAX_INTERVAL_H, ih))
+        if "auto_refill" in new_cfg:
+            self.config["auto_refill"] = bool(new_cfg["auto_refill"])
         if "recheck" in new_cfg:
             self.config["recheck"] = bool(new_cfg["recheck"])
         if "recheck_limit" in new_cfg:
@@ -222,8 +239,63 @@ class Scheduler:
             self.status["running"] = False
         self._recompute_next()
 
+    def _maybe_refill(self):
+        """Restock one profile when its pool is below the threshold.
+
+        Runs at most one refill per tick and only when nothing else is running:
+        two concurrent analyses would double the network cost and fight over the
+        same store file.
+        """
+        if not (self.config.get("enabled") and self.config.get("profiles")):
+            return None
+        if not self.config.get("auto_refill", True):
+            return None
+        if not (self.refill_fn and self.refill_check_fn):
+            return None
+        if self.status.get("running"):
+            return None
+        for prof in list(self.config.get("profiles", [])):
+            center = (prof.get("domain") or "").strip().lower()
+            if not center:
+                continue
+            try:
+                state = self.refill_check_fn(center)
+            except Exception as exc:  # noqa: BLE001 — a check must never kill the loop
+                self.status["last_error"] = "refill check failed: %s: %s" % (
+                    type(exc).__name__, str(exc)[:200])
+                continue
+            if not state.get("due"):
+                continue
+            params = self._profile_to_params(prof)
+            rec = {"ts": _now(), "profile": prof.get("name", ""), "domain": center,
+                   "refill": True, "ok": False, "inventory": state.get("inventory"),
+                   "threshold": state.get("threshold"), "reason": state.get("reason"),
+                   "added": None, "error": None}
+            try:
+                self.status["running"] = True
+                res = self.refill_fn(params)
+                rec["ok"] = True
+                rec["inventory_after"] = res.get("inventory_after")
+                rec["added"] = res.get("added")
+                rec["candidates"] = res.get("candidates")
+            except Exception as exc:  # noqa: BLE001
+                rec["error"] = "%s: %s" % (type(exc).__name__, str(exc)[:300])
+                self.status["last_error"] = rec["error"]
+            finally:
+                self.status["running"] = False
+            self.runs.insert(0, rec)
+            self.runs = self.runs[:50]
+            self._save_runs()
+            return rec
+        return None
+
     def _loop(self):
         while not self._stop.is_set():
+            try:
+                self._maybe_refill()
+            except Exception as exc:  # noqa: BLE001 — the loop must survive anything
+                self.status["last_error"] = "auto refill: %s: %s" % (
+                    type(exc).__name__, str(exc)[:200])
             if self.config.get("enabled") and self.config.get("profiles") and self._is_due():
                 self._execute_all()
             self._stop.wait(TICK_SECONDS)

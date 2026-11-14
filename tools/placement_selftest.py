@@ -1052,6 +1052,266 @@ def section_j():
             pass
 
 
+def section_k():
+    """Run diff, automatic refill and the dead-link todo.
+
+    The queue can only be honest if three things behind it are honest: what the
+    last run changed (diff), whether the shelf is being restocked (refill), and
+    which links died (lost). Each is asserted here, including the parts that are
+    deliberately conservative.
+    """
+    print("\n=== K. run diff / auto refill / dead-link todo ===")
+    import scheduler as sch
+    # server.py builds a Scheduler at import time, and by default that thread
+    # starts immediately: in a test process it would refill a real domain over
+    # the network and write into the real run history. BP_NO_SCHEDULER makes the
+    # import side-effect free.
+    os.environ["BP_NO_SCHEDULER"] = "1"
+    import server as srv
+    srv.SCHED.stop()
+
+    center = TEST_DOMAIN + "-k"
+
+    def fresh():
+        return {"domains": {}, "placements": {}, "suppressions": {},
+                "acquired_domains": [], "whitelist": {}, "settings": {},
+                "center_domain": center}
+
+    def add_pool(s, names, valid=True, priority=50):
+        for i, d in enumerate(names):
+            s["domains"][d] = {"url": "https://" + d, "valid": valid, "priority": priority - i,
+                               "type_key": "directory", "acquired": False}
+
+    try:
+        # ---------------- run diff ----------------
+        s = fresh()
+        add_pool(s, ["a.example", "b.example", "c.example"])
+        st.merge_result(s, {"prospects": []})
+        st.record_run(s, "seed")
+        add_pool(s, ["d.example"])
+        s["domains"]["b.example"]["valid"] = False
+        st.merge_result(s, {"prospects": []})
+        st.record_run(s, "seed")
+        d = st.run_diff(s)
+        check("diff needs two snapshots and says so", st.run_diff(fresh())["comparable"] is False)
+        check("two runs produce a name diff", d["comparable"] is True, d.get("reason"))
+        check("the diff names exactly what is new", d["added"] == ["d.example"]
+              and d["added_count"] == 1, d["added"])
+        check("nothing disappeared, so nothing is reported as removed",
+              d["removed"] == [] and d["removed_count"] == 0, d["removed"])
+        check("a domain that stopped verifying is reported as newly invalid",
+              d["newly_invalid"] == ["b.example"], d["newly_invalid"])
+        check("kept counts the domains present in both runs", d["kept"] == 3, d["kept"])
+        check("totals delta matches the snapshot difference",
+              d["delta"]["total"] == 1 and d["latest"]["total"] == 4, d["delta"])
+
+        s["domains"]["b.example"]["valid"] = True
+        st.record_run(s, "seed")
+        d2 = st.run_diff(s)
+        check("a recovered domain is reported as recovered, not as new",
+              d2["recovered"] == ["b.example"] and d2["newly_invalid"] == [], d2.get("recovered"))
+
+        big = fresh()
+        add_pool(big, ["x%d.example" % i for i in range(st.RUN_SNAPSHOT_MAX + 2)], valid=True)
+        st.record_run(big, "seed")
+        st.record_run(big, "seed")
+        db = st.run_diff(big)
+        check("an oversized pool refuses an invented name diff",
+              db["comparable"] is False and "truncated" in str(db.get("reason")),
+              db.get("reason"))
+        check("the oversized snapshot still reports totals",
+              db["latest"]["total"] == st.RUN_SNAPSHOT_MAX + 2, db["latest"]["total"])
+        check("the diff response never carries the full domain list",
+              "domains" not in db["latest"] and "domains" not in d["latest"],
+              sorted(db["latest"].keys()))
+
+        many = fresh()
+        for i in range(st.RUN_LOG_KEEP + 5):
+            st.record_run(many, "run%d" % i)
+        check("run history is capped", len(many["run_log"]) == st.RUN_LOG_KEEP,
+              len(many["run_log"]))
+        check("back= compares further than one run",
+              st.run_diff(many, back=3)["previous"]["label"] == many["run_log"][-4]["label"],
+              st.run_diff(many, back=3)["previous"]["label"])
+
+        # ---------------- inventory / refill state ----------------
+        inv = fresh()
+        add_pool(inv, ["p1.example", "p2.example", "p3.example"])
+        inv["domains"]["p2.example"]["acquired"] = True      # owned: not supply
+        inv["domains"]["p3.example"]["valid"] = False         # unverified: not supply
+        inv["domains"]["p4.example"] = {"url": "https://p4.example", "valid": True,
+                                        "is_competitor": True}
+        st.add_whitelist(inv, ["p5.example"])
+        inv["domains"]["p5.example"] = {"url": "https://p5.example", "valid": True}
+        check("inventory counts only claimable rows", st.inventory_count(inv) == 1,
+              st.inventory_count(inv))
+        ref = st.refill_state(inv, center)
+        check("a low shelf is due when nothing blocks it",
+              ref["due"] is True and ref["low"] is True and ref["inventory"] == 1,
+              (ref["due"], ref["inventory"], ref["threshold"]))
+        st.mark_refill(inv, "auto", available=1, reason="test")
+        ref2 = st.refill_state(inv, center)
+        check("booking a refill starts the cooldown", ref2["due"] is False
+              and ref2["cooldown_left"] > 0, (ref2["due"], ref2["cooldown_left"]))
+        check("the cooldown is persisted on the store", len(inv.get("refills") or []) == 1,
+              inv.get("refills"))
+        # A refill that produced nothing must not be retried at the base rate.
+        for _ in range(2):
+            st.mark_refill(inv, "auto", available=1, added=0, reason="test")
+        back = st.refill_state(inv, center)
+        # Two zero-progress attempts here; the older record has no `added` value,
+        # which deliberately breaks the streak (unknown is not "no progress").
+        check("consecutive empty refills back off instead of retrying every window",
+              back["zero_streak"] == 2 and back["backoff"] == 4
+              and back["cooldown_h"] == st.REFILL_COOLDOWN_H * 4,
+              (back["zero_streak"], back["backoff"], back["cooldown_h"]))
+        check("the backoff is visible in the reason", "backoff" in back["reason"], back["reason"])
+        st.mark_refill(inv, "auto", available=9, added=8, reason="productive")
+        prod = st.refill_state(inv, center)
+        check("one productive refill resets the backoff",
+              prod["backoff"] == 1 and prod["cooldown_h"] == st.REFILL_COOLDOWN_H,
+              (prod["backoff"], prod["cooldown_h"]))
+
+        full = fresh()
+        add_pool(full, ["f%d.example" % i for i in range(st.REFILL_THRESHOLD + 5)])
+        rf = st.refill_state(full, center)
+        check("a stocked shelf is never due", rf["due"] is False and rf["low"] is False,
+              (rf["due"], rf["inventory"], rf["threshold"]))
+
+        # ---------------- run_refill (server) with an injected runner ----------------
+        calls = {"n": 0}
+
+        def fake_runner(params, center_domain=None):
+            calls["n"] += 1
+            pool = st.load_store(center_domain)
+            n = calls["n"]
+            st.merge_result(pool, {"prospects": [
+                {"domain": "fresh%d.example" % (n * 10 + i), "valid": True,
+                 "priority": 60, "type_key": "directory"} for i in range(4)]})
+            st.record_run(pool, "refill")
+            st.save_store(pool, center_domain)
+            return {"totals": {"candidates": 4}, "pool_stats": st.store_stats(pool)}
+
+        seed = st.load_store(center)
+        add_pool(seed, ["k1.example", "k2.example"])
+        st.record_run(seed, "seed")     # a diff needs a baseline snapshot
+        st.save_store(seed, center)
+        rr = srv.run_refill({"center_domain": center, "keywords": "x"}, runner=fake_runner)
+        check("run_refill grows the shelf and reports it",
+              rr["inventory_before"] == 2 and rr["inventory_after"] == 6 and rr["added"] == 4,
+              (rr["inventory_before"], rr["inventory_after"]))
+        check("run_refill books the attempt so the cooldown applies",
+              rr["booked"]["kind"] == "auto" and rr["refill"]["due"] is False,
+              (rr["booked"].get("kind"), rr["refill"]["due"]))
+        check("run_refill returns the diff the run produced",
+              rr["diff"]["comparable"] is True and rr["diff"]["added_count"] == 4,
+              rr["diff"].get("added_count"))
+        again = srv.run_refill({"center_domain": center, "keywords": "x"},
+                               runner=fake_runner, kind="manual")
+        check("a manual refill outranks the cooldown and is labelled as such",
+              again["kind"] == "manual" and again["added"] == 4,
+              (again["kind"], again["added"]))
+
+        # ---------------- scheduler: auto refill on tick ----------------
+        ran = {"refill": 0, "run": 0}
+
+        def fake_run(params):
+            ran["run"] += 1
+            return {"result": {"totals": {"candidates": 0}, "pool_stats": {}}}
+
+        def fake_refill(p):
+            ran["refill"] += 1
+            return {"inventory_after": 40, "added": 30, "candidates": 30}
+
+        sched = sch.Scheduler(fake_run, refill_fn=fake_refill,
+                              refill_check_fn=lambda c: {"due": True, "inventory": 3,
+                                                         "threshold": 30, "reason": "low"},
+                              autostart=False)
+        sched._save_runs = lambda: None      # never touch the real run history file
+        sched.runs = []
+        sched.config = {"enabled": True, "interval_hours": 24, "profiles": [
+            {"name": "k", "domain": center}], "auto_refill": True, "last_run": st._now()}
+
+        rec = sched._maybe_refill()
+        check("a due shelf triggers exactly one refill run",
+              rec and rec["refill"] is True and rec["added"] == 30 and ran["refill"] == 1, rec)
+        check("the refill is recorded in the run history with its reason",
+              sched.runs[0].get("refill") is True and sched.runs[0].get("reason") == "low",
+              sched.runs[0].get("reason"))
+        check("a refill does not leave the scheduler marked as running",
+              sched.status.get("running") is False, sched.status.get("running"))
+        check("an interval run is not triggered by the refill", ran["run"] == 0, ran["run"])
+
+        sched.config["auto_refill"] = False
+        check("auto_refill=false disables it", sched._maybe_refill() is None)
+        sched.config["auto_refill"] = True
+        sched.refill_check_fn = lambda c: {"due": False, "inventory": 99, "threshold": 30,
+                                          "reason": "ok"}
+        check("a stocked shelf is not restocked", sched._maybe_refill() is None)
+        sched.refill_check_fn = lambda c: {"due": True, "inventory": 0, "threshold": 30,
+                                           "reason": "low"}
+        sched.status["running"] = True
+        check("no refill while another run is in flight", sched._maybe_refill() is None)
+        sched.status["running"] = False
+
+        def boom(c):
+            raise RuntimeError("check failed")
+        sched.refill_check_fn = boom
+        check("a failing check is swallowed, not fatal", sched._maybe_refill() is None
+              and "refill check failed" in str(sched.status.get("last_error")),
+              sched.status.get("last_error"))
+
+        # ---------------- dead-link todo ----------------
+        lost = fresh()
+        add_pool(lost, ["l1.example", "l2.example"])
+        old = "2020-01-01T00:00:00Z"
+        for dom, stamp in (("l1.example", st._now()), ("l2.example", old)):
+            key = st.placement_key(dom, "https://" + dom + "/x")
+            lost["placements"][key] = {"id": key, "target_domain": dom,
+                                       "target_url": "https://" + dom + "/x",
+                                       "state": "lost", "lost_at": stamp,
+                                       "recheck": {"status": "gone", "note": "404"}}
+        rows, n = st.lost_recent(lost)
+        check("only losses inside the window make the todo list",
+              n == 1 and rows[0]["domain"] == "l1.example", (n, [r["domain"] for r in rows]))
+        check("the todo row carries the evidence note", rows[0]["note"] == "404", rows[0])
+        stats = st.store_stats(lost)
+        check("stats expose the dead-link todo",
+              stats["lost_recent"] == 1 and stats["lost_days"] == st.LOST_WINDOW_DAYS
+              and len(stats["lost_list"]) == 1, stats["lost_recent"])
+
+        # ---------------- HTTP surface ----------------
+        if not NO_WRITE:
+            api_center = center + "-http"
+            code, body = http("/api/runs/diff?domain=%s" % api_center)
+            check("/api/runs/diff answers an empty history cleanly",
+                  code == 200 and body.get("ok") is True
+                  and body.get("diff", {}).get("comparable") is False,
+                  (code, body.get("diff", {}).get("reason")))
+            code, body = http("/api/store?domain=%s" % api_center)
+            check("/api/store carries refill state and the diff",
+                  code == 200 and "refill" in body and "diff" in body
+                  and body["refill"].get("threshold") == st.REFILL_THRESHOLD,
+                  (code, list(body.keys())[:6]))
+            code, body = http("/api/refill", {"center_domain": api_center})
+            check("/api/refill refuses a domain with no profile",
+                  code == 400 and "no profile" in str(body.get("error", "")),
+                  (code, body.get("error")))
+            code, body = http("/api/refill", {"center_domain": ""})
+            check("/api/refill requires a center domain",
+                  code == 400 and "center_domain" in str(body.get("error", "")),
+                  (code, body.get("error")))
+    finally:
+        for c in (center, center + "-http"):
+            st.prune_queues(c, keep_days=-1)
+            try:
+                path = st.get_store_path(c)
+                if os.path.isfile(path):
+                    os.remove(path)
+            except OSError:
+                pass
+
+
 
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
@@ -1068,6 +1328,7 @@ if __name__ == "__main__":
     section_h()
     section_i()
     section_j()
+    section_k()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

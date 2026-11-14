@@ -339,6 +339,30 @@ The probe lives in `recheck.py` (fetch + verdict); `store.py` still contains no 
 
 ---
 
+### D13. Run snapshots + diff = "what did this run actually add"
+
+`times_discovered` says "seen again", not "new". So every persisted run writes a **snapshot** (domain list + invalid list + total/valid/acquired); the last 10 are kept and `run_diff()` compares the two most recent (`back=n` reaches further) into `added / removed / newly_invalid / recovered`.
+
+Three deliberately conservative choices:
+
+1. **Over the cap, report totals only.** A snapshot stores at most 20k domains; beyond that `total_only=true` and the diff returns `comparable:false` with `reason:"snapshot truncated"` instead of inventing a name diff. "I can only give you totals" beats a fabricated list.
+2. **`recovered` must still be in the pool.** The rule is "invalid before ∩ in the pool now − invalid now"; the naive "invalid before − invalid now" would let a deleted domain pose as recovered.
+3. **Priority moves stay out of the diff.** Priorities are recomputed every run and would drown out the two lines that matter (new, dead).
+
+### D14. Auto refill: cooldown plus no-progress backoff
+
+The quota is a hard gate, but there has to be stock behind the gate. `inventory_count()` counts what can actually be handed out right now (in pool, not claimed, not owned, not excluded, verified, not in per-domain cooldown); below `REFILL_THRESHOLD` (30) one analysis runs, and the same domain will not be refilled again inside `REFILL_COOLDOWN_H` (6h). The cooldown lives in the store, so a restart cannot reset it.
+
+The part that needed real design is the **empty run**: free sources saturate, and analysing every 6 hours while the pool sits at 17 candidates is pure noise (for other people's servers too). So consecutive zero-progress refills double the cooldown (6 → 12 → 24 → 48, capped at 8x) and one productive refill resets it. That is why `refills` records an `added` field — without it "was the last one worth it?" is unanswerable.
+
+Division of labour: `store.py` computes state (`refill_state`), `scheduler.py` decides when (one profile per tick, never while `status.running`), `server.run_refill()` runs it and books it. `Scheduler(autostart=False)` / `BP_NO_SCHEDULER=1` stop `import server` from quietly starting a scheduler — a test-only import once pointed the real `schedule.json` at a production domain.
+
+### D15. Dead-link todo: a recheck nobody reads is worthless
+
+`lost` only flips a record and hands the domain back to the gap; unread, that knowledge is worth nothing. The red strip on the overview (last 7 days, `LOST_WINDOW_DAYS`) puts "which link died, when, and on what evidence" on the first screen, with one click to the ledger.
+
+---
+
 ## 3. Free Data Sources (no API keys required)
 
 | Source | Role | Notes |
