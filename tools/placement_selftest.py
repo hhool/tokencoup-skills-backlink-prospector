@@ -449,7 +449,6 @@ def section_g():
     """
     print("\n=== G. daily queue: quota + frozen batch ===")
     center = TEST_DOMAIN
-    qpath = st._queue_path(center)
 
     def qstore(n):
         return {"domains": {("q%03d.example" % i): {"url": "https://q%03d.example" % i,
@@ -550,12 +549,7 @@ def section_g():
                   code2 == 200 and "queue" in (body2 or {}) and "items" not in body2["queue"],
                   sorted((body2 or {}).get("queue") or {}))
     finally:
-        for p in [qpath]:
-            try:
-                if p and os.path.isfile(p):
-                    os.remove(p)
-            except OSError:
-                pass
+        st.prune_queues(center, keep_days=-1)
 
 
 def section_h():
@@ -567,7 +561,6 @@ def section_h():
     """
     print("\n=== H. whitelist + hard daily quota ===")
     center = TEST_DOMAIN + "-h"
-    qpath = st._queue_path(center)
 
     def wstore(n):
         return {"domains": {("w%03d.example" % i): {"url": "https://w%03d.example" % i,
@@ -649,6 +642,22 @@ def section_h():
               rec2 is None and (reason2 or "").startswith("daily quota reached"), reason2)
         check("a past day does not eat today's quota", st.claimed_on(s, "2020-01-01") == 0)
 
+        # Per-day queue files: a caller that forgets `date` must not be able to
+        # rebuild the batch someone is already working from.
+        check("queue files are keyed by day",
+              st._queue_path(center, "2026-03-01").endswith("-20260301.json"))
+        q_auto = st.daily_queue(s, center)
+        check("a date-less call lands on the quota day",
+              q_auto["batch_id"].endswith(st._quota_date().replace("-", "")), q_auto["batch_id"])
+        old_f, new_f = (st._queue_path(center, "2025-01-01"),
+                        st._queue_path(center, st._quota_date()))
+        for f in (old_f, new_f):
+            with open(f, "w", encoding="utf-8") as fh:
+                fh.write("{}")
+        st.prune_queues(center)
+        check("old queue files are pruned, recent ones kept",
+              (not os.path.exists(old_f)) and os.path.exists(new_f))
+
         # A claim made yesterday must not count against today.
         old = wstore(3)
         st.set_daily_quota(old, 2)
@@ -693,11 +702,7 @@ def section_h():
                   and isinstance(body.get("whitelist"), list),
                   (code, sorted((body or {}).keys())))
     finally:
-        try:
-            if qpath and os.path.isfile(qpath):
-                os.remove(qpath)
-        except OSError:
-            pass
+        st.prune_queues(center, keep_days=-1)
 
 
 if __name__ == "__main__":

@@ -490,9 +490,44 @@ def _utc_date():
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
 
 
-def _queue_path(center_domain):
+QUEUE_KEEP_DAYS = 14
+
+
+def _queue_path(center_domain, date=None):
+    """One file per (center, day).
+
+    A single rolling file meant a caller who forgot `date` (curl, monitoring, a
+    second tab in another timezone) rewrote the freeze key and rebuilt the batch
+    the operator was already working from. Dated files make that impossible.
+    """
     safe = _sanitize_domain(center_domain)
-    return os.path.join(DATA_DIR, "%s%s.json" % (QUEUE_PREFIX, safe)) if safe else None
+    if not safe:
+        return None
+    if date:
+        return os.path.join(DATA_DIR, "%s%s-%s.json"
+                            % (QUEUE_PREFIX, safe, str(date).replace("-", "")))
+    return os.path.join(DATA_DIR, "%s%s.json" % (QUEUE_PREFIX, safe))
+
+
+def prune_queues(center_domain, keep_days=QUEUE_KEEP_DAYS):
+    """Delete per-day queue files older than keep_days; returns the filenames."""
+    safe = _sanitize_domain(center_domain)
+    if not safe or not os.path.isdir(DATA_DIR):
+        return []
+    prefix = "%s%s-" % (QUEUE_PREFIX, safe)
+    cutoff = (dt.datetime.now(QUOTA_TZ) - dt.timedelta(days=keep_days)).strftime("%Y%m%d")
+    removed = []
+    for name in os.listdir(DATA_DIR):
+        if not name.startswith(prefix) or not name.endswith(".json"):
+            continue
+        stamp = name[len(prefix):-5]
+        if len(stamp) == 8 and stamp.isdigit() and stamp < cutoff:
+            try:
+                os.remove(os.path.join(DATA_DIR, name))
+                removed.append(name)
+            except OSError:
+                pass
+    return removed
 
 
 def queue_block_reason(store, domain, entry=None, whitelist=None):
@@ -537,7 +572,10 @@ def daily_queue(store, center_domain, date=None, quota=None, refill=False, with_
     rows that appeared after the freeze — explicit, never automatic, so a batch
     cannot silently change size mid-day.
     """
-    date = (date or _utc_date())[:10]
+    # Default to the *quota* day (UTC+8), so a caller that omits `date` (curl,
+    # monitoring, the scheduler) lands on the same freeze key as the UI instead
+    # of inventing a second, near-identical batch for the UTC day.
+    date = (date or _quota_date())[:10]
     configured = effective_quota(store)
     if quota is None:
         quota = configured
@@ -557,12 +595,13 @@ def daily_queue(store, center_domain, date=None, quota=None, refill=False, with_
     eligible.sort()
     eligible_domains = [d for _, d in eligible]
 
-    path = _queue_path(center_domain)
+    path = _queue_path(center_domain, date)
     with _QUEUE_LOCK:
         state = load_json_file(path, {}) if path else {}
         if not isinstance(state, dict) or state.get("center_domain") != center_domain \
                 or state.get("date") != date:
             slug = _sanitize_domain(center_domain) or "default"
+            prune_queues(center_domain)   # dated files accumulate; keep two weeks
             state = {"schema": QUEUE_SCHEMA, "center_domain": center_domain, "date": date,
                      "batch_id": "%s-%s" % (slug, date.replace("-", "")),
                      "quota": quota, "items": [], "created_at": _now()}

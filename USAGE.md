@@ -151,7 +151,7 @@ For a steady 50/day online, ship with `--max-rows` around 1500 (~0.9 MB, trivial
 
 Four rules, all deliberate:
 
-1. **Frozen per day.** The first page load slices the batch and writes `data/queue-<domain>.json`; reloading at noon does not reshuffle what you saw in the morning.
+1. **Frozen per day.** The first page load slices the batch and writes `data/queue-<domain>-<YYYYMMDD>.json` — **one file per day**. That separation is deliberate: a curl or a monitor that forgets `date` only ever touches its own day and can never rebuild the batch you are working from. Files older than 14 days are pruned.
 2. **Claimed rows leave the batch.** "Claim batch" writes every remaining row into the delivery ledger as `claimed` and stamps the `batch_id`; rows blocked by the ledger, suppressions or cooldown are counted separately.
 3. **No automatic refill.** Short inventory shows up as a gap — never padded with duplicates. Closing it takes a fresh analysis (the **Get more** button runs one in place) or a harvest file (see 3.5). Lowering the quota never deletes rows already handed to you; raising it tops today's batch up to the new quota.
 4. **The quota is a hard gate.** Claims beyond it are rejected by the server (`409 daily quota reached`), including single claims from the pool — otherwise "100/day" is just a slogan. The quota day rolls at 00:00 **UTC+8** (`QUOTA_TZ_OFFSET`), not UTC.
