@@ -381,7 +381,7 @@ curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \
   -H 'Content-Type: application/json' -d '{}' | jq '{ran,refill,next_run}'
 ```
 
-The repo ships `.github/workflows/tick.yml`: every day at 09:17 Asia/Shanghai (UTC `17 1 * * *`) it knocks on this endpoint once, and it can also be dispatched manually from the Actions page. One step remains to make it work — **store the same value as the repository Actions secret `BDL_TRIGGER_TOKEN`** (Settings → Secrets and variables → Actions). If the app lives at a non-default address, also add the repository variable `BDL_BASE_URL`.
+The repo ships `.github/workflows/tick.yml`: twice a day (09:17 / 23:17 Asia/Shanghai, UTC `17 1,15 * * *`) it knocks on this endpoint, and it can also be dispatched manually from the Actions page. Twice rather than once is deliberate: running a profile by hand moves `last_run`, which can push the due moment past any single fixed time; the tick decides due-ness itself, so extra knocks never double-run. One step remains to make it work — **store the same value as the repository Actions secret `BDL_TRIGGER_TOKEN`** (Settings → Secrets and variables → Actions). If the app lives at a non-default address, also add the repository variable `BDL_BASE_URL`.
 
 Two operational notes: GitHub disables scheduled workflows after 60 days without a commit to the repo (one manual dispatch re-enables them); and a cold start takes a few seconds, so the workflow retries `000/502/503/504` up to 5 times but fails immediately on 4xx — a wrong token will not fix itself by waiting.
 

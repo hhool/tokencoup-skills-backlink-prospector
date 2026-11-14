@@ -315,7 +315,7 @@ python3 tools/competitor_backlinks.py \
 
 线上是 scale-to-zero，机器一停进程就没了，调度器线程跟着消失——**冷却到点、间隔到点这些事在睡着的时候永远不会发生**。`POST /api/cron/tick` 让外部定时器把机器叫醒并做恰好一次它本来该做的事（先补货，再跑到点的档案）；`ran` 取自 `last_run` 是否真的变了，两次并发只有一个会报真。
 
-这个接口花的是真实配额，地址又是公开的，所以**没配 `BDL_TRIGGER_TOKEN` 就返回 503 而不是默默开放**（fail closed）。令牌错 403、没带 401。仓库自带 `.github/workflows/tick.yml` 每天敲一次。
+这个接口花的是真实配额，地址又是公开的，所以**没配 `BDL_TRIGGER_TOKEN` 就返回 503 而不是默默开放**（fail closed）。令牌错 403、没带 401。仓库自带 `.github/workflows/tick.yml` 每天敲两次（tick 自己判断到没到点，多敲不重复跑）。
 
 ---
 

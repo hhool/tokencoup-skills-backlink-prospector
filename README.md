@@ -365,7 +365,7 @@ Division of labour: `store.py` computes state (`refill_state`), `scheduler.py` d
 
 The deployed app scales to zero, so when the machine stops the scheduler thread stops with it — **a cooldown expiring or an interval elapsing while asleep simply never happens**. `POST /api/cron/tick` lets an external timer wake the machine and do exactly one turn of what the loop would have done (restock first, then run the profiles that are due); `ran` is derived from whether `last_run` actually moved, so of two concurrent callers only one reports true.
 
-That call spends real quota and the address is public, so **without `BDL_TRIGGER_TOKEN` it answers 503 instead of silently staying open** (fail closed). Wrong token 403, no token 401. The repo ships `.github/workflows/tick.yml`, which knocks once a day.
+That call spends real quota and the address is public, so **without `BDL_TRIGGER_TOKEN` it answers 503 instead of silently staying open** (fail closed). Wrong token 403, no token 401. The repo ships `.github/workflows/tick.yml`, which knocks twice a day (the tick decides due-ness itself, so extra knocks never double-run).
 
 ---
 

@@ -12,9 +12,11 @@ name: daily-tick
 
 on:
   schedule:
-    # 01:17 UTC = 09:17 Asia/Shanghai. Off the hour on purpose: GitHub delays
-    # or drops jobs queued at exactly :00 during peak load.
-    - cron: "17 1 * * *"
+    # Twice daily, 01:17 and 15:17 UTC (09:17 / 23:17 Asia/Shanghai). The tick
+    # itself decides due-ness, so extra knocks are free — and necessary,
+    # because `last_run` drifts whenever a profile is run by hand, which can
+    # push the due moment past any single fixed time.
+    - cron: "17 1,15 * * *"
   workflow_dispatch:
 
 concurrency:

@@ -375,7 +375,7 @@ curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \
   -H 'Content-Type: application/json' -d '{}' | jq '{ran,refill,next_run}'
 ```
 
-仓库自带 `.github/workflows/tick.yml`：每天 09:17（Asia/Shanghai，UTC `17 1 * * *`）敲一次这个接口，也能在 Actions 页面手动 dispatch。要让它跑起来只差一步——**把同一个值存进仓库的 Actions secret `BDL_TRIGGER_TOKEN`**（Settings → Secrets and variables → Actions）。地址不是默认域名时再加一个仓库变量 `BDL_BASE_URL`。
+仓库自带 `.github/workflows/tick.yml`：每天两次（09:17 / 23:17 Asia/Shanghai，UTC `17 1,15 * * *`）敲一次这个接口，也能在 Actions 页面手动 dispatch。敲两次而不是一次是刻意的：手动跑过分析会往后挪 `last_run`，固定时刻可能落在「还没到点」的那一侧；tick 自己判断到没到点，多敲不重复跑。要让它跑起来只差一步——**把同一个值存进仓库的 Actions secret `BDL_TRIGGER_TOKEN`**（Settings → Secrets and variables → Actions）。地址不是默认域名时再加一个仓库变量 `BDL_BASE_URL`。
 
 两个运维注意点：GitHub 的定时工作流在仓库 60 天无提交后会自动停用（手动 dispatch 一次即可恢复）；冷启动要几秒，工作流里对 `000/502/503/504` 会重试 5 次，而 4xx 直接失败——因为令牌错了等多久都没用。
 

@@ -345,11 +345,11 @@ curl -s -X POST https://backlink-prospector.fly.dev/api/cron/tick \\
   <p><span class="doc-zh">每次分析都会留一份池子快照（最近 10 份），相邻两次的差异就是「这次多了什么」：新增 / 消失 / 转为无效 / 恢复有效；池子超过 2 万个域名时只报总量，不编明细。
   <b>自动补货</b>：可领候选低于 <code>REFILL_THRESHOLD</code>（默认 30）时后台自己跑一次分析，同域 6 小时内不重复（<code>REFILL_COOLDOWN_H</code>）；连续空跑会翻倍退避（上限 8 倍），有产出立刻恢复。
   <b>失活待办</b>：近 7 天失活的链接会顶到概览页红条，点一下直达台账。
-  <b>外部唤醒</b>：scale-to-zero 机器睡着就没有调度线程，外部定时器（仓库自带 GitHub Actions）每天叫醒一次做恰好一个 tick；没配 <code>BDL_TRIGGER_TOKEN</code> 时接口返回 503 而不是默默开放。</span>
+  <b>外部唤醒</b>：scale-to-zero 机器睡着就没有调度线程，外部定时器（仓库自带 GitHub Actions）每天叫醒两次做恰好一个 tick（到没到点由 tick 判断，多敲不重复跑）；没配 <code>BDL_TRIGGER_TOKEN</code> 时接口返回 503 而不是默默开放。</span>
   <span class="doc-en">Every analysis leaves a pool snapshot (last 10 kept); the difference between two is "what changed": added / removed / went invalid / recovered. Above 20k domains only totals are reported — no invented detail.
   <b>Auto refill</b>: below <code>REFILL_THRESHOLD</code> (30) the backend runs one analysis, at most once per <code>REFILL_COOLDOWN_H</code> (6h) per domain; consecutive empty runs double the wait (capped at 8x) and one productive run resets it.
   <b>Dead-link todo</b>: links lost in the last 7 days surface in the overview's red strip with one click to the ledger.
-  <b>External wake-up</b>: a scale-to-zero machine has no scheduler thread while asleep, so an external timer (the bundled GitHub Actions workflow) wakes it once a day for exactly one tick; without <code>BDL_TRIGGER_TOKEN</code> the endpoint answers 503 instead of silently staying open.</span></p>
+  <b>External wake-up</b>: a scale-to-zero machine has no scheduler thread while asleep, so an external timer (the bundled GitHub Actions workflow) wakes it twice a day for exactly one tick (due-ness is the tick's own decision, so extra knocks never double-run); without <code>BDL_TRIGGER_TOKEN</code> the endpoint answers 503 instead of silently staying open.</span></p>
 
   <h3><span class="doc-zh">导出与查看</span><span class="doc-en">Export and inspect</span></h3>
 <pre><code>curl -s "http://127.0.0.1:8787/api/store/csv?domain=soundbuttons.click" -o pool.csv
