@@ -74,21 +74,27 @@ DEFAULTS: Dict[str, Any] = {
     "max_links": 120,        # links considered per page
     "email_limit": 3,        # contact candidates kept per domain
     # Submission pages are usually reachable but often unlinked, so a bounded
-    # probe runs after the link crawl when nothing usable was found.
-    "probe_paths": ["/contact", "/contact-us", "/submit", "/add", "/advertise"],
-    "probe_budget": 3,
+    # probe runs after the link crawl when nothing usable was found. A
+    # trailing-slash variant matters: plenty of sites 404 /contact, 200 /contact/.
+    "probe_paths": ["/contact", "/contact/", "/contact-us", "/submit", "/feedback", "/advertise"],
+    "probe_budget": 4,
 }
 
 # ---------------------------------------------------------------------------
 # Path lexicon. Higher wins; anything that scores 0 is never fetched.
+# Sites nest these under a section: /help/advertise, /about/contact,
+# /press-room/media-contacts. Up to two prefix segments are allowed before the
+# keyword; the negative list still vetoes blog/tag/category prefixes first.
 # ---------------------------------------------------------------------------
 
+_PREFIX = r"(?:/[a-z0-9\-_]+){0,2}"
+
 _PATH_RULES: List[Tuple[int, str]] = [
-    (100, r"/(?:submit|submission|add-?(?:a-?)?(?:link|site|url|listing|resource|tool)|suggest|"
+    (100, _PREFIX + r"/(?:submit|submission|add-?(?:a-?)?(?:link|site|url|listing|resource|tool)|suggest|"
           r"guest-?post|write-?for-?us|contribute|advertise|promote|partnerships?)(?:[/?#\-.]|$)"),
-    (70, r"/(?:contact|contact-?us|about|about-?us|imprint|imprint-?legal|support|help|feedback|"
-         r"get-?in-?touch)(?:[/?#\-.]|$)"),
-    (45, r"/(?:resources?|links?|directory|directories|press|media|partners?|vendors?|"
+    (70, _PREFIX + r"/(?:contact|contact-?us|media-?contacts?|press-?contacts?|about|about-?us|imprint|"
+         r"imprint-?legal|support|help|feedback|get-?in-?touch)(?:[/?#\-.]|$)"),
+    (45, _PREFIX + r"/(?:resources?|links?|directory|directories|press|media|partners?|vendors?|"
          r"community|forum)(?:[/?#\-.]|$)"),
 ]
 
@@ -102,13 +108,18 @@ _PATH_NEGATIVE = re.compile(
 # A form is a submission form only if it can carry a URL and words. These are the
 # shapes that never do.
 _SEARCH_HINTS = re.compile(r"search|query|find|filter", re.I)
-_LOGIN_FIELDS = {"password", "pass", "login", "username", "user_login", "signin"}
+_LOGIN_FIELDS = {"login", "signin", "user_login", "log"}
+_PASSWORD_FIELDS = {"password", "passwd", "pass", "pwd"}
 _NEWSLETTER_ONLY = {"email", "email_address", "mail"}
 
 # Field name synonyms. Two sites running the same plugin should land on the same
 # shape hash, so the normalisation has to be opinionated.
 _FIELD_SYNONYMS: List[Tuple[str, str]] = [
     (r"^(?:your|the|my)?[_-]?(?:full[_-]?)?name\d*$", "name"),
+    # Forum software calls the sender's name field "username" (XenForo, phpBB,
+    # Discourse). On a contact form that is the same slot; a true login form is
+    # rejected by its password field before this mapping is ever reached.
+    (r"^(?:user|member|display|screen|nick)[_-]?name\d*$", "name"),
     (r"^(?:first|last|given|family|sur)[_-]?(?:name)?\d*$", "name"),
     (r"^(?:your|the|my)?[_-]?(?:e[_-]?mail|email[_-]?address|mail|emailaddr)\d*$", "email"),
     (r"^(?:your|the|my)?[_-]?(?:web[_-]?site|website[_-]?url|site[_-]?url|url|link|link[_-]?url|"
@@ -362,7 +373,7 @@ def is_honeypot(name: str) -> bool:
 # plugin's internal id differs on every site and would make every shape unique.
 _TECHNICAL = re.compile(
     r"(?:csrf|token|nonce|_wpnonce|wpforms\[(?:id|post_id)\]|page_?(?:title|url|id)|"
-    r"url_referer|redirect|referer|referrer|^utm_)",
+    r"url_referer|redirect|referer|referrer|clientload|loadtime|^utm_)",
     re.I,
 )
 _KNOWN_SLOTS = {"name", "email", "url", "message", "subject", "company", "phone", "captcha"}
@@ -407,7 +418,15 @@ def classify_form(form: Dict[str, Any], page_url: str) -> Optional[Dict[str, Any
     lowered = {name.lower() for name in visible}
     type_values = {str(item.get("type", "")).lower() for item in meta.values()}
 
-    if lowered & _LOGIN_FIELDS or "password" in type_values:
+    # A login form is the form with a password. A contact form that names its
+    # name field "username" is not one - that misread threw away every XenForo
+    # and phpBB contact page.
+    if "password" in type_values or lowered & _PASSWORD_FIELDS:
+        return None
+    # A one-step login (username, then password on the next page) has no words to
+    # write; anything that can carry a message is not a login.
+    has_words = bool(form.get("has_textarea")) or "message" in slots or "subject" in slots
+    if lowered & _LOGIN_FIELDS and not has_words:
         return None
     if set(slots) <= _NEWSLETTER_ONLY:
         return None
@@ -416,7 +435,6 @@ def classify_form(form: Dict[str, Any], page_url: str) -> Optional[Dict[str, Any
         return None
 
     has_url = "url" in slots
-    has_words = bool(form.get("has_textarea")) or "message" in slots or "subject" in slots
     # A form that can carry an address and an email but nowhere to say what is
     # being submitted is a signup box. Two such fields are the classic false
     # positive: email + website, no message.
@@ -778,14 +796,34 @@ def discover_domain(
     if home_status == 0:
         record["notes"].append("entry page unreadable (DNS, TLS or timeout): unknown, not absent")
         return record
+    if home_status in (401, 403):
+        record["notes"].append(
+            "the site refuses automated reads (HTTP %d); a submission page may exist "
+            "but cannot be observed - handle by hand, do not retry" % home_status
+        )
+        return record
     if home_status >= 400:
         record["notes"].append("entry page returned %d" % home_status)
         return record
 
-    for _, url in links:
-        if record["pages_fetched"] >= max_pages or has_submission():
-            break
-        visit(url)
+    # A scored frontier, not a flat walk over the home page's links. Submission
+    # pages are usually two hops deep (/help -> /help/advertise), and a flat walk
+    # spends the whole budget on the first page's siblings before it ever reads
+    # the better link a deeper page advertises. Highest score first, then short
+    # URLs, then alphabetical - so the order is stable and replayable.
+    frontier: Dict[str, int] = {}
+
+    def push(found: List[Tuple[int, str]]) -> None:
+        for score, url in found:
+            if url not in visited and url not in frontier:
+                frontier[url] = score
+
+    push(links)
+    while frontier and record["pages_fetched"] < max_pages and not has_submission():
+        best_url = min(frontier.items(), key=lambda item: (-item[1], len(item[0]), item[0]))[0]
+        frontier.pop(best_url)
+        _, found = visit(best_url)
+        push(found)
 
     # Link-driven crawling only reaches pages the site chose to link. Submission
     # pages are often reachable but unlinked, so a bounded probe of the usual
@@ -834,10 +872,18 @@ def discover_domain(
         record["contact_source_url"] = deduped[0].get("page_url")
 
     if not best:
-        record["notes"].append(
-            "no usable form within %d page(s); a larger --max-pages may find one"
-            % record["pages_fetched"]
-        )
+        if forms:
+            record["notes"].append(
+                "%d form(s) found in %d page(s) but none is a usable submission or "
+                "contact form; a larger --max-pages may find one"
+                % (len(forms), record["pages_fetched"])
+            )
+        else:
+            record["notes"].append(
+                "no <form> element in %d page(s) of HTML read; a form rendered by "
+                "JavaScript would not appear here, and a larger --max-pages will not help"
+                % record["pages_fetched"]
+            )
     elif best["kind"] == "contact":
         record["notes"].append("only a contact form was found, no submission form")
     if not deduped:
@@ -958,6 +1004,35 @@ _FIXTURES: Dict[str, Tuple[int, str]] = {
     "https://example-g.com/": (200, """<html><body>
         <a href="/cdn-cgi/l/email-protection" data-cfemail="5b33321b3e233a362b373e763c75383436"
            class="__cf_email__">[email protected]</a></body></html>"""),
+    # XenForo contact page: the sender field is "username", a hidden
+    # _xfClientLoadTime tag rides along, and the link is nested under /misc/.
+    "https://example-h.com/": (200, """<html><body>
+        <a href="/misc/contact">Contact us</a></body></html>"""),
+    "https://example-h.com/misc/contact": (200, """<html><body>
+        <form action="/misc/contact" method="post">
+          <input type="hidden" name="_xfToken" value="t">
+          <input type="hidden" name="_xfRedirect" value="/">
+          <label for="u">Your name</label><input id="u" name="username" type="text">
+          <label for="e">Your email address</label><input id="e" name="email" type="email">
+          <label for="s">Subject</label><input id="s" name="subject" type="text">
+          <label for="m">Message</label><textarea id="m" name="message"></textarea>
+          <input type="hidden" name="_xfClientLoadTime" value="1">
+        </form></body></html>"""),
+    # Two hops: the submission page is advertised only from a section page, not
+    # from home. A flat walk over the home page's links never reaches it.
+    "https://example-i.com/": (200, """<html><body>
+        <a href="/help">Help</a>
+        <a href="/about">About</a></body></html>"""),
+    "https://example-i.com/help": (200, """<html><body>
+        <a href="/help/faq">FAQ</a>
+        <a href="/help/advertise">Advertise</a></body></html>"""),
+    "https://example-i.com/help/faq": (200, "<html><body>answers</body></html>"),
+    "https://example-i.com/about": (200, "<html><body>who we are</body></html>"),
+    "https://example-i.com/help/advertise": (200, """<html><body>
+        <form action="/help/advertise" method="post">
+          <input name="your_name"><input name="email" type="email">
+          <input name="website" type="url"><textarea name="message"></textarea>
+        </form></body></html>"""),
 }
 
 
@@ -1003,7 +1078,8 @@ def selftest() -> int:
     c = discover_domain("example-c.com", "https://example-c.com", _fixture_fetch,
                         max_pages=2, delay=0, sleep=lambda _: None)
     check("a bare page yields no channel", c["submission_url"] is None and c["contact_email"] is None)
-    check("a miss is explained, not silent", any("may find one" in note for note in c["notes"]),
+    check("a miss is explained, not silent",
+          any("no <form> element" in note or "may find one" in note for note in c["notes"]),
           c["notes"])
 
     d = discover_domain("example-d.com", "https://example-d.com", _fixture_fetch,
@@ -1037,6 +1113,26 @@ def selftest() -> int:
           g["contact_email"] == "hi@example-g.com", g["contact_email"])
     check("obfuscated provenance is recorded", g["contact_source"] == "obfuscated",
           g["contact_source"])
+
+    # Forum software names the sender field "username"; that is a contact form,
+    # not a login. This fixture is the head-fi.org case that started the fix.
+    h = discover_domain("example-h.com", "https://example-h.com", _fixture_fetch,
+                        max_pages=4, delay=0, sleep=lambda _: None)
+    check("a forum contact form is not mistaken for a login",
+          h["submission_url"] == "https://example-h.com/misc/contact", h["submission_url"])
+    visible_slots = sorted(
+        entry["slot"] for entry in (h["form_map"] or [])
+        if not entry["technical"] and not entry["honeypot"] and entry["slot"]
+    )
+    check("the username field maps to the name slot",
+          visible_slots == ["email", "message", "name", "subject"], visible_slots)
+    check("the client-load timestamp is filed as technical",
+          "_xfClientLoadTime" in (h["form_technical"] or []), h["form_technical"])
+
+    i = discover_domain("example-i.com", "https://example-i.com", _fixture_fetch,
+                        max_pages=4, delay=0, sleep=lambda _: None)
+    check("a submission page two hops from home is still reached",
+          i["submission_url"] == "https://example-i.com/help/advertise", i["submission_url"])
 
     print("")
     if failures:

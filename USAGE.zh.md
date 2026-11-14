@@ -266,6 +266,14 @@ python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
 python3 tools/discover_entry.py --selftest
 ```
 
+爬虫被允许做什么，做不到时又会如何诚实说明：
+
+- **零发送。** 全程只读 GET，先看 robots.txt。
+- **带打分的 frontier，不是平铺遍历。** 投稿页通常隔两层（`/help` → `/help/advertise`），所以每个已读页面的链接会重新排队，同一页数预算内始终优先读得分最高的 URL。
+- **嵌套路径也算数。** `/help/advertise`、`/about/contact`、`/press-room/media-contacts` 都有分；关键词前允许最多两段前缀。
+- **论坛的联系表单就是联系表单。** `username` 字段映射为 name 槽位；只有出现密码字段才算登录表单（XenForo / phpBB 场景）。
+- **没找到会说原因。** `no <form> element in N page(s)` 表示表单多半是 JS 渲染的，加大 `--max-pages` 也没用；`the site refuses automated reads (HTTP 403)` 表示这个域名改为人工处理，不要重试。
+
 判定规则与理由：
 
 | 问题 | 规则 |

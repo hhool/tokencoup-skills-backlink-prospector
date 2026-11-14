@@ -268,6 +268,20 @@ python3 tools/discover_entry.py --store data/store-soundbuttons.cc.json \
 python3 tools/discover_entry.py --selftest
 ```
 
+What the crawler is allowed to do, and what it says honestly when it cannot:
+
+- **No transmission.** Everything is a read-only GET; robots.txt is honoured first.
+- **A scored frontier, not a flat walk.** Submission pages are usually two hops deep
+  (`/help` -> `/help/advertise`), so each visited page's links re-rank the queue and
+  the highest-scoring URL is read next, within the same page budget.
+- **Nested paths count.** `/help/advertise`, `/about/contact` and
+  `/press-room/media-contacts` all score; up to two prefix segments before the keyword.
+- **A forum contact form is a contact form.** A `username` field maps to the name
+  slot; only a password field makes a form a login (this is the XenForo / phpBB case).
+- **A miss says why.** `no <form> element in N page(s)` means a JavaScript-rendered
+  form is likely and a larger `--max-pages` will not help; `the site refuses automated
+  reads (HTTP 403)` means handle the domain by hand instead of retrying.
+
 What it decides, and why:
 
 | Question | Rule |
