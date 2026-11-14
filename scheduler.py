@@ -90,6 +90,11 @@ class Scheduler:
         cfg.setdefault("interval_hours", 24)
         cfg.setdefault("profiles", [])
         cfg.setdefault("last_run", None)
+        # Make the defaults self-describing: /api/schedule is what an operator
+        # reads to know whether the backend is allowed to recheck and restock.
+        cfg.setdefault("recheck", True)
+        cfg.setdefault("recheck_limit", 20)
+        cfg.setdefault("auto_refill", True)
         return cfg
 
     def _load_runs(self):
