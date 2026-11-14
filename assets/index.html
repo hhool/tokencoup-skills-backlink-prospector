@@ -1356,7 +1356,7 @@ function renderSchedRuns(){
       <td>${escAttr(r.domain||'')}</td>
       <td>${st}</td>
       <td>${r.candidates!=null?r.candidates:'—'}</td>
-      <td>${LANG==='en'?'pool ':'池总数 '}${r.pool_total!=null?r.pool_total:'—'}${err}</td>
+      <td>${LANG==='en'?'pool: ':'池总数 '}${r.pool_total!=null?r.pool_total:'—'}${err}</td>
     </tr>`;
   }).join('');
 }
@@ -1433,6 +1433,7 @@ $('langToggle').addEventListener('click',()=>{
   applyLang(); renderTips(); refreshCenterUI(); loadOverview();
   if(LAST_CHANNELS.length) renderChannels(LAST_CHANNELS, LAST_ROTATION);
   if(POOL) renderPool(POOL);
+  if(typeof SCHED!=='undefined' && SCHED && SCHED.runs) renderSchedRuns();  // run-history rows are built per-language
   refreshAllSortUI();
 });
 $('centerDomain').addEventListener('input', onCenterTyped);
