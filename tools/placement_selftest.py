@@ -17,6 +17,7 @@ Sections:
     D  real-Chrome rendering of the ledger in ZH / EN / ZH
     E  in-app help: per-view tips toggles + the standalone /help page
     F  competitor semantics (excluded hosts vs. admitted competitor backlinks)
+    I  existing-backlink import (export -> live rows -> gap report -> undo)
 """
 import json
 import os
@@ -705,6 +706,182 @@ def section_h():
         st.prune_queues(center, keep_days=-1)
 
 
+def section_i():
+    """Importing the links you already own (export -> ledger -> gap report).
+
+    The export is evidence, not a claim: it must create `live` rows carrying the
+    source label, shrink the gap by exactly the in-pool domains it proves, keep
+    out-of-pool domains booked, and never burn the daily quota.
+    """
+    print("\n=== I. existing-backlink import ===")
+    center = TEST_DOMAIN + "-i"
+    EXPORT = """Linking page,Anchor,Date
+https://www.reddit.com/r/foobar/comments/abc/,great list,2026-10-01
+"https://quiet.example/tools?x=1",quiet,2026-10-02
+https://comp.example/blog/post,competitor,2026-10-03
+https://sub.mine.example/own,self sub,2026-10-04
+https://mine.example/own,self,2026-10-05
+https://blocked.example/x,excluded,2026-10-06
+https://quora.com/What-is-x,quora,2026-10-07
+12,https://listicle.example/best,2026-10-08
+brandnew.example
+http://
+"""
+
+    def istore():
+        return {"domains": {"reddit.com": {"url": "https://reddit.com", "priority": 90,
+                                           "valid": True, "type_key": "community"},
+                            "quiet.example": {"url": "https://quiet.example", "priority": 70,
+                                              "valid": True, "type_key": "directory"},
+                            "listicle.example": {"url": "https://listicle.example", "priority": 60,
+                                                 "valid": True, "type_key": "resource"},
+                            "comp.example": {"url": "https://comp.example", "priority": 40,
+                                             "valid": True, "is_competitor": True},
+                            "blocked.example": {"url": "https://blocked.example", "priority": 30,
+                                                "valid": True},
+                            "still-gap.example": {"url": "https://still-gap.example",
+                                                  "priority": 20, "valid": True}},
+                "placements": {}, "suppressions": {"blocked.example": {"reason": "spam"}},
+                "acquired_domains": [], "whitelist": {}, "settings": {},
+                # The import compares against the store's own center domain, so the
+                # fixture must name one: mine.example + its subdomains are "self".
+                "center_domain": "mine.example"}
+
+    try:
+        rows, invalid = st._parse_link_rows(EXPORT)
+        check("parser keeps the linking URL and its bare host",
+              rows[0] == {"page": "https://www.reddit.com/r/foobar/comments/abc/",
+                          "host": "reddit.com"}, rows[0])
+        check("a leading rank column does not break the row",
+              [r for r in rows if r["host"] == "listicle.example"],
+              [r for r in rows if r["host"] == "listicle.example"])
+        check("a bare host gets a synthetic page URL",
+              [r["page"] for r in rows if r["host"] == "brandnew.example"] ==
+              ["https://brandnew.example"])
+        check("unusable lines are counted, not silently dropped",
+              invalid == 2 and len(rows) == 9, (invalid, len(rows)))
+
+        s = istore()
+        st.add_whitelist(s, ["quora.com"])
+        before = st.store_stats(s)
+        before_gap = before["gap"]
+        rep = st.import_placements(s, EXPORT, source="gsc-2026-11")
+        sk = rep["skipped"]
+        check("import skips self (incl. subdomain), competitor, whitelisted, excluded",
+              (sk["self"], sk["competitor"], sk["whitelisted"], sk["suppressed"]) == (2, 1, 1, 1), sk)
+        # 4 accepted: 3 in the pool (gap -3) + 1 host the pool never saw, still booked.
+        check("import writes one live row per accepted link", rep["written"] == 4, rep["written"])
+        check("import rows carry their source as evidence",
+              all(r["verify"]["verify_method"] == "import:gsc-2026-11"
+                  and r["imported"] is True and r["verify"]["verified_at"] == ""
+                  for r in s["placements"].values()),
+              [r["verify"] for r in s["placements"].values()][:1])
+        check("gap shrinks by exactly the in-pool domains", rep["gap_delta"] == -3
+              and s and st.store_stats(s)["gap"] == before_gap - 3,
+              (rep["gap_delta"], before_gap, st.store_stats(s)["gap"]))
+        check("out-of-pool hosts are booked but never added to the pool",
+              rep["out_of_pool"] == 1 and "brandnew.example" not in s["domains"]
+              and "brandnew.example" in rep["out_of_pool_sample"], rep["out_of_pool_sample"])
+        check("the pool entry for an imported domain flips to acquired",
+              s["domains"]["reddit.com"]["acquired"] is True)
+        check("importing does not burn the daily quota",
+              st.claimed_on(s) == 0 and st.quota_state(s)["used"] == 0, st.quota_state(s))
+        check("a normal claim still fits the quota right after importing",
+              st.claim_placement(s, {"target_domain": "fresh.example",
+                                     "target_url": "https://fresh.example/x"})[0] is not None
+              and st.claimed_on(s) == 1, st.claimed_on(s))
+        check("an imported domain is protected by the per-domain cadence",
+              str(st.placement_block_reason(s, "reddit.com", "https://reddit.com/other")
+                  ).startswith("domain cadence"), st.placement_block_reason(s, "reddit.com", "https://reddit.com/other"))
+
+        q = st.daily_queue(s, center, date="2026-03-01", quota=100)
+        qd = [i["domain"] for i in q["items"]]
+        check("the daily queue never offers an imported domain",
+              not ({"reddit.com", "quiet.example", "listicle.example"} & set(qd)), qd)
+
+        rep2 = st.import_placements(s, EXPORT, source="gsc-2026-11")
+        check("re-importing the same export is a no-op",
+              rep2["written"] == 0 and rep2["skipped"]["duplicate"] == 4
+              and st.store_stats(s)["gap"] == before_gap - 3, rep2["skipped"])
+
+        probe = istore()
+        st.add_whitelist(probe, ["quora.com"])
+        dry = st.import_placements(probe, EXPORT, source="gsc-2026-11", dry_run=True)
+        check("dry run reports the projected numbers and writes nothing",
+              dry["dry_run"] is True and dry["gap_delta"] == -3
+              and len(probe["placements"]) == 0 and dry["after"]["live"] == 4,
+              (dry["dry_run"], len(probe["placements"]), dry["after"]))
+
+        check("imported rows are counted in the ledger stats",
+              st.placement_stats(s)["imported"] == 4, st.placement_stats(s))
+
+        # An analysis run must not un-acquire a domain that a live/imported row owns.
+        fresh = istore()
+        st.import_placements(fresh, "https://reddit.com/r/x", source="gsc")
+        st.merge_result(fresh, {"prospects": [{"domain": "reddit.com", "valid": True,
+                                               "priority": 88, "type_key": "community"}]})
+        check("a later analyze run keeps the imported domain acquired",
+              fresh["domains"]["reddit.com"]["acquired"] is True)
+
+        undo = st.import_placements(s, EXPORT, remove=True)
+        check("undo deletes only the imported rows and restores the gap",
+              undo["removed"] == 4 and st.store_stats(s)["gap"] == before_gap
+              and s["domains"]["reddit.com"]["acquired"] is False,
+              (undo["removed"], st.store_stats(s)["gap"]))
+
+        if not NO_WRITE:
+            api_center = center + "-http"
+            code, body = http("/api/placements/import",
+                              {"center_domain": api_center, "dry_run": True,
+                               "text": "https://api-one.example/a\nhttps://api-two.example/b\n",
+                               "source": "selftest"})
+            check("/api/placements/import previews without writing",
+                  code == 200 and body.get("dry_run") is True and body.get("written") == 2
+                  and body.get("placements") == [], (code, body.get("written")))
+            code, body = http("/api/placements/import",
+                              {"center_domain": api_center,
+                               "text": "https://api-one.example/a\nhttps://api-two.example/b\n",
+                               "source": "selftest"})
+            check("/api/placements/import writes live rows",
+                  code == 200 and body.get("written") == 2
+                  and body.get("stats", {}).get("placements", {}).get("live") == 2,
+                  (code, body.get("stats", {}).get("placements")))
+            check("/api/placements/import leaves the quota alone",
+                  body.get("stats", {}).get("quota", {}).get("used") == 0,
+                  body.get("stats", {}).get("quota"))
+            check("/api/placements/import reports the source on the row",
+                  all(p.get("import_source") == "selftest" for p in body.get("placements", [])),
+                  [p.get("import_source") for p in body.get("placements", [])])
+            code, body = http("/api/placements/import",
+                              {"center_domain": api_center, "text": 42})
+            check("/api/placements/import rejects a non-string payload",
+                  code == 400 and "text" in str(body.get("error", "")), (code, body.get("error")))
+            code, body = http("/api/store/unmark-existing",
+                              {"center_domain": api_center, "domains": "api-one.example"})
+            check("unmark-existing names domains a live row still owns",
+                  code == 200 and body.get("still_live") == ["api-one.example"],
+                  (code, body.get("still_live")))
+            code, body = http("/api/placements/import",
+                              {"center_domain": api_center, "remove": True,
+                               "text": "https://api-one.example/a\nhttps://api-two.example/b\n"})
+            check("/api/placements/import undo empties the ledger",
+                  code == 200 and body.get("removed") == 2
+                  and body.get("stats", {}).get("placements", {}).get("total") == 0,
+                  (code, body.get("removed")))
+    finally:
+        for c in (center, center + "-http"):
+            st.prune_queues(c, keep_days=-1)
+            # section I is the first section that writes an HTTP store file, so
+            # clean up after itself instead of leaving fixtures in data/.
+            try:
+                path = st.get_store_path(c + "-http" if not c.endswith("-http") else c)
+                if os.path.isfile(path):
+                    os.remove(path)
+            except OSError:
+                pass
+
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -718,6 +895,7 @@ if __name__ == "__main__":
     section_f()
     section_g()
     section_h()
+    section_i()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

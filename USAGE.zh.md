@@ -177,6 +177,39 @@ python3 tools/simulate_harvest.py --preset tiny --keep --verbose   # 保留中�
 
 ---
 
+## 3.9 导入已有外链（导出 → 台账 → 缺口报告）
+
+「已拥有」有三个来源：台账里已上线的记录、人工标记、以及**导入的已有外链**。第三条最容易被忽略，也最容易把缺口算错——你已经有 300 条外链，池里却全显示成"缺口"。
+
+粘贴格式很宽松：
+
+```
+https://www.reddit.com/r/foo/comments/abc/     # 整条 URL
+example.org                                     # 裸域名
+Linking page,Anchor,Date                        # CSV 表头（自动跳过）
+12,https://listicle.example/best,2026-10-08     # 带前置排名列的 CSV 也行
+```
+
+导入做的事（不是"打个标记"）：
+
+- 每一行变成**一条 `live` 台账记录**，`verify_method = import:<来源标签>`，`verified_at` 为空——意思是"有导出为证，但没实地探过"。来源标签写清（`ahrefs-2026-11` / `gsc` / `cc-2026-10`），以后复查时能只挑这类没探过的行先跑。
+- 池内域名：缺口立刻减对应条数，`已拥有` 同步增加。
+- 池外域名：**不塞进池子**（污染"累计发现"），但照记账，并进入 90 天同域节奏保护——所以不会再花配额去要一个你已经有链接的站。
+- **不消耗日配额**：导入是记账，不是今天的工作量。一次粘 500 行也不会把当天的闸门顶死。
+- 自动跳过：自身域名（含子域）、竞品、白名单、已排除、重复（同一投放位幂等）。
+
+三个按钮：
+
+| 按钮 | 作用 |
+|---|---|
+| 预览 | `dry_run`，只报"写入后缺口会变成多少"，一个字节都不落盘 |
+| 导入为已拥有 | 真写；报告给出 缺口 X→Y、已拥有 P→Q、池内/池外条数、跳过原因 |
+| 撤销这批 | 只删**导入产生**的记录（同域），缺口原样回来；人工标记与真实上线记录不动 |
+
+接口：`POST /api/placements/import`，body `{center_domain, text, source, dry_run?, remove?, own_url?}`。返回里有 `before/after/gap_delta/acquired_delta/skipped/in_pool_sample/out_of_pool_sample`，足够直接贴进周报。
+
+---
+
 ## 4. 命令行 / API 速查（批量与自动化用）
 
 下列可直接 curl 调用（本地 `8787` 或线上域名）。

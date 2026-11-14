@@ -273,6 +273,31 @@ curl -s -X POST http://127.0.0.1:8787/api/whitelist \
   but is excluded from discovered, acquired, gap, type distribution, reciprocal ratio and the daily queue, and claiming a placement
   on it is refused. Every record has an Add/Un-whitelist button; the Pool tab accepts a bulk paste.</span></p>
 
+  <h3><span class="doc-zh">导入已有外链（预览 / 导入 / 撤销）</span><span class="doc-en">Import existing backlinks (preview / import / undo)</span></h3>
+<pre><code># 1) preview: reports the gap delta, writes nothing
+curl -s -X POST http://127.0.0.1:8787/api/placements/import \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","source":"ahrefs-2026-11","dry_run":true,
+       "text":"https://www.reddit.com/r/foo/comments/abc/\nhttps://listicle.example/best"}'
+
+# 2) import for real (accepts URLs, bare hosts, or a pasted CSV export)
+curl -s -X POST http://127.0.0.1:8787/api/placements/import \
+  -H 'Content-Type: application/json' \
+  -d @import.json    # {"center_domain":"...","source":"gsc","text":"..."}
+
+# 3) undo only the rows this import created for those hosts
+curl -s -X POST http://127.0.0.1:8787/api/placements/import \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","remove":true,"text":"reddit.com"}'</code></pre>
+  <p><span class="doc-zh">导入不是打个标记，而是把每一行写成一条 <code>state=live</code> 台账记录（<code>verify_method=import:&lt;来源&gt;</code>，
+  未实地探测）。池内域名会从缺口里减掉，池外域名只记账不塞进池子，并受 90 天同域节奏保护。
+  <b>不吃日配额</b>：一次粘 500 行也不会顶死当天的闸门。自身域名、竞品、白名单、已排除与重复会自动跳过并计数。</span>
+  <span class="doc-en">An import is not a flag: every row becomes a <code>state=live</code> ledger record
+  (<code>verify_method=import:&lt;source&gt;</code>, never probed). In-pool domains leave the gap, out-of-pool hosts are
+  booked without entering the pool and fall under the 90-day per-domain cadence. <b>No daily quota is consumed</b> — a
+  500-row paste cannot close the day's gate. Your own domain, competitors, whitelisted hosts, suppressed hosts and
+  duplicates are skipped and counted.</span></p>
+
   <h3><span class="doc-zh">已知域名（下拉数据源）</span><span class="doc-en">Known domains (picker source)</span></h3>
 <pre><code>curl -s "http://127.0.0.1:8787/api/domains"</code></pre>
 

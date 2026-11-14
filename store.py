@@ -14,6 +14,8 @@ pool that is NOT acquired is the live "gap" to pursue.
 Storage isolation: pools are now isolated per center domain (e.g., soundbuttons.cc.json,
 balancebiketoddler.com.json) to avoid cross-contamination when switching domains.
 """
+import copy
+import csv
 import datetime as dt
 import hashlib
 import json
@@ -117,6 +119,10 @@ def merge_result(store, result):
     now = _now()
     doms = store.setdefault("domains", {})
     acquired = set(store.get("acquired_domains", []))
+    # A verified live link (delivered or imported) is ownership too: without the
+    # union, every analysis run reset that flag to False and only the stats kept
+    # telling the truth (they union with live_domains() at read time).
+    live = {_norm_target(x) for x in live_domains(store) if x}
     merged = 0
     for p in result.get("prospects", []):
         d = p.get("domain")
@@ -146,7 +152,7 @@ def merge_result(store, result):
                 e["evidence"] = p.get("evidence")
             if tranco is not None:
                 e.setdefault("authority", {})["tranco_global_rank"] = tranco
-            e["acquired"] = d in acquired
+            e["acquired"] = (d in acquired) or (_norm_target(d) in live)
             merged += 1
         else:
             doms[d] = {
@@ -171,7 +177,7 @@ def merge_result(store, result):
                 "source": p.get("source", "seed"),
                 "via_competitors": p.get("via_competitors") or [],
                 "evidence": p.get("evidence"),
-                "acquired": d in acquired,
+                "acquired": (d in acquired) or (_norm_target(d) in live),
             }
             merged += 1
     store["runs"] = store.get("runs", 0) + 1
@@ -353,11 +359,18 @@ def _stamp_quota_date(stamp):
 
 
 def claimed_on(store, date=None):
-    """Placements claimed on a given quota day (UTC+8 by default)."""
+    """Placements claimed on a given quota day (UTC+8 by default).
+
+    Imported rows (verify_method="import:*") are skipped on purpose: they record
+    links the operator already earned, so counting them would let one paste of a
+    500-row export slam the hard daily gate shut and block the day's real work.
+    """
     date = (date or _quota_date())[:10]
     n = 0
     for p in store.get("placements", {}).values():
         if p.get("state") not in tuple(ACTIVE_STATES) + ("live",):
+            continue
+        if _is_imported(p):
             continue
         stamp = p.get("claimed_at") or p.get("submitted_at") or p.get("live_at") or ""
         if _stamp_quota_date(stamp) == date:
@@ -1220,15 +1233,203 @@ def suppress_placement(store, params):
     return {"scope": scope, "reason": reason}, None
 
 
+# ---------------------------------------------------------------------------
+# Import the links you already own (GSC / Ahrefs / Common Crawl export).
+#
+# Why import into the ledger instead of just flipping an "acquired" flag: an
+# operator's export *is* evidence, and every number in this tool is supposed to
+# carry its source. A row imported here becomes a `live` placement tagged
+# verify_method="import:<source>" with verified_at="" (never probed), so
+#   1) the gap shrinks by exactly the domains that export proves,
+#   2) the per-domain cadence keeps those domains from being claimed again (no
+#      quota burned on links you already have),
+#   3) the survival recheck can later probe exactly the rows whose evidence is
+#      an export rather than a live visit.
+# It deliberately does NOT touch the daily quota: importing yesterday's links is
+# bookkeeping, not today's work.
+# ---------------------------------------------------------------------------
+IMPORT_MAX_ROWS = 2000
+
+
+def _import_cells(line):
+    """Split one CSV/TSV line into cells, tolerating quoted commas."""
+    if "," in line:
+        try:
+            return list(next(csv.reader([line])))
+        except (csv.Error, StopIteration):
+            pass
+    return re.split(r"[\t;]", line)
+
+
+def _parse_link_rows(text, limit=IMPORT_MAX_ROWS):
+    """Extract (page_url, host) pairs from whatever the operator pastes.
+
+    Accepts one URL per line, a bare host per line, or a CSV/TSV export where a
+    single column holds the linking page and the others hold date / anchor /
+    traffic numbers. The first cell that resolves to a real host wins, so
+    "12,https://x.com/a,anchor" parses while a header row does not.
+    """
+    rows, invalid = [], 0
+    for raw in str(text or "").splitlines():
+        line = raw.strip().lstrip("\ufeff")
+        if not line or line.startswith("#"):
+            continue
+        if len(rows) >= limit:
+            break
+        page = host = ""
+        for cell in _import_cells(line):
+            cell = (cell or "").strip().strip('"').strip("'").strip()
+            h = _bare_domain(cell)
+            if h:
+                page, host = cell, h
+                break
+        if not host:
+            invalid += 1
+            continue
+        if not re.match(r"^[a-z][a-z0-9+.-]*://", page, re.I):
+            page = "https://" + page.lstrip("/")
+        rows.append({"page": page[:500], "host": host})
+    return rows, invalid
+
+
+def _is_imported(rec):
+    """True when a ledger row came from an operator export, not from a visit."""
+    if not isinstance(rec, dict):
+        return False
+    if rec.get("imported"):
+        return True
+    return str((rec.get("verify") or {}).get("verify_method") or "").startswith("import:")
+
+
+def _sync_acquired_flags(store, domains=None):
+    """Recompute each pool entry's acquired flag: manual mark OR a live placement.
+
+    Without this, an import (or a removed import) leaves `acquired` disagreeing
+    with the ledger in the raw JSON — the stats survive because they union with
+    live_domains(), but every other reader of the flag would be lied to.
+    """
+    live = {_norm_target(x) for x in live_domains(store) if x}
+    manual = set(store.get("acquired_domains", []))
+    for d, e in store.get("domains", {}).items():
+        if domains is not None and d not in domains:
+            continue
+        e["acquired"] = bool(d in manual or _norm_target(d) in live)
+
+
+def _import_snapshot(store):
+    s = store_stats(store)
+    return {"total": s["total_discovered"], "acquired": s["acquired"],
+            "gap": s["gap"], "gap_valid": s["gap_valid"],
+            "records": s["placements"]["total"], "live": s["placements"]["live"]}
+
+
+def import_placements(store, text="", source="operator-export", dry_run=False,
+                      remove=False, own_url="", limit=IMPORT_MAX_ROWS):
+    """Turn a pasted backlink export into `live` ledger rows; return a gap report.
+
+    remove=True deletes the rows this feature created for the same hosts, which
+    is how an operator undoes a bad paste (the gap comes back exactly).
+    """
+    rows, invalid = _parse_link_rows(text, limit)
+    src = re.sub(r"[^A-Za-z0-9._:/-]", "", str(source or "operator-export")).strip()[:60] \
+        or "operator-export"
+    if dry_run:  # mutate a copy so the preview cannot lie or leak a write
+        store = copy.deepcopy(store)
+    center = _bare_domain(store.get("center_domain") or "")
+    wl = whitelisted_domains(store)
+    doms = store.setdefault("domains", {})
+    places = store.setdefault("placements", {})
+    sup = store.get("suppressions", {})
+    before = _import_snapshot(store)
+    now = _now()
+    skipped = {"self": 0, "competitor": 0, "whitelisted": 0, "suppressed": 0,
+               "existing": 0, "duplicate": 0}
+    hosts, seen, accepted = set(), set(), []
+    for r in rows:
+        host, page = r["host"], r["page"]
+        if center and (host == center or host.endswith("." + center)):
+            skipped["self"] += 1
+            continue
+        if host in wl:
+            skipped["whitelisted"] += 1
+            continue
+        if (doms.get(host) or {}).get("is_competitor"):
+            skipped["competitor"] += 1
+            continue
+        if host in sup:
+            skipped["suppressed"] += 1
+            continue
+        key = placement_key(host, page)
+        if key in seen:
+            skipped["duplicate"] += 1
+            continue
+        seen.add(key)
+        hosts.add(host)
+        cur = places.get(key)
+        if cur:
+            skipped["duplicate" if cur.get("state") == "live" else "existing"] += 1
+            continue
+        accepted.append((key, host, page))
+
+    removed = 0
+    if remove:
+        for key, rec in list(places.items()):
+            if not _is_imported(rec):
+                continue
+            if _bare_domain(rec.get("target_domain")) not in hosts:
+                continue
+            places.pop(key, None)
+            removed += 1
+        _sync_acquired_flags(store, {h for h in hosts if h in doms})
+    else:
+        for key, host, page in accepted:
+            places[key] = {
+                "id": key, "target_domain": host, "target_url": page,
+                "placement_type": "link", "created_at": now, "state": "live",
+                "live_at": now, "imported": True, "imported_at": now,
+                "import_source": src, "own_url": str(own_url or "")[:500],
+                "batch_id": "",
+                "verify": {"landing_url": page, "verify_method": "import:" + src,
+                           "observed_href": "", "rel": "", "anchor_text": "",
+                           "verified_at": ""},
+                "evidence": [{"at": now, "note": "imported from export (%s)" % src}],
+            }
+        _sync_acquired_flags(store, {h for h in hosts if h in doms})
+
+    in_pool = sorted(h for h in hosts if h in doms)
+    out_pool = sorted(h for h in hosts if h not in doms)
+    after = _import_snapshot(store)
+    log = store.setdefault("imports", [])
+    log.append({"at": now, "mode": "remove" if remove else "import", "source": src,
+                "parsed": len(rows), "written": removed if remove else len(accepted),
+                "dry_run": bool(dry_run), "domains": len(hosts)})
+    store["imports"] = log[-20:]
+    return {
+        "ok": True, "dry_run": bool(dry_run), "mode": "remove" if remove else "import",
+        "source": src, "parsed": len(rows), "invalid": invalid,
+        "accepted": 0 if remove else len(accepted), "written": len(accepted),
+        "removed": removed, "domains": len(hosts), "skipped": skipped,
+        "in_pool": len(in_pool), "out_of_pool": len(out_pool),
+        "in_pool_sample": in_pool[:20], "out_of_pool_sample": out_pool[:20],
+        "before": before, "after": after,
+        "gap_delta": after["gap"] - before["gap"],
+        "acquired_delta": after["acquired"] - before["acquired"],
+        "live_delta": after["live"] - before["live"],
+        "quota_untouched": True,
+    }
+
+
 def placement_stats(store):
     by_state = {}
     for p in store.get("placements", {}).values():
         s = p.get("state", "unknown")
         by_state[s] = by_state.get(s, 0) + 1
+    imported = sum(1 for p in store.get("placements", {}).values() if _is_imported(p))
     return {"total": len(store.get("placements", {})), "by_state": by_state,
             "live": by_state.get("live", 0),
             "in_progress": sum(by_state.get(s, 0) for s in ACTIVE_STATES),
             "suppressed": len(store.get("suppressions", {})),
+            "imported": imported,
             "live_domains": len(live_domains(store))}
 
 

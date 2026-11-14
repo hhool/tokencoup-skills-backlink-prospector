@@ -70,7 +70,9 @@
   .wlrow td{opacity:.62}
   /* Three actions per row (own / use / whitelist) must stack cleanly instead of
      wrapping into a ragged two-line cell. */
-  #poolTable td:last-child{min-width:112px}
+  #poolTable td:last-child,#plTable td:last-child{min-width:120px}
+  #plTable td:last-child button{white-space:nowrap}
+  #plTable td:nth-child(2){white-space:nowrap}
   #poolTable td:last-child button{display:block;width:100%;margin-top:4px}
   #poolTable td:last-child button:first-child{margin-top:0}
   .pl-use{white-space:nowrap}
@@ -346,7 +348,7 @@
   <div class="tabpane" id="tab-pool">
     <div class="viewtips">
       <button class="tipbtn" data-tipbtn="pool" aria-expanded="false" data-i18n="tipbtn_pool">💡 本页怎么用</button>
-      <div class="tipbody hidden" id="tip-pool" data-i18n="tip_pool"><ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li><li><b>白名单</b>：每条记录（池 / 分析 / 台账）都能一键加入或移出。加白的域名留在池里但不计入任何统计，也不进今日队列；顶部输入框可批量粘贴。</li></ul></div>
+      <div class="tipbody hidden" id="tip-pool" data-i18n="tip_pool"><ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴 URL / 域名 / CSV → 先「预览」看缺口怎么变，再「导入为已拥有」；写错了点「撤销这批」，缺口原样回来。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li><li><b>白名单</b>：每条记录（池 / 分析 / 台账）都能一键加入或移出。加白的域名留在池里但不计入任何统计，也不进今日队列；顶部输入框可批量粘贴。</li></ul></div>
     </div>
     <div class="panel">
       <div class="toolbar" style="margin-bottom:0">
@@ -480,9 +482,16 @@
       </div>
 
       <div style="margin-top:10px">
-        <label><span data-i18n="imp_label">导入已有外链（GSC / Ahrefs / Common Crawl 导出，每行一个域名）→ 标记「已拥有」</span></label>
-        <textarea id="importExisting" placeholder="example.com&#10;another-backlink.com"></textarea>
-        <div style="margin-top:8px"><button id="importBtn" data-i18n="imp_btn">导入并标记已拥有</button> <span id="importMsg2" class="badge"></span></div>
+        <label><span data-i18n="imp_label">导入已有外链（GSC / Ahrefs / Common Crawl 导出：每行一个 URL 或域名，可直接粘 CSV）</span></label>
+        <textarea id="importExisting" data-i18n-ph="imp_text_ph" placeholder="每行一个：URL / 域名 / CSV 行（Linking page,Anchor,Date）"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+          <input id="impSource" style="flex:0 0 230px" data-i18n-ph="imp_source_ph" placeholder="来源标签（ahrefs-2026-11）">
+          <button id="impPreview" class="ghost" data-i18n="imp_preview">预览</button>
+          <button id="impBtn" data-i18n="imp_btn">导入为已拥有</button>
+          <button id="impUndo" class="ghost" data-i18n="imp_undo">撤销这批</button>
+          <span id="importMsg2" class="badge"></span>
+        </div>
+        <div class="note" id="impReport" style="margin-top:6px"></div>
       </div>
 
       <div class="grid" style="margin-top:8px">
@@ -621,13 +630,18 @@ const I18N = {
     tipbtn_ov:'💡 本页怎么看', tipbtn_analyze:'💡 本页怎么用', tipbtn_pool:'💡 本页怎么用', tipbtn_sched:'💡 本页怎么用',
     tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站；在「外链池」里逐条切换。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
     tip_analyze:'<ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名（含子域）整行剔除：既不占候选/有效/缺口，也不做 HTTP 校验；只在卡片下方单独计数。</li><li>竞品的外链站相反是<b>高价值候选</b>：由离线 host 图 harvest 写入 <code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限限制。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul>',
-    tip_pool:'<ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul>',
+    tip_pool:'<ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴 URL / 域名 / CSV → 先「预览」看缺口怎么变，再「导入为已拥有」；写错了点「撤销这批」，缺口原样回来。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul>',
     tip_sched:'<ul><li>周期查询按间隔自动跑分析，把新候选<b>去重并入外链池</b>，适合「不断扩库」。</li><li>需要进程常驻：本地用 <code>nohup python3 server.py</code>，Fly 上机器休眠期间不会触发。</li><li>改完配置必须点<b>保存配置</b>；「立即运行」只跑一次，不影响定时。</li><li>运行历史里能看到每次新增多少域名；失败会记录原因，先看 <code>/api/health</code>。</li><li>定时任务用的档案来自「分析」页表单，添加后会固定当时的域名/关键词/竞品。</li></ul>',
     pool_title:'外链池 · 已有 vs 空缺 <span class="badge">周期查询不断扩充</span>', pool_load:'加载外链池', pool_csv:'下载池 CSV',
     pool_note:'每次分析自动并入候选池（按域名去重、累计发现次数与首见/末见时间）。「见过」不等于「已拥有」：缺口只与投放台账中已验证上线的记录、人工标记及显式导入的已有外链比对。点击下方列表标题可排序；「编辑」列可标记已拥有，「选用」可把域名带入下方投放台账。',
     existing_title:'已有外链库 · 条目状态（外链池）',
     ps_total:'累计发现', ps_acq:'已拥有', ps_gap:'空缺', ps_gapv:'空缺且有效', ps_recip:'互链占比',
-    imp_label:'导入已有外链（GSC / Ahrefs / Common Crawl 导出，每行一个域名）→ 标记「已拥有」', imp_btn:'导入并标记已拥有',
+    imp_label:'导入已有外链（GSC / Ahrefs / Common Crawl 导出：每行一个 URL 或域名，可直接粘 CSV）',
+    imp_btn:'导入为已拥有', imp_preview:'预览', imp_undo:'撤销这批',
+    imp_source_ph:'来源标签（ahrefs-2026-11）',
+    imp_text_ph:'每行一个 URL 或域名；也可直接粘 CSV（Linking page,Anchor,Date）',
+    imp_empty:'请先粘贴已有外链（URL、域名或 CSV 导出）',
+    imp_need_preview:'先预览，再决定是否写入',
     bytype_label:'按类型分布 / By type', bytype_hint:'点击「加载外链池」查看分布。',
     sort_hint:'点击表头可排序 · Click a column header to sort',
     tree_title:'目录树 · 类型（点击筛选，可多选）', tree_legend:'计数：总数 / 已拥有 / 缺口',
@@ -688,13 +702,18 @@ const I18N = {
     tipbtn_ov:'💡 How to read', tipbtn_analyze:'💡 How to use', tipbtn_pool:'💡 How to use', tipbtn_sched:'💡 How to use',
     tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li><b>Daily queue</b> is a <b>work quota</b> (100 by default, editable in the queue bar): the batch is frozen for the day, claimed rows leave it, and it never refills itself. The quota is a <b>hard gate</b> — claims beyond it are rejected. Supply gap = quota − batch; the <b>Get more</b> button runs an analysis in place.</li><li><b>Whitelisted</b> domains stay in the pool but are <b>excluded from every number</b> (totals, gap, queue). Use it for your own network and aggregators; toggle it per row in the Pool tab.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
     tip_analyze:'<ul><li>Keywords drive the <b>relevance</b> score: use category terms (soundboard, sound buttons), not brand names.</li><li>Competitor hosts (including subdomains) are dropped entirely: they are not candidates, not validated, and not counted in candidate / valid / gap - only in the breakdown line under the cards.</li><li>Sites that LINK TO a competitor are the opposite: high-value candidates, harvested offline from the host graph into <code>seeds/competitor-links-&lt;domain&gt;.json</code>, admitted by evidence and therefore not subject to the keyword gate.</li><li>"Existing backlinks" only affects the <b>gap of this run</b> and is not persisted; to mark owned domains for good, import them on the Pool page.</li><li>Tick "merge into pool" to accumulate results on disk; otherwise they are for this view only.</li><li>Zero results? Check whether <code>seeds/seed-&lt;domain&gt;.json</code> exists, then whether live Bing is reachable.</li></ul>',
-    tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting domains (one per line); the gap recalculates immediately and the import is reversible.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li><li><b>Whitelist</b>: every record (pool / analysis / ledger) toggles in one click. A whitelisted host stays in the pool but leaves every number and the queue; the box at the top accepts a bulk paste.</li></ul>',
+    tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting URLs, domains or a CSV export: hit <b>Preview</b> to see the gap delta, then <b>Import as owned</b>; a wrong paste is undone with <b>Undo this batch</b> and the gap returns exactly.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li><li><b>Whitelist</b>: every record (pool / analysis / ledger) toggles in one click. A whitelisted host stays in the pool but leaves every number and the queue; the box at the top accepts a bulk paste.</li></ul>',
     tip_sched:'<ul><li>The scheduler runs the analysis on an interval and <b>merges new candidates into the pool</b> with dedup.</li><li>It needs a long-running process: <code>nohup python3 server.py</code> locally; on Fly nothing runs while the machine is asleep.</li><li>Click <b>Save config</b> after editing; "Run now" fires a single run and does not change the schedule.</li><li>Run history shows how many domains each run added; failures record a reason, so check <code>/api/health</code> first.</li><li>Scheduled profiles come from the Analyze form and freeze the domain/keywords/competitors captured at that moment.</li></ul>',
     pool_title:'Backlink Pool · Owned vs Gap <span class="badge">expanded by periodic queries</span>', pool_load:'Load pool', pool_csv:'Pool CSV',
     pool_note:'Every analysis auto-merges into the candidate pool (dedup by domain, accumulates discovery count and first/last seen). Seen is not owned: gap detection uses verified live placements, operator-marked acquisitions and explicit imports only. Click column headers to sort; use "Edit" to mark acquired, or "Use" to carry a domain into the delivery ledger below.',
     existing_title:'Existing backlink library · entry status (the pool)',
     ps_total:'Discovered', ps_acq:'Acquired', ps_gap:'Gap', ps_gapv:'Gap & valid', ps_recip:'Reciprocal %',
-    imp_label:'Import existing backlinks (GSC / Ahrefs / Common Crawl export, one domain per line) → mark "acquired"', imp_btn:'Import & mark acquired',
+    imp_label:'Import existing backlinks (GSC / Ahrefs / Common Crawl export: one URL or domain per line, or paste a CSV)',
+    imp_btn:'Import as owned', imp_preview:'Preview', imp_undo:'Undo this batch',
+    imp_source_ph:'source label (ahrefs-2026-11)',
+    imp_text_ph:'One URL or domain per line; a CSV export (Linking page,Anchor,Date) also works',
+    imp_empty:'Paste your existing backlinks first (URLs, domains or a CSV export)',
+    imp_need_preview:'Preview first, then decide whether to write',
     bytype_label:'Distribution by type', bytype_hint:'Click "Load pool" to see distribution.',
     sort_hint:'Click a column header to sort',
     tree_title:'Type tree · click to filter (multi-select)', tree_legend:'Counts: total / acquired / gap',
@@ -1036,6 +1055,10 @@ function renderAllDynamic(){
     renderProfiles(collectProfileCards()); // profile cards (values preserved)
   }
   if(LAST_CHANNELS.length) renderChannels(LAST_CHANNELS, LAST_ROTATION);
+  // The import report is assembled in JS, so it must be replayed on a language
+  // switch like every other dynamic block (stale Chinese text in EN mode was the
+  // exact failure the i18n audit exists for).
+  if(LAST_IMP_REPORT) $('impReport').innerHTML=impReport(LAST_IMP_REPORT);
   loadOverview();                           // SVG chart labels
   if(LAST_ERR) $('err').textContent=LANG==='en'?LAST_ERR.en:LAST_ERR.zh;
   if(LAST_IMPORT_MSG) $('importMsg2').textContent=LANG==='en'?LAST_IMPORT_MSG.en:LAST_IMPORT_MSG.zh;
@@ -1694,6 +1717,14 @@ async function toggleAcquired(domain, makeAcquired){
     }else{
       await fetch('/api/store/unmark-existing',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({domains:domain, center_domain:CENTER})});
+      if(!makeAcquired){
+        const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER));
+        const dd=await r.json();
+        const live=(dd.domains||[]).find(x=>x.domain===domain);
+        if(live && live.acquired && live.placement_state==='live')
+          showErr('Still owned: this domain has a live/imported ledger row — undo it in the ledger',
+                  '仍算已拥有：该域名在台账里有上线/导入记录，请到台账撤销或排除');
+      }
     }
     await loadPool();
   }catch(e){ showErr('Update failed: '+e.message, '更新失败：'+e.message); }
@@ -1752,15 +1783,17 @@ function renderPlacements(){
   $('plSummary').textContent=(LANG==='en'?'Records ':'记录 ')+(s.total||0)
     +(LANG==='en'?' · live ':' · 已上线 ')+(s.live||0)
     +(LANG==='en'?' · in progress ':' · 进行中 ')+(s.in_progress||0)
-    +(LANG==='en'?' · excluded ':' · 已排除 ')+(s.suppressed||0);
+    +(LANG==='en'?' · excluded ':' · 已排除 ')+(s.suppressed||0)
+    +(s.imported?(LANG==='en'?' · imported ':' · 导入 ')+s.imported:'');
   const rows=PLACEMENTS.map(p=>{
     const v=p.verify||{}, st=p.state||'';
     const act=(st==='claimed'||st==='submitted')
       ? `<button class="pl-row-live" data-id="${escAttr(p.id)}" style="padding:3px 10px;font-size:12px">${plLabel('pl_live')}</button>`
       : (st==='live' ? '' : `<button class="ghost pl-row-exclude" data-id="${escAttr(p.id)}" style="padding:3px 10px;font-size:12px">${plLabel('pl_exclude_row')}</button>`);
     const cls=st==='live'?'have':((st==='lost'||st==='rejected'||st==='error')?'no':'gap');
+    const imp=p.imported?` <span class="pill">${LANG==='en'?'imported':'导入'}</span>`:'';
     return `<tr><td>${esc(p.target_domain||'')}</td>
-      <td><span class="pill ${cls}">${esc(plStateLabel(st))}</span></td>
+      <td><span class="pill ${cls}">${esc(plStateLabel(st))}</span>${imp}</td>
       <td class="note">${esc(p.target_url||'')}<br>${esc(p.placement_type||'')}</td>
       <td class="note">${esc(v.landing_url||'—')}<br>${esc(v.verify_method||'—')}</td>
       <td class="note">${esc(p.live_at||p.submitted_at||p.claimed_at||p.created_at||'')}</td>
@@ -1812,18 +1845,53 @@ async function loadPool(){
   try{ await loadPlacements(); }
   catch(e){ setPlMsg('Ledger load failed: '+e.message, '台账加载失败：'+e.message); }
 }
-async function importExisting(){
+let LAST_IMP_REPORT=null;
+function impReport(d){
+  const en=LANG==='en', k=d.skipped||{}, s=[];
+  const pre=d.dry_run?(en?'[preview, nothing written] ':'【预览，未写入】'):'';
+  s.push(pre+(en?'parsed ':'解析 ')+d.parsed+(en?' rows':' 行')
+    +(d.invalid?(en?' ('+d.invalid+' unusable)':'（无效 '+d.invalid+'）'):'')
+    +(d.mode==='remove'?(en?' · deleted ':' · 删除 '):(en?' · ledger rows +':' · 新增台账 '))
+    +(d.mode==='remove'?d.removed:d.written));
+  if(d.domains) s.push((en?'Domains ':'域名 ')+d.domains
+    +(en?' · in pool ':' · 池内 ')+d.in_pool+(en?' (gap removed)':'（已从缺口移除）')
+    +(en?' · outside pool ':' · 池外 ')+d.out_of_pool+(en?' (booked, not offered for 90 days)':'（已记账，90 天内不再推）'));
+  s.push((en?'Gap ':'缺口 ')+d.before.gap+' → '+d.after.gap+' ('+(d.gap_delta>0?'+':'')+d.gap_delta+')'
+    +(en?' · owned ':' · 已拥有 ')+d.before.acquired+' → '+d.after.acquired
+    +(en?' · live rows ':' · 已上线 ')+d.before.live+' → '+d.after.live);
+  const sk=[];
+  if(k.self) sk.push((en?'self ':'自身 ')+k.self);
+  if(k.competitor) sk.push((en?'competitor ':'竞品 ')+k.competitor);
+  if(k.whitelisted) sk.push((en?'whitelisted ':'白名单 ')+k.whitelisted);
+  if(k.suppressed) sk.push((en?'excluded ':'已排除 ')+k.suppressed);
+  if(k.existing) sk.push((en?'not-live record ':'非上线记录 ')+k.existing);
+  if(k.duplicate) sk.push((en?'duplicate ':'重复 ')+k.duplicate);
+  if(sk.length) s.push((en?'Skipped: ':'跳过：')+sk.join(' · '));
+  if(!d.dry_run && d.mode!=='remove' && d.out_of_pool_sample && d.out_of_pool_sample.length)
+    s.push((en?'Not in pool (e.g.): ':'不在池中（示例）：')+d.out_of_pool_sample.slice(0,6).join(', '));
+  return s.map(x=>esc(x)).join('<br>');
+}
+async function impPost(mode){
   const txt=$('importExisting').value.trim();
-  if(!txt){ showErr('Enter existing backlink domains first', '请先填入已有外链域名'); return; }
-  setImportMsg('Importing…', '导入中…');
+  if(!txt){ setImportMsg(I18N.en.imp_empty, I18N.zh.imp_empty); return; }
+  const body={center_domain:CENTER, text:txt,
+    source:($('impSource').value.trim()||'operator-export')};
+  if(mode==='preview') body.dry_run=true;
+  if(mode==='remove') body.remove=true;
+  setImportMsg(mode==='preview'?'Previewing…':(mode==='remove'?'Undoing…':'Importing…'),
+               mode==='preview'?'预览中…':(mode==='remove'?'撤销中…':'导入中…'));
   try{
-    const r=await fetch('/api/store/sync-existing',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({domains:txt, center_domain:CENTER})});
+    const r=await fetch('/api/placements/import',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
     const d=await r.json();
     if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
-    POOL_STATS_CACHE=d.stats;
-    setImportMsg('marked '+d.added, '已新增标记 '+d.added+' 个');
-    await loadPool();
+    POOL_STATS_CACHE=d.stats||POOL_STATS_CACHE;
+    LAST_IMP_REPORT=d;
+    $('impReport').innerHTML=impReport(d);
+    setImportMsg(mode==='preview'?'preview only':(mode==='remove'?'removed '+d.removed:'wrote '+d.written),
+                 mode==='preview'?'仅预览':(mode==='remove'?'已撤销 '+d.removed:'已写入 '+d.written));
+    if(mode!=='preview') await loadPool();
+    if($('tab-ov').classList.contains('active')) loadOverview();
   }catch(e){ setImportMsg(null,null); showErr('Import failed: '+e.message, '导入失败：'+e.message); }
 }
 
@@ -2086,7 +2154,9 @@ $('run').addEventListener('click',analyze);
 $('csv').addEventListener('click',downloadCsv);
 $('poolLoad').addEventListener('click',loadPool);
 $('poolCsv').addEventListener('click',downloadPoolCsv);
-$('importBtn').addEventListener('click',importExisting);
+$('impBtn').addEventListener('click',()=>impPost('import'));
+$('impPreview').addEventListener('click',()=>impPost('preview'));
+$('impUndo').addEventListener('click',()=>impPost('remove'));
 $('chBody').addEventListener('click', (ev)=>{
   const b=ev.target.closest('.ch-toggle'); if(!b) return;
   toggleChannel(b.dataset.id, b.dataset.en==='1');

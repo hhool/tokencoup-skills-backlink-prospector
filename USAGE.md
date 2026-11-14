@@ -177,6 +177,39 @@ The client sends its local date, so "today" is your today, not the UTC day of th
 
 ---
 
+## 3.9 Importing existing backlinks (export → ledger → gap report)
+
+"Acquired" has three sources: verified live ledger rows, manual marks, and **imported existing backlinks**. The third one is the easy one to forget and the one that makes the gap wrong — you may already have 300 backlinks while the pool calls every one of them a gap.
+
+The paste format is forgiving:
+
+```
+https://www.reddit.com/r/foo/comments/abc/     # a full URL
+example.org                                     # a bare host
+Linking page,Anchor,Date                        # a CSV header (skipped)
+12,https://listicle.example/best,2026-10-08     # CSV with a leading rank column
+```
+
+What an import actually does (it is not "just a flag"):
+
+- Every row becomes a **`live` ledger record** with `verify_method = import:<source>` and an empty `verified_at` — meaning "backed by an export, never probed". Label the source (`ahrefs-2026-11`, `gsc`, `cc-2026-10`) so a later survival recheck can start with exactly the unprobed rows.
+- In-pool domains: the gap drops by that many rows and **Acquired** goes up with it.
+- Out-of-pool domains: **never injected into the pool** (that would inflate "discovered"), but they are booked and fall under the 90-day per-domain cadence, so no quota is spent chasing a site that already links to you.
+- **No daily quota is consumed**: importing is bookkeeping, not today's work. A 500-row paste cannot slam the day's gate shut.
+- Automatically skipped: your own domain (incl. subdomains), competitors, whitelisted hosts, suppressed hosts, duplicates (idempotent per delivery slot).
+
+Three buttons:
+
+| Button | What it does |
+|---|---|
+| Preview | `dry_run`: reports what the gap would become, writes nothing |
+| Import as owned | Writes for real; the report shows gap X→Y, owned P→Q, in-pool/out-of-pool counts and skip reasons |
+| Undo this batch | Deletes only the rows **this feature created** for those hosts; the gap comes back exactly. Manual marks and genuinely delivered rows are untouched |
+
+API: `POST /api/placements/import` with `{center_domain, text, source, dry_run?, remove?, own_url?}`. The response carries `before/after/gap_delta/acquired_delta/skipped/in_pool_sample/out_of_pool_sample` — enough to paste straight into a report.
+
+---
+
 ## 4. CLI / API quick reference (for bulk & automation)
 
 All calls work against local `8787` or the live host.

@@ -304,6 +304,19 @@ Hosts are normalized on the way in (`https://www.Foo.com/x` -> `foo.com`), junk 
 
 ---
 
+### D11. An imported backlink is evidenced ledger state, not a boolean flag
+
+Most wrong gap counts come from a missing third data layer: you already have hundreds of backlinks and the tool knows about none of them. So an import cannot be a single `acquired` switch — it has to land as **ledger fact**:
+
+- One export row becomes one `state=live` record with `verify_method = import:<source>` and an empty `verified_at` (backed by an export, never probed). That is what lets a later survival recheck select exactly the unprobed rows.
+- In-pool domains: gap down, acquired up. Out-of-pool domains: **not injected into the pool** (that would inflate "discovered"), but booked and covered by the 90-day per-domain cadence, so no quota is spent chasing a site that already links to you.
+- **No daily quota is consumed**: `claimed_on()` skips `import:` rows explicitly. Without that, a 500-row paste slams the day's hard gate shut — a bug caught in testing, not in theory.
+- The parser accepts full URLs, bare hosts and CSV (including a leading rank column); self domain (and subdomains), competitors, whitelisted hosts, suppressed hosts and duplicates are skipped and counted.
+- `dry_run` runs on a deep copy, so the preview numbers match a real write while nothing touches disk; `remove` deletes only the rows the import created, restoring the gap exactly.
+- It also closed a latent contradiction: `merge_result()` used to overwrite `acquired` from `acquired_domains` only, so a delivered domain flipped back to `false` in the JSON after every analysis run (the stats hid it by unioning with `live_domains()`). The flag is now "manual mark ∪ live ledger", and `unmark-existing` returns `still_live` instead of pretending the removal worked.
+
+---
+
 ## 3. Free Data Sources (no API keys required)
 
 | Source | Role | Notes |

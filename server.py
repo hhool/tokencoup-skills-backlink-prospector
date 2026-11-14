@@ -278,6 +278,7 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/store/csv",
                                                       "/api/store/sync-existing",
                                                       "/api/placements/claim-batch",
+                                                      "/api/placements/import",
                                                       "/api/profiles",
                                                       "/api/schedule",
                                                       "/api/schedule/run",
@@ -415,6 +416,7 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/store/unmark-existing", "/api/channels",
                         "/api/profiles", "/api/schedule", "/api/schedule/run",
                         "/api/placements/claim", "/api/placements/claim-batch",
+                        "/api/placements/import",
                         "/api/placements/transition",
                         "/api/placements/suppress",
                         "/api/whitelist", "/api/settings"):
@@ -448,7 +450,14 @@ class Handler(BaseHTTPRequestHandler):
                 pool = st.load_store(center_domain)
                 removed = st.unmark_existing(pool, re.split(r"[,\n]", text))
                 st.save_store(pool, center_domain)
+                # A live placement (delivered or imported) outranks a manual mark:
+                # reporting the removal as done while the domain stays owned would
+                # be a lie, so name the domains that need the ledger instead.
+                live = {st._norm_target(x) for x in st.live_domains(pool) if x}
+                still_live = sorted({st._bare_domain(d) for d in re.split(r"[,\n]", text)
+                                     if st._bare_domain(d) in live})
                 return self._json(200, {"ok": True, "removed": removed,
+                                        "still_live": still_live,
                                         "stats": st.store_stats(pool),
                                         "center_domain": center_domain})
 
@@ -548,6 +557,37 @@ class Handler(BaseHTTPRequestHandler):
                                         "results": out["results"],
                                         "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
+
+            if path == "/api/placements/import":
+                # Turn a GSC / Ahrefs / Common Crawl export into live ledger rows
+                # (and therefore into "already owned"). dry_run previews the exact
+                # gap delta without writing; remove undoes a bad paste.
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower() or None
+                text = params.get("text")
+                if text is None:
+                    text = params.get("links")
+                if not isinstance(text, str):
+                    raise ValueError("text must be a string (paste one URL per line or a CSV export)")
+                # 240KB ~= 2000 rows; the request body itself is capped at 256KB.
+                text = safe_text(text, 240000)
+                source = params.get("source") or "operator-export"
+                if not isinstance(source, str):
+                    raise ValueError("source must be a string")
+                own_url = params.get("own_url") or ""
+                if not isinstance(own_url, str):
+                    raise ValueError("own_url must be a string")
+                pool = st.load_store(center_domain)
+                report = st.import_placements(
+                    pool, text, source=source,
+                    dry_run=bool(params.get("dry_run")),
+                    remove=bool(params.get("remove")),
+                    own_url=own_url)
+                if not report["dry_run"]:
+                    st.save_store(pool, center_domain)
+                report["placements"] = st.placement_list(pool)
+                report["stats"] = st.store_stats(pool)
+                report["center_domain"] = center_domain
+                return self._json(200, report)
 
             if path == "/api/channels":
                 # POST to toggle a channel or save domain-specific config
