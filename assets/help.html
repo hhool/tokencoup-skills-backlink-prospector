@@ -238,6 +238,41 @@ curl -s -X POST http://127.0.0.1:8787/api/store/unmark-existing \
   -d '{"center_domain":"soundbuttons.click","id":"&lt;placement id&gt;","state":"live",
        "landing_url":"https://a.com/post","verify_method":"manual_check"}'</code></pre>
 
+  <h3><span class="doc-zh">今日队列（日配额 + 冻结批次）</span><span class="doc-en">Daily queue (quota + frozen batch)</span></h3>
+<pre><code>curl -s "http://127.0.0.1:8787/api/queue?domain=soundbuttons.click&amp;date=2026-11-15"
+# explicit top-up only: &amp;refill=1</code></pre>
+  <p><span class="doc-zh">「每天 100 个」是工作配额，不是产量：当天冻结一批、领走即出队、不自动补齐。返回里的
+  <code>supply_gap = quota − batch_size</code>，缺口只能靠跑分析（队列条上的「补候选」）或补 harvest 文件来填，不会用重复域名凑数。
+  <code>quota_gate</code> 是配置值，<code>quota_used/quota_left</code> 是硬闸门口径：<b>超过配额的领取会被服务端拒绝</b>（409），
+  从池里单条「选用」也一样。配额日按 UTC+8 结算。<code>date</code> 由客户端传本地日期，所以「今天」是你的今天。</span>
+  <span class="doc-en">"100 a day" is a work quota, not a production rate: the batch is frozen for the day, claimed rows leave it,
+  and it never refills itself. <code>supply_gap = quota − batch_size</code> is the part inventory cannot cover — close it
+  with a fresh analysis (the <b>Get more</b> button) or a harvest file, never with duplicates.
+  <code>quota_gate</code> is the configured ceiling; <code>quota_used/quota_left</code> is the gate: <b>claims beyond it are rejected</b> (409),
+  including single claims from the pool. The quota day rolls at UTC+8. The client sends its local date, so "today" is your today.</span></p>
+
+  <h3><span class="doc-zh">配额设置与白名单</span><span class="doc-en">Quota settings and whitelist</span></h3>
+<pre><code># hard daily ceiling (1-2000, stored per center domain)
+curl -s -X POST http://127.0.0.1:8787/api/settings \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","daily_quota":100}'
+
+curl -s "http://127.0.0.1:8787/api/whitelist?domain=soundbuttons.click"
+
+# add / remove (URLs and "www." are normalized; junk is rejected)
+curl -s -X POST http://127.0.0.1:8787/api/whitelist \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","domains":"example.com, https://www.foo.com/x","action":"add"}'
+
+curl -s -X POST http://127.0.0.1:8787/api/whitelist \
+  -H 'Content-Type: application/json' \
+  -d '{"center_domain":"soundbuttons.click","domains":"example.com","action":"remove"}'</code></pre>
+  <p><span class="doc-zh">白名单是「记录留着但不算数」：域名仍在池里（可随时移出），但不计入累计发现、已拥有、缺口、类型分布、互链占比与今日队列，
+  对它领取投放位会被拒绝。每条记录在界面上都有「加入白名单 / 移出白名单」按钮；池页顶部可批量粘贴。</span>
+  <span class="doc-en">A whitelist entry means "keep the record, don't count it": the host stays in the pool (removable at any time)
+  but is excluded from discovered, acquired, gap, type distribution, reciprocal ratio and the daily queue, and claiming a placement
+  on it is refused. Every record has an Add/Un-whitelist button; the Pool tab accepts a bulk paste.</span></p>
+
   <h3><span class="doc-zh">已知域名（下拉数据源）</span><span class="doc-en">Known domains (picker source)</span></h3>
 <pre><code>curl -s "http://127.0.0.1:8787/api/domains"</code></pre>
 

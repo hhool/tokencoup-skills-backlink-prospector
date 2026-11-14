@@ -284,6 +284,24 @@ python3 tools/competitor_backlinks.py \
 
 Resolution order: `data/competitor-links-<domain>.json` (operator override) then `seeds/competitor-links-<domain>.json` (image-baked). When neither exists, `data_sources.competitor_backlinks.status` is `empty` and behaviour is identical to before.
 
+### D9. Daily quota — a gate, not a gauge
+
+`100/day` (configurable per center domain, 1–2000 via `POST /api/settings`) is enforced where a claim is written, not where a batch is displayed: `claim_placement` refuses anything past the ceiling (`409 daily quota reached`), and `claim-batch` reports `quota_blocked` for the rows it had to drop. The pool's single "Use" button goes through the same gate, so the number cannot be sidestepped. The quota day rolls at 00:00 **UTC+8** (`QUOTA_TZ_OFFSET`) and placement timestamps (stored UTC) are converted before comparison — slicing the timestamp string would misfile every claim made before 08:00 local into yesterday.
+
+### D10. Whitelist — keep the record, drop the number
+
+A whitelist entry is not a suppression. A suppression says "never offer this slot again"; a whitelist entry says "this domain exists in my data but must not move any backlink number" (own network, aggregators, mirrors, link farms).
+
+| Layer | Effect |
+|---|---|
+| `store_stats` | Excluded from discovered / acquired / gap / gap & valid / type distribution / reciprocal ratio; reported separately as `whitelisted` |
+| `domain_list` | Row stays visible (`whitelisted: true`, dimmed) so the toggle can be undone; `is_gap` forced to `false` |
+| `daily_queue` | Block reason `whitelisted`; never enters a batch |
+| `claim_placement` | Refused: a link there can never be counted, so the work would be invisible |
+| `analyze` | Prospects on whitelisted hosts are tagged `whitelisted` and are not counted as gap |
+
+Hosts are normalized on the way in (`https://www.Foo.com/x` -> `foo.com`), junk is rejected rather than stored, and the list is per center domain (`whitelist` in `data/store-<domain>.json`). The UI exposes a toggle on every record — pool row, analysis row, ledger row — plus a bulk paste box in the Pool tab.
+
 ---
 
 ## 3. Free Data Sources (no API keys required)

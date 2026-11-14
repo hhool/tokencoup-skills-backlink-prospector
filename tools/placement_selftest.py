@@ -439,6 +439,267 @@ def section_f():
                 pass
 
 
+def section_g():
+    """Daily queue: a frozen batch, a hard quota, and an honest supply gap.
+
+    The point of this section is the distinction the operator asked for: 100 a
+    day is a WORK quota, not a production rate. The batch freezes so the same
+    day never reshuffles, claimed rows leave it, and anything the inventory
+    cannot cover shows up as supply_gap instead of being invented.
+    """
+    print("\n=== G. daily queue: quota + frozen batch ===")
+    center = TEST_DOMAIN
+    qpath = st._queue_path(center)
+
+    def qstore(n):
+        return {"domains": {("q%03d.example" % i): {"url": "https://q%03d.example" % i,
+                                                   "priority": 200 - i, "valid": True,
+                                                   "source": "seed"} for i in range(n)},
+                "placements": {}, "suppressions": {}, "acquired_domains": []}
+
+    try:
+        s = qstore(120)
+        s["domains"]["q000.example"]["acquired"] = True
+        s["domains"]["q001.example"]["valid"] = False
+        s["domains"]["q002.example"]["is_competitor"] = True
+        s["suppressions"]["q003.example"] = {"reason": "operator excluded"}
+
+        q = st.daily_queue(s, center, date="2026-01-02", quota=100)
+        check("inventory excludes acquired / invalid / competitor / suppressed",
+              q["inventory"] == 116, q["inventory"])
+        check("batch is capped at the quota",
+              (q["batch_size"], q["available"]) == (100, 100),
+              (q["batch_size"], q["available"]))
+        check("no gap when inventory covers the quota", q["supply_gap"] == 0, q["supply_gap"])
+        check("batch id carries the day", q["batch_id"].endswith("20260102"), q["batch_id"])
+        check("batch rows carry what outreach needs",
+              all(r.get("domain") and r.get("url") and r.get("priority") is not None
+                  for r in q["items"]), q["items"][:1])
+
+        q2 = st.daily_queue(s, center, date="2026-01-02", quota=100)
+        check("batch is frozen within the day",
+              [i["domain"] for i in q2["items"]] == [i["domain"] for i in q["items"]])
+
+        for it in q["items"][:3]:
+            st.claim_placement(s, {"target_domain": it["domain"], "target_url": it["url"],
+                                   "batch_id": q["batch_id"]})
+        q3 = st.daily_queue(s, center, date="2026-01-02", quota=100)
+        check("claimed rows leave the batch", q3["available"] == 97, q3["available"])
+        check("claimed_today counts the batch id", q3["claimed_today"] == 3, q3["claimed_today"])
+
+        q4 = st.daily_queue(s, center, date="2026-01-03", quota=100)
+        check("a new day freezes a new batch",
+              q4["batch_id"] != q["batch_id"] and q4["batch_size"] == 100,
+              (q4["batch_id"], q4["batch_size"]))
+        check("a claimed domain never returns",
+              not ({i["domain"] for i in q4["items"]} & {i["domain"] for i in q["items"][:3]}))
+
+        small = qstore(40)
+        qs = st.daily_queue(small, center, date="2026-01-04", quota=100)
+        check("short inventory reports a supply gap",
+              (qs["batch_size"], qs["supply_gap"]) == (40, 60),
+              (qs["batch_size"], qs["supply_gap"]))
+        for i in range(40, 110):
+            small["domains"]["q%03d.example" % i] = {"url": "https://q%03d.example" % i,
+                                                     "priority": 1, "valid": True}
+        qn = st.daily_queue(small, center, date="2026-01-04", quota=100)
+        check("the batch never grows by itself", qn["batch_size"] == 40, qn["batch_size"])
+        qr = st.daily_queue(small, center, date="2026-01-04", quota=100, refill=True)
+        check("refill tops the batch up to the quota",
+              (qr["batch_size"], qr["supply_gap"]) == (100, 0),
+              (qr["batch_size"], qr["supply_gap"]))
+
+        check("quota is clamped to a sane range",
+              st.daily_queue(s, center, date="2026-01-05", quota=0)["quota"] >= 1
+              and st.daily_queue(s, center, date="2026-01-05", quota=99999)["quota"] == st.MAX_DAILY_QUOTA)
+
+        # Closing the loop: a verified live backlink must stop being a gap, and
+        # a claim made outside the batch must still show up in today's throughput.
+        lv = qstore(3)
+        st.claim_placement(lv, {"target_domain": "q000.example",
+                                "target_url": "https://q000.example", "batch_id": "t1"})
+        lid = st.placement_key("q000.example", "https://q000.example", "link")
+        st.transition_placement(lv, {"id": lid, "state": "live",
+                                     "landing_url": "https://q000.example/post",
+                                     "verify_method": "manual-check"})
+        check("live writes acquired back into the pool",
+              (lv["domains"].get("q000.example") or {}).get("acquired") is True)
+        check("a delivered domain stops being a gap", st.store_stats(lv)["gap"] == 2,
+              st.store_stats(lv)["gap"])
+        check("live lands in owned_domains", "q000.example" in st.owned_domains(lv))
+
+        z = qstore(5)
+        st.claim_placement(z, {"target_domain": "q001.example",
+                               "target_url": "https://q001.example"})  # no batch_id
+        # claimed_day compares against the quota day (UTC+8), not the raw UTC day,
+        # so a claim made at 00:30 local still belongs to today.
+        qz = st.daily_queue(z, center, date=st._quota_date(), quota=100)
+        check("claimed_day counts claims made outside the batch",
+              (qz["claimed_day"], qz["claimed_today"]) == (1, 0),
+              (qz["claimed_day"], qz["claimed_today"]))
+
+        if not NO_WRITE:
+            code, body = http("/api/queue?domain=%s&date=2026-01-02&quota=100" % center)
+            qq = (body or {}).get("queue") or {}
+            check("/api/queue ok", code == 200 and body.get("ok") is True, code)
+            check("/api/queue exposes the counters",
+                  all(k in qq for k in ("quota", "batch_size", "available", "claimed_today",
+                                        "inventory", "supply_gap", "batch_id")), sorted(qq))
+            code2, body2 = http("/api/store?domain=%s&date=2026-01-02" % center)
+            check("/api/store carries the queue summary",
+                  code2 == 200 and "queue" in (body2 or {}) and "items" not in body2["queue"],
+                  sorted((body2 or {}).get("queue") or {}))
+    finally:
+        for p in [qpath]:
+            try:
+                if p and os.path.isfile(p):
+                    os.remove(p)
+            except OSError:
+                pass
+
+
+def section_h():
+    """Whitelist (excluded from stats) + the hard daily quota.
+
+    Two rules the operator set explicitly: a whitelisted host must not move any
+    backlink number, and 100/day is a ceiling that the server refuses to cross
+    even when rows are claimed one by one from the pool.
+    """
+    print("\n=== H. whitelist + hard daily quota ===")
+    center = TEST_DOMAIN + "-h"
+    qpath = st._queue_path(center)
+
+    def wstore(n):
+        return {"domains": {("w%03d.example" % i): {"url": "https://w%03d.example" % i,
+                                                   "priority": 200 - i, "valid": True,
+                                                   "type_key": "directory"} for i in range(n)},
+                "placements": {}, "suppressions": {}, "acquired_domains": [],
+                "whitelist": {}, "settings": {}}
+
+    try:
+        s = wstore(6)
+        added = st.add_whitelist(s, ["https://www.W000.example/x?q=1", "w001.example",
+                                     "not a host at all", ""])
+        check("whitelist normalizes URL/www and rejects junk",
+              added == ["w000.example", "w001.example"], added)
+        check("whitelisting the same host twice is a no-op",
+              st.add_whitelist(s, ["w000.example"]) == [])
+
+        stats = st.store_stats(s)
+        check("whitelisted rows leave the totals",
+              (stats["total_discovered"], stats["gap"]) == (4, 4),
+              (stats["total_discovered"], stats["gap"]))
+        check("whitelist size is reported separately", stats["whitelisted"] == 2, stats["whitelisted"])
+        check("whitelisted_in_pool counts only pool members",
+              stats["whitelisted_in_pool"] == 2, stats["whitelisted_in_pool"])
+
+        row = [r for r in st.domain_list(s) if r["domain"] == "w000.example"]
+        check("a whitelisted row stays listed but is no longer a gap",
+              bool(row) and row[0]["whitelisted"] is True and row[0]["is_gap"] is False,
+              row[:1])
+
+        q = st.daily_queue(s, center, date="2026-02-01", quota=100)
+        batch = [i["domain"] for i in q["items"]]
+        check("whitelisted rows never enter the queue",
+              "w000.example" not in batch and "w001.example" not in batch, batch)
+        check("queue block reason names the whitelist",
+              st.queue_block_reason(s, "w000.example") == "whitelisted")
+
+        rec, reason = st.claim_placement(s, {"target_domain": "w000.example",
+                                             "target_url": "https://w000.example"})
+        check("claiming a whitelisted slot is refused",
+              rec is None and (reason or "").startswith("whitelisted"), reason)
+
+        st.remove_whitelist(s, ["w000.example", "w001.example"])
+        check("removing from the whitelist restores the numbers",
+              st.store_stats(s)["total_discovered"] == 6, st.store_stats(s)["total_discovered"])
+
+        # ---- hard quota --------------------------------------------------
+        check("quota defaults to 100/day",
+              st.effective_quota(wstore(1)) == st.DEFAULT_DAILY_QUOTA)
+        quota, err = st.set_daily_quota(s, 3)
+        check("quota is configurable", quota == 3 and err is None and st.effective_quota(s) == 3,
+              (quota, err))
+        check("out-of-range quota is rejected instead of clamped silently",
+              bool(st.set_daily_quota(s, 0)[1]) and bool(st.set_daily_quota(s, 10 ** 6)[1])
+              and st.effective_quota(s) == 3)
+
+        items = [{"target_domain": "w%03d.example" % i,
+                  "target_url": "https://w%03d.example" % i} for i in range(5)]
+        out = st.claim_placements_batch(s, items)
+        check("the batch stops exactly at the hard quota",
+              (out["claimed"], out["blocked"], out["quota_blocked"]) == (3, 2, 2),
+              (out["claimed"], out["blocked"], out["quota_blocked"]))
+        check("the quota block explains itself",
+              out["results"][-1]["reason"].startswith("daily quota reached"),
+              out["results"][-1]["reason"])
+        check("quota state reports the gate",
+              (st.quota_state(s)["used"], st.quota_state(s)["left"]) == (3, 0),
+              st.quota_state(s))
+
+        st.set_daily_quota(s, 4)
+        rec, reason = st.claim_placement(s, {"target_domain": "w004.example",
+                                             "target_url": "https://w004.example"})
+        check("raising the quota unblocks the next claim", rec is not None and reason is None, reason)
+
+        st.set_daily_quota(s, 4)          # 4 used, 4 allowed -> full again
+        rec2, reason2 = st.claim_placement(s, {"target_domain": "w005.example",
+                                               "target_url": "https://w005.example"})
+        check("the single pool 'Use' path is gated too",
+              rec2 is None and (reason2 or "").startswith("daily quota reached"), reason2)
+        check("a past day does not eat today's quota", st.claimed_on(s, "2020-01-01") == 0)
+
+        # A claim made yesterday must not count against today.
+        old = wstore(3)
+        st.set_daily_quota(old, 2)
+        st.claim_placement(old, {"target_domain": "w000.example",
+                                 "target_url": "https://w000.example"})
+        for p in old["placements"].values():
+            p["claimed_at"] = "2026-01-01T03:00:00Z"
+        check("yesterday's claims are outside today's window",
+              st.quota_state(old)["used"] == 0 and st.quota_state(old)["left"] == 2,
+              st.quota_state(old))
+
+        if not NO_WRITE:
+            code, body = http("/api/whitelist?domain=%s" % TEST_DOMAIN)
+            check("/api/whitelist ok", code == 200 and body.get("ok") is True, code)
+            code, body = http("/api/whitelist", {"center_domain": TEST_DOMAIN,
+                                                 "domains": "https://www.Case-Test.example/x",
+                                                 "action": "add", "note": "selftest"})
+            check("/api/whitelist add normalizes the host",
+                  code == 200 and body.get("changed") == ["case-test.example"],
+                  (code, (body or {}).get("changed")))
+            check("/api/whitelist is reflected in store stats",
+                  (body or {}).get("stats", {}).get("whitelisted") == 1,
+                  (body or {}).get("stats", {}).get("whitelisted"))
+            code, body = http("/api/whitelist", {"center_domain": TEST_DOMAIN,
+                                                 "domains": "case-test.example",
+                                                 "action": "remove"})
+            check("/api/whitelist remove works",
+                  code == 200 and body.get("count") == 0 and body.get("changed") == ["case-test.example"],
+                  (code, (body or {}).get("changed")))
+
+            code, body = http("/api/settings", {"center_domain": TEST_DOMAIN, "daily_quota": 42})
+            check("/api/settings saves the quota",
+                  code == 200 and body.get("settings", {}).get("daily_quota") == 42,
+                  (code, (body or {}).get("settings")))
+            code, body = http("/api/settings", {"center_domain": TEST_DOMAIN, "daily_quota": 0})
+            check("/api/settings rejects an impossible quota",
+                  code == 400 and "between" in str((body or {}).get("error", "")),
+                  (code, (body or {}).get("error")))
+            code, body = http("/api/store?domain=%s" % TEST_DOMAIN)
+            check("/api/store exposes settings + whitelist",
+                  code == 200 and body.get("settings", {}).get("daily_quota") == 42
+                  and isinstance(body.get("whitelist"), list),
+                  (code, sorted((body or {}).keys())))
+    finally:
+        try:
+            if qpath and os.path.isfile(qpath):
+                os.remove(qpath)
+        except OSError:
+            pass
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -450,6 +711,8 @@ if __name__ == "__main__":
     section_d()
     section_e()
     section_f()
+    section_g()
+    section_h()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

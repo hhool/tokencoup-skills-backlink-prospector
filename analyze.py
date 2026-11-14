@@ -610,6 +610,16 @@ def analyze(input):
     comp_domains = split_list(competitors)
     exist_domains = split_list(existing)
 
+    # Whitelisted hosts mean "keep the record, don't count it". The pool already
+    # excludes them from every number, so an analysis run must not present them
+    # as fresh gap again — otherwise the two views contradict each other.
+    wl_domains = set()
+    try:
+        import store as _store  # local module; imported lazily to keep CLI use light
+        wl_domains = _store.whitelisted_domains(_store.load_store(target_d or None))
+    except Exception:
+        wl_domains = set()
+
     # 1) seed candidates — scoped to the center domain so results from another
     #    niche can never leak into this analysis.
     candidates, seed_scope = [], "disabled"
@@ -713,14 +723,19 @@ def analyze(input):
         base.append({"c": c, "d": d, "rel": rel, "auth": auth,
                      "obt": obt, "prio": prio})
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+    # Concurrency scales with the candidate set: a 30-row run should not open 24
+    # sockets, and a 1500-row "full" run must not crawl at 6. Tranco stays capped
+    # lower on purpose — it is a public API and politeness beats throughput.
+    workers = max(6, min(24, len(base) // 60 + 6))
+    doc_workers = max(4, min(10, len(base) // 120 + 4))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {id(b): ex.submit(validate, b["c"]["url"]) for b in base}
         for b in base:
             b["val"] = futs[id(b)].result()
 
     # 4) authority signal (free Tranco), concurrent
     if tranco_on:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=doc_workers) as ex:
             tfuts = {id(b): ex.submit(tranco_rank, b["d"]) for b in base}
             for b in base:
                 b["tranco"] = tfuts[id(b)].result()
@@ -734,7 +749,8 @@ def analyze(input):
         c = b["c"]
         d = b["d"]
         already = d in exist_domains
-        is_gap = not already
+        wl_hit = d in wl_domains
+        is_gap = (not already) and (not wl_hit)
         tranco = b.get("tranco")
         prospects.append({
             "url": c["url"],
@@ -756,7 +772,7 @@ def analyze(input):
             "valid": b["val"]["ok"], "http_status": b["val"]["status"],
             "valid_error": b["val"]["error"], "final_url": b["val"]["final_url"],
             "is_competitor": False,
-            "is_gap": is_gap, "already_have": already,
+            "is_gap": is_gap, "already_have": already, "whitelisted": wl_hit,
             "note": c.get("note", ""),
             "note_en": note_en(c),
             "source": c.get("source", "seed"),
@@ -784,6 +800,8 @@ def analyze(input):
             "competitor_rows": len(competitor_rows),
             "competitor_domains": len(comp_domains | harvest_comps),
             "from_competitors": sum(1 for p in prospects if p.get("source") == "competitor_backlink"),
+            # Whitelisted hosts stay visible but are not gap: they never count.
+            "whitelisted": sum(1 for p in prospects if p.get("whitelisted")),
         },
         "prospects": prospects,
         "data_sources": {

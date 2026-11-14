@@ -19,6 +19,8 @@ import hashlib
 import json
 import os
 import re
+import threading
+import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "data")
@@ -54,6 +56,25 @@ def _now():
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _bare_domain(value):
+    """Reduce a URL / host / stray paste to the registrable-looking host we key on.
+
+    Accepts 'https://www.Example.com/x?y=1' and returns 'example.com'. Returns ""
+    for anything that cannot be a host, so a typo can never enter the whitelist.
+    """
+    v = str(value or "").strip().lower()
+    if not v:
+        return ""
+    v = re.sub(r"^[a-z][a-z0-9+.-]*://", "", v)
+    v = v.split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
+    v = v.rsplit("@", 1)[-1].split(":")[0].strip(".")
+    if v.startswith("www."):
+        v = v[4:]
+    if "." not in v or not re.match(r"^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$", v):
+        return ""
+    return v
+
+
 def load_store(center_domain=None):
     """Load store for a specific center domain."""
     store_path = get_store_path(center_domain)
@@ -65,13 +86,16 @@ def load_store(center_domain=None):
         data.setdefault("acquired_domains", [])
         data.setdefault("placements", {})
         data.setdefault("suppressions", {})
+        data.setdefault("whitelist", {})
+        data.setdefault("settings", {})
         data.setdefault("runs", 0)
         data.setdefault("center_domain", center_domain)
         return data
     except Exception:
         return {"schema_version": SCHEMA_VERSION, "updated_at": _now(),
                 "domains": {}, "acquired_domains": [], "placements": {},
-                "suppressions": {}, "runs": 0, "center_domain": center_domain}
+                "suppressions": {}, "whitelist": {}, "settings": {},
+                "runs": 0, "center_domain": center_domain}
 
 
 def save_store(store, center_domain=None):
@@ -186,28 +210,202 @@ def unmark_existing(store, domains):
     return removed
 
 
+# ---------------------------------------------------------------------------
+# Whitelist: domains the operator does NOT want counted as backlink inventory.
+#
+# Why a separate concept from suppressions: suppressing says "never offer this
+# slot again"; whitelisting says "this domain exists in my data but must not
+# move any backlink number". Own-network sites, aggregators and mirrors land
+# here. Whitelisted rows stay visible (so the toggle can be undone) yet they are
+# invisible to the stats, to the gap and to the daily queue.
+# ---------------------------------------------------------------------------
+def whitelist_map(store):
+    """Normalized {domain: {added_at, note}} view of the whitelist."""
+    raw = store.get("whitelist")
+    if isinstance(raw, (list, tuple)):
+        raw = {d: {} for d in raw}
+    out = {}
+    for key, meta in (raw or {}).items():
+        d = _bare_domain(key)
+        if not d:
+            continue
+        out[d] = meta if isinstance(meta, dict) else {}
+    return out
+
+
+def whitelisted_domains(store):
+    return set(whitelist_map(store))
+
+
+def add_whitelist(store, domains, note=""):
+    """Add hosts to the whitelist -> list of newly added domains."""
+    if isinstance(domains, str):
+        domains = re.split(r"[,\s\n]+", domains)
+    wl = store.get("whitelist")
+    if not isinstance(wl, dict):
+        wl = {}
+        store["whitelist"] = wl
+    added = []
+    for raw in (domains or []):
+        d = _bare_domain(raw)
+        if not d or d in wl:
+            continue
+        wl[d] = {"added_at": _now(), "note": str(note or "")[:200]}
+        added.append(d)
+    return added
+
+
+def remove_whitelist(store, domains):
+    """Remove hosts from the whitelist -> list of domains actually removed."""
+    if isinstance(domains, str):
+        domains = re.split(r"[,\s\n]+", domains)
+    wl = store.get("whitelist")
+    if not isinstance(wl, dict):
+        return []
+    removed = []
+    for raw in (domains or []):
+        d = _bare_domain(raw)
+        if d and d in wl:
+            wl.pop(d, None)
+            removed.append(d)
+    return removed
+
+
+def whitelist_rows(store):
+    """Whitelist as a list, annotated with what the pool knows about each host."""
+    doms = store.get("domains", {})
+    out = []
+    for d, meta in whitelist_map(store).items():
+        e = doms.get(d) or {}
+        out.append({"domain": d,
+                    "added_at": meta.get("added_at"),
+                    "note": meta.get("note"),
+                    "in_pool": d in doms,
+                    "valid": bool(e.get("valid")),
+                    "acquired": bool(e.get("acquired"))})
+    out.sort(key=lambda r: r["domain"])
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Daily quota: a hard ceiling, configurable per center domain.
+#
+# The batch in daily_queue is a *plan*; this is the *gate*. Without it the pool's
+# per-row "Use" button could claim 150 rows on a 100/day policy and nothing would
+# complain. Enforcement therefore lives in claim_placement, not in the queue.
+# ---------------------------------------------------------------------------
+def _env_int(name, default, lo, hi):
+    try:
+        return max(lo, min(hi, int(os.environ.get(name, default))))
+    except (TypeError, ValueError):
+        return default
+
+
+# Operator timezone: the quota day rolls at 00:00 there, not at UTC 00:00. The
+# machine runs in UTC, so this is the one place that offset is declared.
+QUOTA_TZ_OFFSET = _env_int("QUOTA_TZ_OFFSET", 8, -12, 14)
+QUOTA_TZ = dt.timezone(dt.timedelta(hours=QUOTA_TZ_OFFSET))
+
+
+def _quota_date():
+    return dt.datetime.now(QUOTA_TZ).strftime("%Y-%m-%d")
+
+
+def effective_quota(store):
+    """Configured daily quota for this pool (never the raw, unvalidated value)."""
+    raw = (store.get("settings") or {}).get("daily_quota")
+    try:
+        q = int(raw)
+    except (TypeError, ValueError):
+        return DEFAULT_DAILY_QUOTA
+    return max(1, min(MAX_DAILY_QUOTA, q))
+
+
+def set_daily_quota(store, value):
+    """Persist a new daily quota -> (quota, error)."""
+    try:
+        q = int(value)
+    except (TypeError, ValueError):
+        return effective_quota(store), "daily_quota must be an integer"
+    if q < 1 or q > MAX_DAILY_QUOTA:
+        return effective_quota(store), "daily_quota must be between 1 and %d" % MAX_DAILY_QUOTA
+    settings = store.setdefault("settings", {})
+    if not isinstance(settings, dict):
+        settings = {}
+        store["settings"] = settings
+    settings["daily_quota"] = q
+    settings["daily_quota_updated_at"] = _now()
+    return q, None
+
+
+def _stamp_quota_date(stamp):
+    """Placement timestamps are stored in UTC; the quota day is UTC+8.
+
+    Slicing the first 10 chars would put anything claimed before 08:00 local
+    into yesterday, so convert properly (and degrade gracefully on junk).
+    """
+    s = str(stamp or "")
+    try:
+        t = dt.datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
+        return t.astimezone(QUOTA_TZ).strftime("%Y-%m-%d")
+    except ValueError:
+        return s[:10]
+
+
+def claimed_on(store, date=None):
+    """Placements claimed on a given quota day (UTC+8 by default)."""
+    date = (date or _quota_date())[:10]
+    n = 0
+    for p in store.get("placements", {}).values():
+        if p.get("state") not in tuple(ACTIVE_STATES) + ("live",):
+            continue
+        stamp = p.get("claimed_at") or p.get("submitted_at") or p.get("live_at") or ""
+        if _stamp_quota_date(stamp) == date:
+            n += 1
+    return n
+
+
+def quota_state(store):
+    """{quota, used, left} for the current quota day."""
+    quota = effective_quota(store)
+    used = claimed_on(store)
+    return {"quota": quota, "used": used, "left": max(0, quota - used),
+            "date": _quota_date(), "tz_offset": QUOTA_TZ_OFFSET}
+
+
 def store_stats(store):
     doms = store.get("domains", {})
-    total = len(doms)
-    acquired = sum(1 for d in doms.values() if d.get("acquired"))
-    valid = sum(1 for d in doms.values() if d.get("valid"))
+    # A live placement counts as owned even when the entry predates the
+    # write-back in transition_placement (older ledgers must not stay stale).
+    live = {_norm_target(x) for x in live_domains(store) if x}
+    wl = whitelisted_domains(store)
+
+    def owned(d, e):
+        return bool(e.get("acquired")) or _norm_target(d) in live
+
+    # Whitelisted hosts are visible in the pool but invisible to every number
+    # below: they are neither discovered, nor owned, nor gap.
+    counted = [(d, e) for d, e in doms.items() if d not in wl]
+    total = len(counted)
+    acquired = sum(1 for d, e in counted if owned(d, e))
+    valid = sum(1 for d, e in counted if e.get("valid"))
     # Competitor domains are deliberately excluded, so they are neither
     # "acquired" nor a real "gap to pursue".
-    competitors = sum(1 for d in doms.values() if d.get("is_competitor"))
-    gap = sum(1 for d in doms.values()
-              if not d.get("acquired") and not d.get("is_competitor"))
-    gap_valid = sum(1 for d in doms.values()
-                    if (not d.get("acquired")) and (not d.get("is_competitor")) and d.get("valid"))
-    reciprocal = sum(1 for d in doms.values() if d.get("type_key") == "reciprocal")
+    competitors = sum(1 for d, e in counted if e.get("is_competitor"))
+    gap = sum(1 for d, e in counted
+              if not owned(d, e) and not e.get("is_competitor"))
+    gap_valid = sum(1 for d, e in counted
+                    if (not owned(d, e)) and (not e.get("is_competitor")) and e.get("valid"))
+    reciprocal = sum(1 for d, e in counted if e.get("type_key") == "reciprocal")
     reciprocal_ratio = round(reciprocal / total, 4) if total else 0.0
     by_type = {}
-    for d in doms.values():
-        tk = d.get("type_key", "unknown")
+    for d, e in counted:
+        tk = e.get("type_key", "unknown")
         bt = by_type.setdefault(tk, {"discovered": 0, "acquired": 0, "gap": 0})
         bt["discovered"] += 1
-        if d.get("acquired"):
+        if owned(d, e):
             bt["acquired"] += 1
-        elif d.get("is_competitor"):
+        elif e.get("is_competitor"):
             pass  # excluded: neither acquired nor gap
         else:
             bt["gap"] += 1
@@ -221,10 +419,13 @@ def store_stats(store):
         "reciprocal_ratio": reciprocal_ratio,
         "reciprocal_ratio_warn": reciprocal_ratio > 0.30,
         "by_type": by_type,
+        "whitelisted": len(wl),
+        "whitelisted_in_pool": sum(1 for d in wl if d in doms),
         "runs": store.get("runs", 0),
         "updated_at": store.get("updated_at"),
         "acquired_domains": store.get("acquired_domains", []),
         "placements": placement_stats(store),
+        "quota": quota_state(store),
     }
 
 
@@ -233,8 +434,12 @@ def domain_list(store):
     out = []
     idx = placement_index(store)
     sup = store.get("suppressions", {})
+    wl = whitelisted_domains(store)
+    live = {_norm_target(x) for x in live_domains(store) if x}
     for d, e in store.get("domains", {}).items():
         best = idx.get(_norm_target(d))
+        acquired = bool(e.get("acquired")) or _norm_target(d) in live
+        listed = d in wl
         out.append({
             "domain": d,
             "url": e.get("url"),
@@ -245,8 +450,9 @@ def domain_list(store):
             "priority": e.get("priority"),
             "valid": e.get("valid"),
             "http_status": e.get("http_status"),
-            "acquired": e.get("acquired", False),
-            "is_gap": not e.get("acquired", False),
+            "acquired": acquired,
+            "is_gap": (not acquired) and (not listed),
+            "whitelisted": listed,
             "source": e.get("source", "seed"),
             "via_competitors": e.get("via_competitors") or [],
             "first_seen": e.get("first_seen"),
@@ -257,6 +463,191 @@ def domain_list(store):
             "suppressed": _norm_target(d) in sup,
         })
     out.sort(key=lambda x: (-(x.get("priority") or 0), not x.get("valid")))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Daily queue: a frozen batch of deliverable targets, quota per day.
+#
+# Why freeze instead of re-slicing every call: the pool used to hand back the
+# same 39/51/20 rows on every run, so "50 a day" was really "the same 50 today
+# and tomorrow". A frozen batch gives (a) a stable work list the operator can
+# reload at noon without rows jumping around, (b) a hard daily quota, and
+# (c) an auditable batch_id written onto every placement claimed from it, so
+# "how much did we actually ship on 2026-11-15" is a ledger query, not a guess.
+# ---------------------------------------------------------------------------
+QUEUE_PREFIX = "queue-"
+QUEUE_SCHEMA = "queue/1"
+DEFAULT_DAILY_QUOTA = 100
+MAX_DAILY_QUOTA = 2000
+# Two concurrent page loads used to race on the same `.tmp` name and one of them
+# failed with FileNotFoundError mid-replace. Serialise the read-modify-write and
+# give every write its own temp file.
+_QUEUE_LOCK = threading.Lock()
+
+
+def _utc_date():
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+
+
+def _queue_path(center_domain):
+    safe = _sanitize_domain(center_domain)
+    return os.path.join(DATA_DIR, "%s%s.json" % (QUEUE_PREFIX, safe)) if safe else None
+
+
+def queue_block_reason(store, domain, entry=None, whitelist=None):
+    """Why this pool row cannot be handed out as a target today, or None."""
+    entry = entry if entry is not None else (store.get("domains", {}).get(domain) or {})
+    d = _norm_target(domain)
+    if entry.get("acquired"):
+        return "already have"
+    if entry.get("is_competitor"):
+        return "competitor"
+    wl = whitelist if whitelist is not None else whitelisted_domains(store)
+    if d in wl:
+        return "whitelisted"
+    if not entry.get("valid"):
+        return "not verified"
+    # placements / suppressions / cooldown / cadence rules all live in one place
+    return placement_block_reason(store, d, entry.get("url") or ("https://" + d))
+
+
+def _queue_row(domain, entry, store):
+    return {
+        "domain": domain,
+        "url": entry.get("url") or ("https://" + domain),
+        "priority": entry.get("priority"),
+        "type_key": entry.get("type_key"),
+        "type_label_zh": entry.get("type_label_zh"),
+        "type_label_en": entry.get("type_label_en"),
+        "authority_tier": entry.get("authority_tier"),
+        "tranco_global_rank": (entry.get("authority") or {}).get("tranco_global_rank"),
+        "valid": bool(entry.get("valid")),
+        "http_status": entry.get("http_status"),
+        "source": entry.get("source", "seed"),
+        "via_competitors": entry.get("via_competitors") or [],
+        "first_seen": entry.get("first_seen"),
+    }
+
+
+def daily_queue(store, center_domain, date=None, quota=None, refill=False, with_items=True):
+    """Today's batch: up to `quota` verified, unclaimed, unsuppressed targets.
+
+    Frozen per (center, date). `refill=True` tops the batch back up to quota with
+    rows that appeared after the freeze — explicit, never automatic, so a batch
+    cannot silently change size mid-day.
+    """
+    date = (date or _utc_date())[:10]
+    configured = effective_quota(store)
+    if quota is None:
+        quota = configured
+    else:
+        try:
+            quota = int(quota)
+        except (TypeError, ValueError):
+            quota = configured
+    quota = max(1, min(MAX_DAILY_QUOTA, quota))
+
+    doms = store.get("domains", {})
+    wl = whitelisted_domains(store)
+    eligible = []
+    for d, e in doms.items():
+        if queue_block_reason(store, d, e, wl) is None:
+            eligible.append((-(e.get("priority") or 0), d))
+    eligible.sort()
+    eligible_domains = [d for _, d in eligible]
+
+    path = _queue_path(center_domain)
+    with _QUEUE_LOCK:
+        state = load_json_file(path, {}) if path else {}
+        if not isinstance(state, dict) or state.get("center_domain") != center_domain \
+                or state.get("date") != date:
+            slug = _sanitize_domain(center_domain) or "default"
+            state = {"schema": QUEUE_SCHEMA, "center_domain": center_domain, "date": date,
+                     "batch_id": "%s-%s" % (slug, date.replace("-", "")),
+                     "quota": quota, "items": [], "created_at": _now()}
+
+        frozen = [d for d in (state.get("items") or []) if isinstance(d, str)]
+        before = list(frozen)
+        if refill:
+            have = set(frozen)
+            for d in eligible_domains:
+                if len(frozen) >= quota:
+                    break
+                if d not in have:
+                    frozen.append(d)
+                    have.add(d)
+        elif not frozen:
+            frozen = eligible_domains[:quota]
+
+        # A lowered quota must not silently delete rows the operator already saw;
+        # the batch keeps its size and only stops growing.
+        changed = (frozen != before) or state.get("quota") != quota
+        state["items"] = frozen
+        state["quota"] = quota
+        if changed:
+            state["updated_at"] = _now()
+        if path and changed:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            tmp = "%s.%s.tmp" % (path, uuid.uuid4().hex[:8])
+            try:
+                with open(tmp, "w", encoding="utf-8") as f:
+                    json.dump(state, f, ensure_ascii=False, indent=1)
+                os.replace(tmp, path)
+            except Exception:
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                raise
+
+    batch_id = state["batch_id"]
+    available = []
+    for d in frozen:
+        e = doms.get(d)
+        if e is None:
+            continue
+        if queue_block_reason(store, d, e) is None:
+            available.append(d)
+
+    claimed_today = 0
+    for p in store.get("placements", {}).values():
+        if p.get("batch_id") == batch_id and p.get("state") in tuple(ACTIVE_STATES) + ("live",):
+            claimed_today += 1
+
+    # Throughput for the day, regardless of which path claimed it: the pool's
+    # single "Use" button does not go through the batch, so a batch-scoped count
+    # alone would under-report what was actually worked on.
+    claimed_day = 0
+    for p in store.get("placements", {}).values():
+        if p.get("state") not in tuple(ACTIVE_STATES) + ("live",):
+            continue
+        stamp = p.get("claimed_at") or p.get("submitted_at") or p.get("live_at") or ""
+        if _stamp_quota_date(stamp) == date:
+            claimed_day += 1
+
+    out = {
+        "date": date,
+        "batch_id": batch_id,
+        "quota": quota,
+        "quota_used": claimed_on(store),
+        # The claim gate uses the *configured* quota, so report that beside the
+        # batch quota rather than letting an explicit query param look like headroom.
+        "quota_gate": configured,
+        "quota_left": max(0, configured - claimed_on(store)),
+        "batch_size": len(frozen),
+        "available": len(available),
+        "claimed_today": claimed_today,
+        "claimed_day": claimed_day,
+        "inventory": len(eligible_domains),
+        "supply_gap": max(0, quota - len(frozen)),
+        "exhausted": len(available) == 0,
+        "frozen": bool(frozen),
+        "created_at": state.get("created_at"),
+        "updated_at": state.get("updated_at"),
+    }
+    if with_items:
+        out["items"] = [_queue_row(d, doms[d], store) for d in available]
     return out
 
 
@@ -622,6 +1013,10 @@ def placement_block_reason(store, target_domain, target_url, placement_type="lin
     now = dt.datetime.now(dt.timezone.utc)
     d = _norm_target(target_domain)
     key = placement_key(d, target_url, placement_type)
+    # A whitelisted host is excluded from every backlink number, so promoting a
+    # new link on it would create work the ledger can never count.
+    if _bare_domain(d) in whitelisted_domains(store):
+        return "whitelisted: excluded from backlink stats (remove it first)"
     sup = store.get("suppressions", {})
     for scope in (d, key):
         if scope in sup:
@@ -659,6 +1054,14 @@ def claim_placement(store, params):
     reason = placement_block_reason(store, d, u, t)
     if reason:
         return None, reason
+    # Hard daily ceiling. The batch is only a plan; this is the gate that makes
+    # "100/day" true even when rows are claimed one by one from the pool.
+    quota = effective_quota(store)
+    used = claimed_on(store)
+    if used >= quota:
+        return None, ("daily quota reached: %d/%d claimed today (quota day %s UTC+%d) "
+                      "— raise it via POST /api/settings" %
+                      (used, quota, _quota_date(), QUOTA_TZ_OFFSET))
     key = placement_key(d, u, t)
     rows = store.setdefault("placements", {})
     rec = rows.get(key) or {
@@ -679,13 +1082,18 @@ def claim_placements_batch(store, items):
     """Claim many placement slots at once; idempotent per slot key.
 
     items: list of param dicts (same keys as claim_placement). Each slot is
-    claimed independently, so a blocked row never aborts the others. Returns
-    {results:[{ok,target_domain,target_url,placement,reason}],claimed,blocked}.
+    claimed independently, so a blocked row never aborts the others. The daily
+    quota is checked once up front and again per row in claim_placement, so a
+    batch can never overshoot the configured ceiling. Returns
+    {results:[{ok,target_domain,target_url,placement,reason}],claimed,blocked,
+     quota_blocked,quota,remaining}.
     """
-    results, claimed, blocked = [], 0, 0
+    results, claimed, blocked, quota_blocked = [], 0, 0, 0
     if not isinstance(items, list):
         return {"results": [{"ok": False, "reason": "items must be a list"}],
-                "claimed": 0, "blocked": 1}
+                "claimed": 0, "blocked": 1, "quota_blocked": 0,
+                "quota": effective_quota(store), "remaining": 0}
+    quota = effective_quota(store)
     for it in (items or []):
         if not isinstance(it, dict):
             results.append({"ok": False, "reason": "item must be an object"})
@@ -698,9 +1106,13 @@ def claim_placements_batch(store, items):
                         "placement": rec, "reason": reason})
         if reason:
             blocked += 1
+            if reason.startswith("daily quota reached"):
+                quota_blocked += 1
         else:
             claimed += 1
-    return {"results": results, "claimed": claimed, "blocked": blocked}
+    return {"results": results, "claimed": claimed, "blocked": blocked,
+            "quota_blocked": quota_blocked, "quota": quota,
+            "remaining": max(0, quota - claimed_on(store))}
 
 
 def transition_placement(store, params):
@@ -732,6 +1144,15 @@ def transition_placement(store, params):
     rec["state"] = nxt
     if _STATE_TS.get(nxt):
         rec[_STATE_TS[nxt]] = _now()
+    if nxt == "live":
+        # A verified live backlink IS "acquired". Without this write-back the
+        # pool kept showing a delivered domain as a gap (and the overview's
+        # "Acquired" count never moved), which made the queue -> claim -> live
+        # loop look broken from the operator's side.
+        d0 = _norm_target(rec.get("target_domain"))
+        entry = store.setdefault("domains", {}).get(d0)
+        if entry is not None:
+            entry["acquired"] = True
     if nxt in ("rejected", "error"):
         rec["failure_reason"] = str(params.get("failure_reason") or "")[:300]
         try:

@@ -55,6 +55,27 @@
   .badge{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
   .prio{font-weight:700}
   .note{color:var(--muted);font-size:12px}
+  .qbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;background:var(--panel);
+    border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:0 0 10px}
+  .qbar .qlab{font-weight:700;font-size:13px}
+  .qbar .qstat{font-size:12px;color:var(--muted)}
+  .qbar .qstat b{color:var(--text);font-size:15px;margin-right:4px}
+  .qbar .qstat.short b{color:var(--accent2)}
+  .qbar button{margin-left:auto;padding:7px 14px;font-size:13px}
+  .qbar button.qmini{margin-left:6px;padding:2px 8px;font-size:11px}
+  .qbar input[type=number]{width:66px;background:var(--panel2);border:1px solid var(--border);
+    color:var(--text);border-radius:6px;padding:2px 4px 2px 6px;font-size:13px;font-family:inherit;
+    font-variant-numeric:tabular-nums}
+  .qbar .qstat.done b{color:var(--bad)}
+  .wlrow td{opacity:.62}
+  /* Three actions per row (own / use / whitelist) must stack cleanly instead of
+     wrapping into a ragged two-line cell. */
+  #poolTable td:last-child{min-width:112px}
+  #poolTable td:last-child button{display:block;width:100%;margin-top:4px}
+  #poolTable td:last-child button:first-child{margin-top:0}
+  .pl-use{white-space:nowrap}
+  .chips .chip .wlx{margin-left:6px;color:var(--muted);cursor:pointer;font-weight:700}
+  .chips .chip .wlx:hover{color:var(--bad)}
   .src{margin-top:14px;font-size:12px;color:var(--muted)}
   .lim{margin-top:8px;font-size:12px;color:var(--muted)}
   .lim li{margin:2px 0}
@@ -182,7 +203,7 @@
   <div class="tabpane active" id="tab-ov">
     <div class="viewtips">
       <button class="tipbtn" data-tipbtn="ov" aria-expanded="false" data-i18n="tipbtn_ov">💡 本页怎么看</button>
-      <div class="tipbody hidden" id="tip-ov" data-i18n="tip_ov"><ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul></div>
+      <div class="tipbody hidden" id="tip-ov" data-i18n="tip_ov"><ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>可原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul></div>
     </div>
     <div class="cards" id="ovCards">
       <div class="card"><div class="n" id="ov_total">0</div><div class="l" data-i18n="ov_total">累计发现 Discovered</div></div>
@@ -192,6 +213,19 @@
         <div class="card rec"><div class="n" id="ov_recip">0%</div><div class="l" data-i18n="ov_recip">互链占比 Reciprocal</div></div>
     </div>
     <p class="note" id="ovCenter" style="margin:0 0 14px"></p>
+
+    <div class="qbar" id="qbar">
+      <span class="qlab" data-i18n="q_title">今日队列 · Daily queue</span>
+      <span class="qstat"><input id="qQuota" type="number" min="1" max="2000" step="10" value="100"
+            aria-label="daily quota"><span data-i18n="q_quota">日配额 quota</span></span>
+      <span class="qstat"><b id="q_avail">0</b><span data-i18n="q_avail">本批可领 in batch</span></span>
+      <span class="qstat"><b id="q_claimed">0</b><span data-i18n="q_claimed">今日已领 claimed</span></span>
+      <span class="qstat short"><b id="q_gap">0</b><span data-i18n="q_gap">供给缺口 gap</span>
+        <button id="qRefill" class="ghost qmini" data-i18n="q_refill">补候选</button></span>
+      <span class="qstat"><b id="q_inv">0</b><span data-i18n="q_inv">库存 inventory</span></span>
+      <button id="qClaim" data-i18n="q_claim">领取本批</button>
+    </div>
+    <p class="note" id="qNote" style="margin:0 0 14px"></p>
 
     <div class="ov-grid">
       <div class="chartbox">
@@ -312,7 +346,7 @@
   <div class="tabpane" id="tab-pool">
     <div class="viewtips">
       <button class="tipbtn" data-tipbtn="pool" aria-expanded="false" data-i18n="tipbtn_pool">💡 本页怎么用</button>
-      <div class="tipbody hidden" id="tip-pool" data-i18n="tip_pool"><ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul></div>
+      <div class="tipbody hidden" id="tip-pool" data-i18n="tip_pool"><ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li><li><b>白名单</b>：每条记录（池 / 分析 / 台账）都能一键加入或移出。加白的域名留在池里但不计入任何统计，也不进今日队列；顶部输入框可批量粘贴。</li></ul></div>
     </div>
     <div class="panel">
       <div class="toolbar" style="margin-bottom:0">
@@ -337,6 +371,20 @@
       <div class="note" style="margin:10px 0 4px">
         <span id="existingCount" class="badge"></span>
         <span id="existingMsg" class="badge"></span>
+      </div>
+
+      <div class="wl-card" style="margin:6px 0 10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--panel2)">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <b data-i18n="wl_title">白名单 · 不计入外链统计</b>
+          <span class="badge" id="wlCount">0</span>
+          <span class="note" data-i18n="wl_hint">加白名单的域名仍留在池里，但总数、缺口、今日队列都不再算它；可随时移出。</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:8px">
+          <div style="flex:1 1 260px"><input id="wlInput" placeholder="example.com, another.com"></div>
+          <button id="wlAdd" data-i18n="wl_add">加入白名单</button>
+          <span class="badge" id="wlMsg"></span>
+        </div>
+        <div class="chips" id="wlChips" style="margin-top:8px"></div>
       </div>
       <div class="poolfilters">
         <div class="tree-card">
@@ -542,6 +590,19 @@ const I18N = {
     center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'下拉可选已有域名（带池/种子数量）；也可直接输入新域名',
     tab_ov:'📊 总体概况', tab_analyze:'🔍 分析', tab_tips:'📖 类型说明 & 权重', tab_pool:'🗃 外链池 · 已有 vs 空缺', tab_sched:'⚙ 后台服务 · 周期查询',
     ov_total:'累计发现 Discovered', ov_acq:'已拥有 Acquired', ov_gap:'空缺 Gap', ov_gapv:'空缺且有效 Gap & valid', ov_recip:'互链占比 Reciprocal',
+    q_title:'今日队列 · Daily queue', q_quota:'日配额 quota', q_avail:'本批可领 in batch',
+    q_claimed:'今日已领 claimed', q_gap:'供给缺口 gap', q_inv:'库存 inventory',
+    q_claim:'领取本批',
+    q_refill:'补候选', q_quota_full:'配额已满', q_quota_saved:'配额已改为 {q} 条/天',
+    q_refill_need:'先在顶部填写中心域名',
+    wl_title:'白名单 · 不计入外链统计', wl_add:'加入白名单',
+    wl_hint:'加白名单的域名仍留在池里，但总数、缺口、今日队列都不再算它；可随时移出。',
+    wl_none:'还没有白名单域名', wl_added:'已加入 {n} 个', wl_removed:'已移出 {n} 个',
+    wl_on:'加入白名单', wl_off:'移出白名单', wl_pill:'白名单',
+    q_note:'批次 {id} · 本批 {b} 条 · 库存 {i} 条。缺口 = 配额 − 本批；库存不够时先去「分析」跑一次，或补一份 harvest 文件。',
+    q_note_short:'批次 {id} · 本批 {b} 条 · 库存 {i} 条（配额 {q}）。缺口只能靠跑一次分析或补一份 harvest 文件来填。',
+    q_claimed_msg:'已领取 {n} 条，被拦截 {b} 条（已在台账 / 已排除 / 冷却中）',
+    q_claim_fail:'领取失败：{e}',
     ov_type_title:'外链类型分布', ov_type_sub:'基于外链池累计发现数（按类型）',
     ov_funnel_title:'缺口漏斗', ov_funnel_sub:'发现 → 有效 → 空缺 → 空缺且有效',
     ov_recip_title:'互链占比监控', ov_recip_sub:'互链超过 30% 阈值即触发 link scheme 风险告警（互链类型已与 directory 分开统计）',
@@ -558,7 +619,7 @@ const I18N = {
     tips_toggle:'▸ 类型说明 & 权重 Tips（含互链说明 / 打分模型 / 周期查询）',
     btn_help:'? 使用帮助',
     tipbtn_ov:'💡 本页怎么看', tipbtn_analyze:'💡 本页怎么用', tipbtn_pool:'💡 本页怎么用', tipbtn_sched:'💡 本页怎么用',
-    tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
+    tip_ov:'<ul><li>五张卡片回答「池子里有多少 → 已有多少 → 还缺多少 → 缺的里有多少能用」。</li><li><b>缺口 = 累计发现 − 已有外链 − 竞品</b>；数字为 0 时先去「分析」跑一次。</li><li>「累计发现」是<b>见过的域名</b>，不等于已拥有——只有台账里已上线（live）的才算真外链。</li><li>互链占比超过 30% 会提示 link scheme 风险，互链与目录站分开统计。</li><li><b>今日队列</b>是每日<b>工作配额</b>（默认 100，可在队列条直接改）：当天冻结一批、领走即出队、不自动补齐；<b>配额是硬闸门</b>，超了领取会直接被拒。「供给缺口 = 配额 − 本批」，点旁边的<b>补候选</b>原地跑一次分析。</li><li><b>白名单</b>里的域名留在池中但<b>不计入任何统计</b>（总数/缺口/队列都跳过），适合自家站群与聚合站；在「外链池」里逐条切换。</li><li>全部数字围绕顶部<b>中心域名</b>计算，切换域名即重算。</li></ul>',
     tip_analyze:'<ul><li>关键词决定<b>相关性</b>打分：填品类词（如 soundboard、sound buttons），不要填品牌词。</li><li>竞品域名（含子域）整行剔除：既不占候选/有效/缺口，也不做 HTTP 校验；只在卡片下方单独计数。</li><li>竞品的外链站相反是<b>高价值候选</b>：由离线 host 图 harvest 写入 <code>seeds/competitor-links-&lt;域名&gt;.json</code>，按证据准入、不受关键词门限限制。</li><li>「已有外链」<b>只影响本次分析</b>的缺口差值，不会持久保存；要持久标记请到「外链池」页导入。</li><li>勾选「并入外链池」结果才落盘累计，否则仅供本次查看。</li><li>零结果时先查 <code>seeds/seed-&lt;域名&gt;.json</code> 是否有种子库，再查线上 Bing 是否可达。</li></ul>',
     tip_pool:'<ul><li>左侧树按<b>类型 → 域名</b>分组，点节点即筛选；右侧下方是<b>交付台账</b>。</li><li>导入已有外链：粘贴域名（每行一个）→ 缺口立即重算，且可撤销。</li><li>台账状态：<code>registered → claimed → submitted → live</code>；标 live 必须给落地 URL + 验证方式。</li><li>live 的投放位<b>永久锁定</b>，不会再被推荐；不想再要的域名用「永久排除」。</li><li>「池 CSV」与「台账 CSV」是两份数据，交接给运营时别混。</li></ul>',
     tip_sched:'<ul><li>周期查询按间隔自动跑分析，把新候选<b>去重并入外链池</b>，适合「不断扩库」。</li><li>需要进程常驻：本地用 <code>nohup python3 server.py</code>，Fly 上机器休眠期间不会触发。</li><li>改完配置必须点<b>保存配置</b>；「立即运行」只跑一次，不影响定时。</li><li>运行历史里能看到每次新增多少域名；失败会记录原因，先看 <code>/api/health</code>。</li><li>定时任务用的档案来自「分析」页表单，添加后会固定当时的域名/关键词/竞品。</li></ul>',
@@ -596,6 +657,19 @@ const I18N = {
     center_lab:'Analysis target (all tabs center on this domain):', center_hint:'Pick a known domain from the list (with pool/seed counts) or type a new one',
     tab_ov:'📊 Overview', tab_analyze:'🔍 Analyze', tab_tips:'📖 Types & Weights', tab_pool:'🗃 Pool · Owned vs Gap', tab_sched:'⚙ Backend · Scheduler',
     ov_total:'Discovered', ov_acq:'Acquired', ov_gap:'Gap', ov_gapv:'Gap & valid', ov_recip:'Reciprocal %',
+    q_title:'Daily queue', q_quota:'daily quota', q_avail:'in batch',
+    q_claimed:'claimed today', q_gap:'supply gap', q_inv:'pool inventory',
+    q_claim:'Claim batch',
+    q_refill:'Get more', q_quota_full:'Quota reached', q_quota_saved:'Quota set to {q}/day',
+    q_refill_need:'Enter a center domain first',
+    wl_title:'Whitelist · excluded from backlink stats', wl_add:'Add to whitelist',
+    wl_hint:'Whitelisted domains stay in the pool but leave every number: totals, gap and the daily queue. Remove them any time.',
+    wl_none:'No whitelisted domains yet', wl_added:'{n} added', wl_removed:'{n} removed',
+    wl_on:'Whitelist', wl_off:'Un-whitelist', wl_pill:'Whitelisted',
+    q_note:'Batch {id} · {b} in this batch · {i} in inventory. Gap = quota − batch; when inventory is short, run an analysis or ship a harvest file.',
+    q_note_short:'Batch {id} · {b} in this batch · {i} in inventory (quota {q}). Only a fresh analysis or a harvest file can close the gap.',
+    q_claimed_msg:'Claimed {n}, blocked {b} (already in ledger / suppressed / cooling down)',
+    q_claim_fail:'Claim failed: {e}',
     ov_type_title:'Backlink type distribution', ov_type_sub:'Cumulative discovered count by type (from pool)',
     ov_funnel_title:'Gap funnel', ov_funnel_sub:'Discovered → Valid → Gap → Gap & valid',
     ov_recip_title:'Reciprocal ratio monitor', ov_recip_sub:'Above 30% triggers a link-scheme risk warning (reciprocal is tracked separately from directory)',
@@ -612,9 +686,9 @@ const I18N = {
     tips_toggle:'▸ Types & Weights Tips (reciprocal / scoring / periodic)',
     btn_help:'? Help',
     tipbtn_ov:'💡 How to read', tipbtn_analyze:'💡 How to use', tipbtn_pool:'💡 How to use', tipbtn_sched:'💡 How to use',
-    tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
+    tip_ov:'<ul><li>The five cards answer: how much is in the pool, how much you own, how much is missing, and how much of that is usable.</li><li><b>Gap = discovered − acquired − competitors</b>. All zeros usually means no analysis has run yet.</li><li>"Discovered" means <b>seen</b>, not owned: only placements marked live in the ledger count as real backlinks.</li><li>Reciprocal share above 30% raises a link-scheme warning; reciprocal links are counted apart from directories.</li><li><b>Daily queue</b> is a <b>work quota</b> (100 by default, editable in the queue bar): the batch is frozen for the day, claimed rows leave it, and it never refills itself. The quota is a <b>hard gate</b> — claims beyond it are rejected. Supply gap = quota − batch; the <b>Get more</b> button runs an analysis in place.</li><li><b>Whitelisted</b> domains stay in the pool but are <b>excluded from every number</b> (totals, gap, queue). Use it for your own network and aggregators; toggle it per row in the Pool tab.</li><li>Every number follows the <b>center domain</b> at the top and recalculates when you switch it.</li></ul>',
     tip_analyze:'<ul><li>Keywords drive the <b>relevance</b> score: use category terms (soundboard, sound buttons), not brand names.</li><li>Competitor hosts (including subdomains) are dropped entirely: they are not candidates, not validated, and not counted in candidate / valid / gap - only in the breakdown line under the cards.</li><li>Sites that LINK TO a competitor are the opposite: high-value candidates, harvested offline from the host graph into <code>seeds/competitor-links-&lt;domain&gt;.json</code>, admitted by evidence and therefore not subject to the keyword gate.</li><li>"Existing backlinks" only affects the <b>gap of this run</b> and is not persisted; to mark owned domains for good, import them on the Pool page.</li><li>Tick "merge into pool" to accumulate results on disk; otherwise they are for this view only.</li><li>Zero results? Check whether <code>seeds/seed-&lt;domain&gt;.json</code> exists, then whether live Bing is reachable.</li></ul>',
-    tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting domains (one per line); the gap recalculates immediately and the import is reversible.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li></ul>',
+    tip_pool:'<ul><li>The left tree groups by <b>type → domain</b>; click a node to filter. The <b>delivery ledger</b> sits below on the right.</li><li>Import existing backlinks by pasting domains (one per line); the gap recalculates immediately and the import is reversible.</li><li>Ledger states: <code>registered → claimed → submitted → live</code>; marking live requires a landing URL plus a verify method.</li><li>Live slots are <b>locked forever</b> and never recommended again; use "exclude forever" for domains you do not want.</li><li>The pool CSV and the ledger CSV are two different exports - do not mix them when handing off to operators.</li><li><b>Whitelist</b>: every record (pool / analysis / ledger) toggles in one click. A whitelisted host stays in the pool but leaves every number and the queue; the box at the top accepts a bulk paste.</li></ul>',
     tip_sched:'<ul><li>The scheduler runs the analysis on an interval and <b>merges new candidates into the pool</b> with dedup.</li><li>It needs a long-running process: <code>nohup python3 server.py</code> locally; on Fly nothing runs while the machine is asleep.</li><li>Click <b>Save config</b> after editing; "Run now" fires a single run and does not change the schedule.</li><li>Run history shows how many domains each run added; failures record a reason, so check <code>/api/health</code> first.</li><li>Scheduled profiles come from the Analyze form and freeze the domain/keywords/competitors captured at that moment.</li></ul>',
     pool_title:'Backlink Pool · Owned vs Gap <span class="badge">expanded by periodic queries</span>', pool_load:'Load pool', pool_csv:'Pool CSV',
     pool_note:'Every analysis auto-merges into the candidate pool (dedup by domain, accumulates discovery count and first/last seen). Seen is not owned: gap detection uses verified live placements, operator-marked acquisitions and explicit imports only. Click column headers to sort; use "Edit" to mark acquired, or "Use" to carry a domain into the delivery ledger below.',
@@ -846,6 +920,10 @@ function refreshAllSortUI(){
 }
 
 /* ---------- tabs ---------- */
+function showTab(name){
+  const t=document.querySelector('#tabs .tab[data-tab="'+name+'"]');
+  if(t) t.click();
+}
 function initTabs(){
   const tabs=[...document.querySelectorAll('#tabs .tab')];
   tabs.forEach(t=>t.addEventListener('click',()=>{
@@ -951,6 +1029,7 @@ function renderAllDynamic(){
   if(LAST) render(LAST);                    // analysis table, filters, sources, limitations
   if(POOL) renderPool(POOL);                // pool stats / tree / chips / rows
   if(PLACEMENTS) renderPlacements();         // delivery ledger rows + summary (LANG-dependent)
+  if(WL.length || $('wlChips')) renderWhitelist();
   if(SCHED){
     renderSchedStatus();                    // status pills
     renderSchedRuns();                     // run-history rows
@@ -1004,7 +1083,7 @@ async function loadProfile(domain){
 async function switchDomain(oldD, newD){
   if(oldD) await saveProfile(oldD);   // persist the form of the domain we leave
   await loadProfile(newD);             // pull the profile of the domain we enter
-  await Promise.all([loadChannels(), loadOverview(), loadPool()]);
+  await Promise.all([loadChannels(), loadOverview(), loadPool(), loadPlacements()]);
 }
 function looksLikeDomain(s){
   // label[.label]+ ending in a 2+ char TLD — mirrors store._looks_like_domain.
@@ -1091,11 +1170,137 @@ async function loadDomainPicker(){
   }catch(e){ /* picker is a convenience; typing still works */ }
 }
 
+/* ---------- daily queue: quota + a frozen batch ----------
+   100/天 是「工作配额」，不是「新域名产量」：批次当天冻结、领走即出队、不自动补齐。
+   配额是硬闸门（服务端 claim 时拦截），改这里只是改配置，不是「临时放宽」。 */
+let QUEUE = null;
+let WL = [];                 // whitelist rows from the server (per center domain)
+let WL_SET = new Set();      // fast membership for row rendering
+function todayLocal(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function renderQueue(){
+  const q=QUEUE, el=$('qbar'); if(!q||!el) return;
+  const gate = (q.quota_gate!=null?q.quota_gate:q.quota);
+  const used = (q.quota_used!=null?q.quota_used:(q.claimed_day==null?q.claimed_today:q.claimed_day));
+  const qi=$('qQuota'); if(qi && document.activeElement!==qi) qi.value=gate;
+  $('q_avail').textContent=q.available;
+  $('q_claimed').textContent = used + '/' + gate;
+  $('q_claimed').parentElement.classList.toggle('done', (q.quota_left!=null?q.quota_left:(gate-used))<=0);
+  $('q_gap').textContent=q.supply_gap;
+  $('q_inv').textContent=q.inventory;
+  const key = (q.inventory===0 || q.supply_gap>0) ? 'q_note_short' : 'q_note';
+  $('qNote').textContent = I18N[LANG][key]
+    .replace('{id}',q.batch_id).replace('{b}',q.batch_size)
+    .replace('{i}',q.inventory).replace('{q}',gate);
+  const b=$('qClaim'); const left = (q.quota_left!=null?q.quota_left:(gate-used));
+  b.disabled = q.available===0 || left<=0;
+  b.textContent = left<=0 ? I18N[LANG].q_quota_full
+                          : I18N[LANG].q_claim + (q.available?(' '+q.available):'');
+}
+async function saveQuota(value){
+  const v=Math.max(1, Math.min(2000, parseInt(value,10)||100));
+  try{
+    const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({center_domain:CENTER,daily_quota:v})});
+    const d=await r.json(); if(!d.ok) throw new Error(d.error||'fail');
+    localStorage.setItem('bp.quota', String(d.settings.daily_quota));
+    await refillBatch();   // a raised quota should grow today's batch, not just the cap
+    setImportMsg(I18N.en.q_quota_saved.replace('{q}',d.settings.daily_quota),
+                 I18N.zh.q_quota_saved.replace('{q}',d.settings.daily_quota));
+    await loadOverview();
+  }catch(e){ alert(e.message); }
+}
+async function claimQueue(){
+  const b=$('qClaim'); const before=b.textContent; b.disabled=true;
+  try{
+    const r=await fetch('/api/queue?domain='+encodeURIComponent(CENTER)+'&date='+(QUEUE&&QUEUE.date?QUEUE.date:todayLocal()));
+    const d=await r.json(); if(!d.ok) throw new Error(d.error||'fail');
+    const q=d.queue||{}; QUEUE=q;
+    const items=(q.items||[]).map(x=>({target_domain:x.domain,target_url:x.url,
+      placement_type:'link',batch_id:q.batch_id}));
+    if(!items.length){ renderQueue(); return; }
+    const pr=await fetch('/api/placements/claim-batch',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({center_domain:CENTER,items:items})});
+    const pd=await pr.json(); if(!pd.ok) throw new Error(pd.error||'fail');
+    setImportMsg(I18N.en.q_claimed_msg.replace('{n}',pd.claimed||0).replace('{b}',pd.blocked||0)
+                   .replace('{q}',pd.quota_blocked||0),
+                 I18N.zh.q_claimed_msg.replace('{n}',pd.claimed||0).replace('{b}',pd.blocked||0)
+                   .replace('{q}',pd.quota_blocked||0));
+    await loadOverview(); await loadPlacements(); await loadPool();
+  }catch(e){
+    b.textContent=before;
+    setImportMsg(I18N.en.q_claim_fail.replace('{e}',e.message),
+                 I18N.zh.q_claim_fail.replace('{e}',e.message));
+  }finally{ b.disabled = !(QUEUE && QUEUE.available); renderQueue(); }
+}
+
+/* 缺口没有一键动作时，运营只能自己跳页跑分析。这里直接把人送过去并开跑。 */
+async function refillBatch(){
+  try{
+    const r=await fetch('/api/queue?domain='+encodeURIComponent(CENTER)+'&date='+todayLocal()+'&refill=1');
+    const d=await r.json();
+    if(d.ok && d.queue){ QUEUE=d.queue; renderQueue(); }
+    return d.ok;
+  }catch(e){ return false; }
+}
+async function refillCandidates(){
+  const dom=(CENTER||'').trim();
+  if(!dom){ setImportMsg(I18N.en.q_refill_need, I18N.zh.q_refill_need); return; }
+  if(!$('domain').value.trim()) $('domain').value=dom;
+  showTab('analyze');
+  const b=$('run'); if(b.disabled) return;
+  await analyze();
+  await refillBatch();   // fresh candidates should land in today's batch
+}
+
+/* ---------- whitelist: excluded from every backlink number ---------- */
+async function loadWhitelist(){
+  try{
+    const r=await fetch('/api/whitelist?domain='+encodeURIComponent(CENTER));
+    const d=await r.json(); if(!d.ok) return;
+    WL=d.whitelist||[]; WL_SET=new Set(WL.map(x=>x.domain));
+    renderWhitelist();
+  }catch(e){ /* the list is an aid, not a gate */ }
+}
+function renderWhitelist(){
+  const box=$('wlChips'); if(!box) return;
+  $('wlCount').textContent=WL.length;
+  if(!WL.length){
+    box.innerHTML=`<span class="note">${esc(I18N[LANG].wl_none)}</span>`;
+    return;
+  }
+  box.innerHTML=WL.map(x=>`<span class="chip on" title="${escAttr((x.note||'')+(x.in_pool?'':' · not in pool'))}">`
+    +`${esc(x.domain)}<span class="wlx" data-wl="${escAttr(x.domain)}" data-act="rm" title="${escAttr(I18N[LANG].wl_off)}">×</span></span>`).join('');
+}
+async function whitelistPost(action, domains){
+  const r=await fetch('/api/whitelist',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({center_domain:CENTER,action:action,domains:domains})});
+  const d=await r.json(); if(!d.ok) throw new Error(d.error||'fail');
+  WL=d.whitelist||[]; WL_SET=new Set(WL.map(x=>x.domain));
+  renderWhitelist();
+  const n=(d.changed||[]).length;
+  $('wlMsg').textContent = action==='add' ? I18N[LANG].wl_added.replace('{n}',n)
+                                          : I18N[LANG].wl_removed.replace('{n}',n);
+  return d;
+}
+async function toggleWhitelist(domain, add){
+  try{
+    await whitelistPost(add?'add':'remove', domain);
+    await loadOverview(); await loadPool(); await loadPlacements();
+  }catch(e){ setImportMsg(I18N.en.q_claim_fail.replace('{e}',e.message),
+                           I18N.zh.q_claim_fail.replace('{e}',e.message)); }
+}
+
 async function loadOverview(){
   try{
-    const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)); const d=await r.json();
+    const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)+'&date='+todayLocal()); const d=await r.json();
     if(!d.ok) throw new Error(d.error||'fail');
     const s=d.stats||{};
+    QUEUE=d.queue||QUEUE; renderQueue();
+    WL=d.whitelist||WL; WL_SET=new Set(WL.map(x=>x.domain)); renderWhitelist();
     $('ov_total').textContent=s.total_discovered||0;
     $('ov_acq').textContent=s.acquired||0;
     $('ov_gap').textContent=s.gap||0;
@@ -1275,8 +1480,12 @@ function drawRows(){
                      :`<span class="pill no">✗ ${p.http_status||p.valid_error||'dead'}</span>`;
     const gap=p.is_competitor?`<span class="pill comp">${LANG==='en'?'Competitor':'竞品'}</span>`
              :p.already_have?`<span class="pill comp">${LANG==='en'?'Owned':'已拥有'}</span>`
+             :(p.whitelisted||WL_SET.has(p.domain))?`<span class="pill comp">${esc(I18N[LANG].wl_pill)}</span>`
              :p.is_gap?`<span class="pill gap">${LANG==='en'?'Gap':'缺口'}</span>`:`<span class="pill">—</span>`;
     const tr=p.authority&&p.authority.tranco_global_rank!=null?p.authority.tranco_global_rank:'—';
+    const wlOn=p.whitelisted||WL_SET.has(p.domain);
+    const wlBtn=`<button class="ghost wl-toggle" data-dom="${escAttr(p.domain)}" data-wl="${wlOn?'0':'1'}"
+        style="padding:2px 8px;font-size:11px;margin-top:4px">${esc(wlOn?I18N[LANG].wl_off:I18N[LANG].wl_on)}</button>`;
     // Type labels are bilingual in the payload. EN mode shows English only;
     // ZH mode keeps the Chinese primary + English secondary comparison.
     const tl = LANG==='en' ? (p.type_label_en||tlabel(p.type_key)||'')
@@ -1289,7 +1498,7 @@ function drawRows(){
       <td>${p.authority_tier||'—'}<div class="note">Tranco ${tr}</div></td>
       <td>${p.relevance}</td><td>${p.authority_score}</td><td>${p.obtainability}</td>
       <td class="prio">${p.priority}</td>
-      <td>${val}</td><td>${gap}</td>
+      <td>${val}</td><td>${gap}${wlBtn}</td>
       <td class="note">${esc(LANG==='en' ? (p.note_en||p.note||'') : (p.note||''))}</td>
     </tr>`;
   }).join('');
@@ -1425,15 +1634,18 @@ function renderPoolChips(domains){
 }
 function poolRow(d){
   const st=d.acquired?`<span class="pill have">${LANG==='en'?'Owned':'已拥有'}</span>`:`<span class="pill gap">${LANG==='en'?'Gap':'空缺'}</span>`;
+  const wlPill=d.whitelisted?`<span class="pill comp">${esc(I18N[LANG].wl_pill)}</span>`:'';
   const val=d.valid?`<span class="pill ok">✓ ${d.http_status}</span>`:`<span class="pill no">✗ ${d.http_status||'dead'}</span>`;
   const btn=d.acquired
     ?`<button class="ghost acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="0" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Unmark':'取消已拥有'}</button>`
     :`<button class="acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Mark owned':'标记已拥有'}</button>`;
+  const wlBtn=`<button class="ghost wl-toggle" data-dom="${escAttr(d.domain)}" data-wl="${d.whitelisted?'0':'1'}"
+      style="padding:3px 10px;font-size:12px;margin-top:4px">${d.whitelisted?esc(I18N[LANG].wl_off):esc(I18N[LANG].wl_on)}</button>`;
   const ps=d.placement_state||'';
   const pcls=d.suppressed?'no':(ps==='live'?'have':((ps==='lost'||ps==='rejected'||ps==='error')?'no':'gap'));
   const pstate=`<span class="pill ${pcls}">${esc(d.suppressed?plLabel('pl_st_suppressed'):plStateLabel(ps))}</span>`;
   const use=`<button class="ghost pl-use" data-dom="${escAttr(d.domain)}" data-url="${escAttr(d.url||'')}" style="padding:3px 10px;font-size:12px;margin-top:4px">${plLabel('pl_use')}</button>`;
-  return `<tr>
+  return `<tr class="${d.whitelisted?'wlrow':''}">
     <td><a href="${d.url||'#'}" target="_blank" rel="noopener">${d.domain}</a></td>
     <td>${esc(d.type_key ? tlabel(d.type_key) : (LANG==='en'?(d.type_label_en||d.type_label_zh||''):(d.type_label_zh||'')))}${
       (d.via_competitors&&d.via_competitors.length)
@@ -1441,11 +1653,11 @@ function poolRow(d){
         : ''}</td>
     <td>${d.authority_tier||'—'}<div class="note">Tranco ${d.tranco_global_rank!=null?d.tranco_global_rank:'—'}</div></td>
     <td class="prio">${d.priority!=null?d.priority:'—'}</td>
-    <td>${val}</td><td>${st}</td>
+    <td>${val}</td><td>${st}${wlPill}</td>
     <td>${d.times_discovered||1}</td>
     <td class="note">${d.first_seen||''}<br>${d.last_seen||''}</td>
     <td>${pstate}</td>
-    <td>${btn}${use}</td>
+    <td>${btn}${use}${wlBtn}</td>
   </tr>`;
 }
 function sortPoolRows(rows){
@@ -1456,7 +1668,9 @@ function renderPool(domains){
   const all=domains||[];
   const bad=all.filter(d=>!d.valid).length;
   const shown=all.filter(poolFilterOk);
-  $('existingCount').textContent = (LANG==='en'?'Total ':'共 ') + all.length + (LANG==='en'?' entries':' 条');
+  const wlN = all.filter(d=>d.whitelisted).length;
+  $('existingCount').textContent = (LANG==='en'?'Total ':'共 ') + all.length + (LANG==='en'?' entries':' 条')
+    + (wlN ? (LANG==='en'? ' · '+wlN+' whitelisted' : ' · 白名单 '+wlN) : '');
   $('existingMsg').textContent = bad ? (LANG==='en'? (bad+' need re-check'): (bad+' 条需复核')) : (LANG==='en'?'all checked':'全部已校验');
   const rows=sortRows('poolTable', shown);
   $('poolBody').innerHTML=rows.map(poolRow).join('');
@@ -1525,6 +1739,12 @@ async function loadPlacements(){
   PLACEMENTS=d.placements||[]; PL_STATS=d.stats||{};
   renderPlacements();
 }
+function wlToggleBtn(domain){
+  if(!domain) return '';
+  const on=WL_SET.has(domain);
+  return `<button class="ghost wl-toggle" data-dom="${escAttr(domain)}" data-wl="${on?'0':'1'}"
+    style="padding:3px 10px;font-size:12px;margin-top:4px">${esc(on?I18N[LANG].wl_off:I18N[LANG].wl_on)}</button>`;
+}
 function renderPlacements(){
   if(!PLACEMENTS) return;
   const s=PL_STATS||{};
@@ -1544,7 +1764,7 @@ function renderPlacements(){
       <td class="note">${esc(p.target_url||'')}<br>${esc(p.placement_type||'')}</td>
       <td class="note">${esc(v.landing_url||'—')}<br>${esc(v.verify_method||'—')}</td>
       <td class="note">${esc(p.live_at||p.submitted_at||p.claimed_at||p.created_at||'')}</td>
-      <td>${act}</td></tr>`;
+      <td>${act}${wlToggleBtn(p.target_domain)}</td></tr>`;
   }).join('');
   $('plTable').classList.remove('hidden');
   $('plBody').innerHTML = rows ||
@@ -1940,6 +2160,29 @@ $('poolFilterReset').addEventListener('click',()=>{
 $('schedSave').addEventListener('click',schedSave);
 $('schedRun').addEventListener('click',schedRun);
 $('schedAdd').addEventListener('click',schedAddFromForm);
+$('qClaim').addEventListener('click',claimQueue);
+$('qRefill').addEventListener('click',refillCandidates);
+$('qQuota').addEventListener('change', ev=>saveQuota(ev.target.value));
+$('qQuota').addEventListener('keydown', ev=>{ if(ev.key==='Enter') ev.target.blur(); });
+$('wlAdd').addEventListener('click', async ()=>{
+  const v=($('wlInput').value||'').trim();
+  if(!v) return;
+  try{ await whitelistPost('add', v); $('wlInput').value='';
+       await loadOverview(); await loadPool(); await loadPlacements(); }
+  catch(e){ $('wlMsg').textContent=e.message; }
+});
+$('wlChips').addEventListener('click', async (ev)=>{
+  const x=ev.target.closest('.wlx'); if(!x) return;
+  try{ await whitelistPost('remove', x.dataset.wl);
+       await loadOverview(); await loadPool(); await loadPlacements(); }
+  catch(e){ $('wlMsg').textContent=e.message; }
+});
+// One delegated handler covers the pool table, the analyze table and the ledger:
+// every one of them renders its own .wl-toggle button.
+document.addEventListener('click', (ev)=>{
+  const b=ev.target.closest('.wl-toggle'); if(!b) return;
+  toggleWhitelist(b.dataset.dom, b.dataset.wl==='1');
+});
 initSorting();
 initTabs();
 initViewTips();

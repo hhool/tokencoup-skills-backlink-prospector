@@ -111,6 +111,70 @@ python3 tools/competitor_backlinks.py \
 
 > Note: more competitors means more inbound surface scanned, but "more competitors -> more valid backlinks" is not an identity — dedup, suppressions and the quality gate all cut the net gain.
 
+## 3.6 Local simulation (no network, no download)
+
+Before spending gigabytes on a real WDC release, run the whole chain on a synthetic graph. Every host sits under the reserved `.example` TLD, so nothing produced here can be mistaken for a real prospect; the HTTP probe is stubbed (about 1 in 9 hosts does not answer), which keeps `valid < candidates` visible.
+
+```bash
+python3 tools/simulate_harvest.py                  # medium: 120k hosts / 600k edges
+python3 tools/simulate_harvest.py --preset big      # 400k hosts / 2M edges, perf run
+python3 tools/simulate_harvest.py --preset tiny --keep --verbose   # keep artefacts
+```
+
+It does three things and asserts each contract:
+
+1. generates `*-domain-ranks` / `*-domain-edges` (gz, same column shape as WDC, shuffled ids);
+2. runs harvest once per competitor count (1 -> 2 -> 3) and prints rows, wall time, peak RSS, drop reasons;
+3. feeds every evidence file back into `analyze()` and prints `candidates / valid / competitor_rows / from_competitors`, checking that competitor hosts and their subdomains never become candidates, that evidence rows are admitted without a keyword match, and that a seed row sharing a domain with an evidence row is merged rather than duplicated.
+
+**Is 50 valid per day enough?** Supply is finite: one release only yields as many addresses as the file holds, then it is spent.
+
+| Competitors | Valid rows per release (simulated) | Days at 50/day |
+|---|---|---|
+| 1 | ~520 | ~10 |
+| 2 | ~960 | ~19 |
+| 3 | ~1400 | ~28 |
+
+For a steady 50/day online, ship with `--max-rows` around 1500 (~0.9 MB, trivial for the image) and treat each WDC release as a scheduled task. A real niche has a much thinner inbound surface than these synthetic pools, so harvest is a periodic top-up, not a daily source — the day-to-day gap still comes from the seed library plus live discovery.
+
+## 3.7 Daily quota and the batch queue (100/day by default)
+
+"100 a day" is a **work quota**, not a production rate. The overview page carries a "Daily queue" bar:
+
+| Number | Meaning |
+|---|---|
+| Daily quota | Max rows deliverable per day, **editable in the queue bar** (100 by default, capped at 2000, stored per center domain) |
+| In batch | Rows in today's batch that are still unclaimed |
+| Claimed today | `used/quota`; used = rows newly claimed today (UTC+8), including single claims made from the pool |
+| Supply gap | `quota − batch`: the part inventory cannot cover, with a **Get more** button beside it |
+| Pool inventory | Every pool domain that is valid, not owned, not a competitor, not suppressed, not whitelisted, and has no active placement or cooldown |
+
+Four rules, all deliberate:
+
+1. **Frozen per day.** The first page load slices the batch and writes `data/queue-<domain>.json`; reloading at noon does not reshuffle what you saw in the morning.
+2. **Claimed rows leave the batch.** "Claim batch" writes every remaining row into the delivery ledger as `claimed` and stamps the `batch_id`; rows blocked by the ledger, suppressions or cooldown are counted separately.
+3. **No automatic refill.** Short inventory shows up as a gap — never padded with duplicates. Closing it takes a fresh analysis (the **Get more** button runs one in place) or a harvest file (see 3.5). Lowering the quota never deletes rows already handed to you; raising it tops today's batch up to the new quota.
+4. **The quota is a hard gate.** Claims beyond it are rejected by the server (`409 daily quota reached`), including single claims from the pool — otherwise "100/day" is just a slogan. The quota day rolls at 00:00 **UTC+8** (`QUOTA_TZ_OFFSET`), not UTC.
+
+## 3.8 Whitelist (excluded from backlink stats)
+
+Some pool domains must never move a number: your own network, aggregators, mirrors, known link farms. This is deliberately *not* the same as a suppression — a **suppression** means "never offer me this slot again", a **whitelist entry** means "keep the record, just don't count it".
+
+- Every record (pool row, analysis row, ledger row) carries an **Add to whitelist / Un-whitelist** button.
+- Whitelisted domains stay in the pool (otherwise the toggle would disappear and the decision would be irreversible) but are removed from: discovered, acquired, gap, gap & valid, type distribution, reciprocal ratio and the daily queue.
+- The Pool tab has a whitelist block: paste several hosts at once (`example.com`, `https://www.foo.com/x` both work — scheme, `www` and path are stripped), and remove any entry with `×`.
+- Claiming a placement on a whitelisted host is refused (`409 whitelisted`): it can never be counted, so the work would be invisible.
+- The whitelist is isolated per center domain and stored in `whitelist` inside `data/store-<domain>.json`.
+
+API:
+
+- `GET /api/whitelist?domain=`
+- `POST /api/whitelist` body `{center_domain, domains|domain, action:"add"|"remove", note}`
+- `POST /api/settings` body `{center_domain, daily_quota}` (1–2000, out of range → 400)
+- `GET /api/queue?domain=&date=YYYY-MM-DD` (`&refill=1` tops the batch up explicitly; the `quota` param only sizes this batch, the **hard gate always uses the configured value**)
+
+The client sends its local date, so "today" is your today, not the UTC day of the machine.
+
 ---
 
 ## 4. CLI / API quick reference (for bulk & automation)

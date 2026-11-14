@@ -234,6 +234,24 @@ python3 tools/competitor_backlinks.py \
 
 读取顺序：`data/competitor-links-<域名>.json`（运营覆盖）→ `seeds/competitor-links-<域名>.json`（随镜像）。文件存在才生效，缺失时 `data_sources.competitor_backlinks.status` 为 `empty`，流水线行为与之前一致。
 
+### D9. 日配额是闸门，不是仪表盘
+
+`100/天`（按中心域名可配，1–2000，`POST /api/settings`）拦在**写台账的那一刻**，不是画批次的时候：`claim_placement` 超过上限直接拒绝（`409 daily quota reached`），`claim-batch` 把被砍掉的行数记进 `quota_blocked`。池里的单条「选用」走同一道闸，绕不过去。配额日按 **UTC+8**（`QUOTA_TZ_OFFSET`）结算，台账时间戳存的是 UTC，比较前先换算——直接截字符串会把本地 08:00 前的领取全算到昨天。
+
+### D10. 白名单 —— 记录留着，数字不算
+
+白名单不是排除。排除的意思是不再提供这个投放位；白名单只是这个域名**不参与任何外链统计**（自家站群、聚合站、镜像站、目录农场）。
+
+| 层 | 影响 |
+|---|---|
+| `store_stats` | 从累计发现 / 已拥有 / 缺口 / 缺口且有效 / 类型分布 / 互链占比中剔除，单独报 `whitelisted` |
+| `domain_list` | 行仍返回（`whitelisted: true`，界面置灰），否则按钮消失就没法撤销；`is_gap` 强制为 `false` |
+| `daily_queue` | 拦截原因 `whitelisted`，永进不了批次 |
+| `claim_placement` | 拒绝：这里的外链永远进不了统计，做了也是白做 |
+| `analyze` | 候选行标 `whitelisted`，不计入缺口 |
+
+域名在入口归一（`https://www.Foo.com/x` → `foo.com`），非法输入直接拒绝而不是存进去；按中心域名隔离，存在 `data/store-<域名>.json` 的 `whitelist` 字段。界面上每条记录（池行、分析行、台账行）都有切换按钮，池页还有批量粘贴框。
+
 ---
 
 ## 2. 免费数据源（无 API Key 即可运行）

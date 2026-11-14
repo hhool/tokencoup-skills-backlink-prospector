@@ -25,6 +25,13 @@ Endpoints (all JSON except GET /):
     POST /api/store/sync-existing  body={domains|existing} mark real backlinks acquired
     POST /api/store/unmark-existing body={domains} revert domains to gap (unmark acquired)
     GET  /api/placements       delivery ledger (query: domain) + stats
+    GET  /api/queue            today's frozen batch + quota accounting
+                               query: domain, date=YYYY-MM-DD (operator's local day),
+                               quota (batch override; the hard gate is the configured
+                               daily_quota), refill=1 to top the batch back up
+    GET  /api/whitelist        domains excluded from every backlink number
+    POST /api/whitelist        body={center_domain,domains,action:add|remove,note}
+    POST /api/settings         body={center_domain,daily_quota} hard daily ceiling
     GET  /api/placements/csv   ledger exported as CSV attachment (evidence included)
     POST /api/placements/claim      body={target_domain,target_url,placement_type,own_url,batch_id}
     POST /api/placements/claim-batch body={center_domain,items:[{target_domain,target_url,placement_type,own_url,batch_id}]} claim many slots
@@ -109,7 +116,7 @@ def build_csv(result):
 STORE_CSV_COLS = [
     "domain", "url", "type_key", "type_label_zh", "authority_tier",
     "tranco_global_rank", "priority", "valid", "http_status",
-    "acquired", "is_gap", "times_discovered", "first_seen", "last_seen",
+    "acquired", "is_gap", "whitelisted", "times_discovered", "first_seen", "last_seen",
 ]
 
 
@@ -265,6 +272,9 @@ class Handler(BaseHTTPRequestHandler):
                                                       "/api/analyze/csv", "/api/providers",
                                                       "/api/tips", "/api/store",
                                                       "/api/domains",
+                                                      "/api/queue",
+                                                      "/api/whitelist",
+                                                      "/api/settings",
                                                       "/api/store/csv",
                                                       "/api/store/sync-existing",
                                                       "/api/placements/claim-batch",
@@ -307,13 +317,40 @@ class Handler(BaseHTTPRequestHandler):
                 # Everything this workspace knows, so the center-domain picker
                 # offers real choices instead of relying on free-text memory.
                 return self._json(200, {"ok": True, "domains": st.known_domains()})
+            if path == "/api/queue":
+                # Today's frozen batch + quota accounting. `date` comes from the
+                # client so "today" means the operator's day, not the UTC day of
+                # a machine in sin.
+                qs = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                center_domain = qs.get("domain", [None])[0]
+                date = qs.get("date", [None])[0]
+                quota = qs.get("quota", [None])[0]
+                refill = str(qs.get("refill", ["0"])[0]).lower() in ("1", "true", "yes")
+                pool = st.load_store(center_domain)
+                return self._json(200, {"ok": True,
+                                        "queue": st.daily_queue(pool, center_domain, date=date,
+                                                                quota=quota, refill=refill),
+                                        "center_domain": center_domain})
+            if path == "/api/whitelist":
+                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                pool = st.load_store(center_domain)
+                return self._json(200, {"ok": True,
+                                        "whitelist": st.whitelist_rows(pool),
+                                        "count": len(st.whitelist_map(pool)),
+                                        "center_domain": center_domain})
             if path == "/api/store":
                 # Support domain query parameter for multi-domain isolation
-                center_domain = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query).get("domain", [None])[0]
+                qs = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                center_domain = qs.get("domain", [None])[0]
+                date = qs.get("date", [None])[0]
                 pool = st.load_store(center_domain)
                 return self._json(200, {"ok": True,
                                         "stats": st.store_stats(pool),
                                         "domains": st.domain_list(pool),
+                                        "whitelist": st.whitelist_rows(pool),
+                                        "settings": {"daily_quota": st.effective_quota(pool)},
+                                        "queue": st.daily_queue(pool, center_domain,
+                                                                date=date, with_items=False),
                                         "center_domain": center_domain})
             if path == "/api/store/csv":
                 # Support domain query parameter for multi-domain isolation
@@ -379,7 +416,8 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/profiles", "/api/schedule", "/api/schedule/run",
                         "/api/placements/claim", "/api/placements/claim-batch",
                         "/api/placements/transition",
-                        "/api/placements/suppress"):
+                        "/api/placements/suppress",
+                        "/api/whitelist", "/api/settings"):
             return self._error(404, "unknown path")
         try:
             length = int(self.headers.get("Content-Length") or 0)
@@ -412,6 +450,55 @@ class Handler(BaseHTTPRequestHandler):
                 st.save_store(pool, center_domain)
                 return self._json(200, {"ok": True, "removed": removed,
                                         "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/whitelist":
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower() or None
+                action = str(params.get("action") or "add").strip().lower()
+                raw = params.get("domains")
+                if raw is None:
+                    raw = params.get("domain")
+                if isinstance(raw, str):
+                    domains = [x for x in re.split(r"[,\s\n]+", raw) if x]
+                elif isinstance(raw, list):
+                    domains = [str(x) for x in raw if isinstance(x, (str, int))]
+                else:
+                    domains = []
+                if not domains:
+                    raise ValueError("domains (string or array) is required")
+                if len(domains) > 200:
+                    raise ValueError("too many domains (max 200)")
+                for d in domains:
+                    safe_text(d, 300)
+                note = str(params.get("note") or "")[:200]
+                pool = st.load_store(center_domain)
+                if action == "remove":
+                    changed = st.remove_whitelist(pool, domains)
+                elif action == "add":
+                    changed = st.add_whitelist(pool, domains, note=note)
+                else:
+                    raise ValueError("action must be 'add' or 'remove'")
+                st.save_store(pool, center_domain)
+                return self._json(200, {"ok": True, "action": action,
+                                        "changed": changed,
+                                        "whitelist": st.whitelist_rows(pool),
+                                        "count": len(st.whitelist_map(pool)),
+                                        "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/settings":
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower() or None
+                pool = st.load_store(center_domain)
+                if "daily_quota" in params:
+                    quota, err = st.set_daily_quota(pool, params.get("daily_quota"))
+                    if err:
+                        return self._error(400, err)
+                    st.save_store(pool, center_domain)
+                else:
+                    quota = st.effective_quota(pool)
+                return self._json(200, {"ok": True,
+                                        "settings": {"daily_quota": quota},
+                                        "quota": st.quota_state(pool),
                                         "center_domain": center_domain})
 
             if path in ("/api/placements/claim", "/api/placements/transition",
@@ -455,6 +542,9 @@ class Handler(BaseHTTPRequestHandler):
                 st.save_store(pool, center_domain or None)
                 return self._json(200, {"ok": True, "claimed": out["claimed"],
                                         "blocked": out["blocked"],
+                                        "quota_blocked": out.get("quota_blocked", 0),
+                                        "quota": out.get("quota"),
+                                        "remaining": out.get("remaining"),
                                         "results": out["results"],
                                         "stats": st.placement_stats(pool),
                                         "center_domain": center_domain})
