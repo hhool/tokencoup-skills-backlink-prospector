@@ -140,6 +140,12 @@ _PLACEHOLDER_DOMAINS = {
     "example.com", "example.org", "domain.com", "yourdomain.com", "yoursite.com",
     "email.com", "mail.com", "site.com", "company.com", "test.com", "sentry.io",
     "wixpress.com", "sentry-next.wixpress.com", "godaddy.com",
+    # Vendor and analytics widgets embedded in a host page publish their own
+    # support addresses. They belong to the widget vendor, never to the site:
+    # sweetwater.com surfaced support@algolia.com this way.
+    "algolia.com", "algolianet.com", "hcaptcha.com", "cloudflareinsights.com",
+    "datadoghq.com", "datadoghq.eu", "segment.io", "segment.com", "newrelic.com",
+    "hotjar.com", "fullstory.com", "bugsnag.com", "logrocket.com", "smartlook.com",
 }
 # Plugin field names that carry no meaning: the label beside them does.
 _OPAQUE_NAME = re.compile(
@@ -501,7 +507,11 @@ def extract_emails(
         local, _, host = candidate.partition("@")
         if not local or not host or "." not in host:
             return
-        if host in _PLACEHOLDER_DOMAINS or host.endswith((".example", ".test", ".invalid", ".local")):
+        if host.endswith((".example", ".test", ".invalid", ".local")):
+            return
+        # Suffix match: a vendor ingest endpoint such as
+        # o4508...ingest.de.sentry.io is still sentry.io, not the site.
+        if any(host == item or host.endswith("." + item) for item in _PLACEHOLDER_DOMAINS):
             return
         if local in _DEAD_LOCALPARTS:
             return
@@ -1133,6 +1143,27 @@ def selftest() -> int:
                         max_pages=4, delay=0, sleep=lambda _: None)
     check("a submission page two hops from home is still reached",
           i["submission_url"] == "https://example-i.com/help/advertise", i["submission_url"])
+
+    # A vendor widget embedded in the host page publishes its own support
+    # address. That address belongs to the vendor, never to the site. This
+    # fixture is the sweetwater.com / support@algolia.com case.
+    mails = extract_emails(
+        "Powered by Algolia. Search support: support@algolia.com. "
+        "Questions about this store? Write to the team.",
+        mailto=["sales@example-j.com"], domain="example-j.com",
+    )
+    check("a vendor-widget address is refused",
+          all(m["address"] != "support@algolia.com" for m in mails), mails)
+    check("the site's own mailto still wins",
+          mails and mails[0]["address"] == "sales@example-j.com", mails)
+    # An ingest endpoint on a vendor subdomain is still the vendor, not the
+    # site. This fixture is the musicbrainz.org Sentry relay case.
+    relay = extract_emails(
+        "Report issues to 66ce4ddac265405f4bb80b23b4952c66@o4508558300676097.ingest.de.sentry.io",
+        mailto=[], domain="musicbrainz.org",
+    )
+    check("a vendor ingest subdomain is refused",
+          all("sentry.io" not in m["address"] for m in relay), relay)
 
     print("")
     if failures:
