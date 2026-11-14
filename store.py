@@ -300,7 +300,25 @@ def save_domain_channels(channels, center_domain):
 # --------------------------------------------------------------------------- #
 # domain profiles: per-center-domain keyword / competitor profiles
 # --------------------------------------------------------------------------- #
+def _looks_like_domain(domain):
+    """True when the value could be a real hostname (label[.label]+ with a TLD).
+
+    Guards against half-typed input: the UI switches domains on a debounce, so
+    typing "soundbuttons.click" char by char would otherwise persist profiles
+    named "soundbuttons", "soundbuttons.c", ... carrying the previous domain's
+    keywords.
+    """
+    d = (domain or "").strip().strip(".").lower()
+    if not d or len(d) > 100 or " " in d:
+        return False
+    if not re.match(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", d):
+        return False
+    return len(d.rsplit(".", 1)[-1]) >= 2
+
+
 def _profile_path(center_domain):
+    if not _looks_like_domain(center_domain):
+        return None
     safe = _sanitize_domain(center_domain)
     if not safe:
         return None

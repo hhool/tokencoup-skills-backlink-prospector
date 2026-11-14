@@ -933,9 +933,23 @@ async function switchDomain(oldD, newD){
   await loadProfile(newD);             // pull the profile of the domain we enter
   await Promise.all([loadChannels(), loadOverview(), loadPool()]);
 }
+function looksLikeDomain(s){
+  // label[.label]+ ending in a 2+ char TLD — mirrors store._looks_like_domain.
+  const d=(s||'').trim().toLowerCase().replace(/^\.+|\.+$/g,'');
+  return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(d)
+         && d.split('.').pop().length>=2;
+}
 function refreshCenterUI(){
   const oldCenter = CENTER;
-  const next = ($('centerDomain').value||'').trim().toLowerCase() || 'soundbuttons.click';
+  const el = $('centerDomain');
+  const typed = (el.value||'').trim().toLowerCase();
+  if(typed && !looksLikeDomain(typed)){
+    // Half-typed host: keep the previous center instead of switching to junk.
+    el.style.borderColor='#e05252';
+    return;
+  }
+  el.style.borderColor='';
+  const next = typed || 'soundbuttons.click';
   CENTER = next;
   $('domain').value = CENTER;
   updateCenterLabels();
