@@ -504,11 +504,14 @@ class Handler(BaseHTTPRequestHandler):
                                       params.get("keywords") or [],
                                       params.get("competitors") or [],
                                       params.get("note"))
-                return self._json(200, {"ok": True, "profile": {
-                    "keywords": cfg["keywords"], "competitors": cfg["competitors"],
-                    "note": cfg["note"], "source": "saved",
-                    "domain": center_domain},
-                    "center_domain": center_domain})
+                # Re-read so "source" tells the truth: an all-empty payload is a
+                # no-op, and the domain keeps resolving to its shipped default.
+                prof = st.load_profile(center_domain)
+                prof["domain"] = center_domain
+                if cfg.get("skipped"):
+                    prof["skipped"] = cfg["skipped"]
+                return self._json(200, {"ok": True, "profile": prof,
+                                        "center_domain": center_domain})
 
             if path == "/api/schedule":
                 cfg = SCHED.save_config(params)

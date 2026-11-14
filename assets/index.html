@@ -903,6 +903,10 @@ function updateCenterLabels(){
 }
 async function saveProfile(domain){
   if(!domain) return;
+  // A blank form means "no opinion": posting it would create an empty saved
+  // profile that shadows the shipped default for this domain. Skip the write.
+  const kw=($('keywords').value||'').trim(), cp=($('competitors').value||'').trim();
+  if(!kw && !cp) return;
   try{
     await fetch('/api/profiles',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({center_domain:domain,

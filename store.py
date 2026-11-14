@@ -319,9 +319,14 @@ def load_profile(center_domain):
     """Return the keyword/competitor profile for a center domain.
 
     Resolution order (first hit wins):
-      1. data/profile-<domain>.json      - operator edits (saved)
+      1. data/profile-<domain>.json      - operator edits (saved, non-empty only)
       2. profiles.json -> profiles[domain] - shipped default
       3. empty profile                     - unknown domain
+
+    An all-empty saved profile counts as "no opinion" and falls through to the
+    shipped default: the UI writes the form on domain switch, so a visitor who
+    never typed anything would otherwise pin a blank profile that shadows the
+    default forever.
 
     Returns {keywords:[], competitors:[], note:"", source:"saved|default|none"}.
     """
@@ -333,11 +338,13 @@ def load_profile(center_domain):
     if p and os.path.isfile(p):
         d = load_json_file(p, None)
         if isinstance(d, dict):
-            return {"keywords": _as_list(d.get("keywords")),
-                    "competitors": _as_list(d.get("competitors")),
-                    "note": d.get("note") or "",
-                    "note_en": d.get("note_en") or "",
-                    "source": "saved"}
+            kws = _as_list(d.get("keywords"))
+            comps = _as_list(d.get("competitors"))
+            note = d.get("note") or ""
+            note_en = d.get("note_en") or ""
+            if kws or comps or note or note_en:
+                return {"keywords": kws, "competitors": comps,
+                        "note": note, "note_en": note_en, "source": "saved"}
 
     cfg = load_json_file(PROFILES_PATH, {})
     profs = (cfg or {}).get("profiles") or {}
@@ -352,19 +359,29 @@ def load_profile(center_domain):
 
 
 def save_profile(center_domain, keywords, competitors, note=None):
-    """Persist an operator-edited profile for a center domain."""
+    """Persist an operator-edited profile for a center domain.
+
+    An all-empty payload is a no-op (returns the existing view, writes nothing):
+    a blank form means "no opinion", and persisting it would shadow the shipped
+    default with an empty override.
+    """
     center_domain = (center_domain or "").strip().lower()
     if not center_domain:
         raise ValueError("center_domain is required")
     p = _profile_path(center_domain)
     if not p:
         raise ValueError("invalid center_domain")
+    kws, comps = _as_list(keywords), _as_list(competitors)
+    if not (kws or comps or (note or "").strip()):
+        return {"version": "1.0.0", "center_domain": center_domain,
+                "keywords": kws, "competitors": comps, "note": "",
+                "updated_at": _now(), "skipped": "empty"}
     os.makedirs(DATA_DIR, exist_ok=True)
     cfg = {
         "version": "1.0.0",
         "center_domain": center_domain,
-        "keywords": _as_list(keywords),
-        "competitors": _as_list(competitors),
+        "keywords": kws,
+        "competitors": comps,
         "note": (note or "")[:500],
         "updated_at": _now(),
     }
