@@ -316,7 +316,7 @@ def load_profile(center_domain):
     """
     center_domain = (center_domain or "").strip().lower()
     if not center_domain:
-        return {"keywords": [], "competitors": [], "note": "", "source": "none"}
+        return {"keywords": [], "competitors": [], "note": "", "note_en": "", "source": "none"}
 
     p = _profile_path(center_domain)
     if p and os.path.isfile(p):
@@ -325,6 +325,7 @@ def load_profile(center_domain):
             return {"keywords": _as_list(d.get("keywords")),
                     "competitors": _as_list(d.get("competitors")),
                     "note": d.get("note") or "",
+                    "note_en": d.get("note_en") or "",
                     "source": "saved"}
 
     cfg = load_json_file(PROFILES_PATH, {})
@@ -334,8 +335,9 @@ def load_profile(center_domain):
         return {"keywords": _as_list(prof.get("keywords")),
                 "competitors": _as_list(prof.get("competitors")),
                 "note": prof.get("note") or "",
+                "note_en": prof.get("note_en") or "",
                 "source": "default"}
-    return {"keywords": [], "competitors": [], "note": "", "source": "none"}
+    return {"keywords": [], "competitors": [], "note": "", "note_en": "", "source": "none"}
 
 
 def save_profile(center_domain, keywords, competitors, note=None):

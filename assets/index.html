@@ -721,10 +721,90 @@ function payload(){
     persist: $('persist').checked ? '1':'0'
   };
 }
-function showErr(m){ const e=$('err'); e.textContent=m; e.classList.remove('hidden'); }
-function hideErr(){ $('err').classList.add('hidden'); }
+/* ---------- dynamic i18n ----------
+   Static chrome uses data-i18n / applyLang(). Everything built by a render
+   function with an inline LANG ternary is NOT covered by that pass, so a
+   language switch has to replay those renderers from cached state. Keep the
+   state/registry below in sync with any new LANG-dependent renderer. */
+let LAST_PROFILE   = null;   // last /api/profiles payload -> #profileNote
+let LAST_ERR       = null;   // {zh, en} currently visible error banner
+let LAST_IMPORT_MSG= null;   // {zh, en} currently visible import badge
+const BUSY_BTN     = {};     // element id -> {zh, en} while an action runs
+
+/* showErr takes both languages so the banner can be re-translated later.
+   All call sites pass (en, zh) — never a pre-built LANG-dependent string. */
+function showErr(en, zh){
+  LAST_ERR={en:en, zh:zh};
+  const e=$('err'); e.textContent=LANG==='en'?en:zh; e.classList.remove('hidden');
+}
+function hideErr(){ LAST_ERR=null; $('err').classList.add('hidden'); }
+function setImportMsg(en, zh){
+  LAST_IMPORT_MSG = (en==null && zh==null) ? null : {en:en, zh:zh};
+  $('importMsg2').textContent = LAST_IMPORT_MSG ? (LANG==='en'?en:zh) : '';
+}
+/* Buttons show a transient "in progress" label. applyLang() overwrites them
+   on a switch, so renderBusyButtons() restores the correct one afterwards. */
+function setBusy(id, en, zh){
+  const el=$(id); if(!el) return;
+  if(en==null){
+    delete BUSY_BTN[id];
+    const k=el.getAttribute('data-i18n');
+    el.textContent = (k && I18N[LANG][k]!=null) ? I18N[LANG][k] : el.textContent;
+  }else{
+    BUSY_BTN[id]={en:en, zh:zh};
+    el.textContent=LANG==='en'?en:zh;
+  }
+}
+function renderBusyButtons(){
+  Object.keys(BUSY_BTN).forEach(id=>{
+    const el=$(id); if(el) el.textContent=LANG==='en'?BUSY_BTN[id].en:BUSY_BTN[id].zh;
+  });
+}
 function esc(s){ return (s==null?'':s).toString().replace(/</g,'&lt;'); }
 function tlabel(k){ return (LANG==='en'?TYPE_LABEL_EN:TYPE_LABEL)[k]||k; }
+
+function renderProfileNote(){
+  const pn=$('profileNote'); if(!pn||!LAST_PROFILE) return;
+  const p=LAST_PROFILE, src=p.source||'none', dom=p.domain||CENTER;
+  // Saved profile overrides may predate note_en; never surface a Chinese-only
+  // operator note in EN mode (an empty suffix is safer than a wrong-language one).
+  const note = LANG==='en'
+    ? (p.note_en || (/[\u4e00-\u9fff]/.test(p.note||'') ? '' : (p.note||'')))
+    : (p.note||'');
+  pn.textContent=(LANG==='en'?'Profile ':'档案 ') + dom
+    + ' ['+src+']' + (note?(' · '+note):'')
+    + (src==='none' ? (LANG==='en'?' · no profile yet, keywords are empty':' · 尚无档案，关键词为空'):'');
+}
+/* Profile cards are operator-editable: rebuild them from the DOM (not from
+   SCHED) so a language switch never discards unsaved edits. */
+function collectProfileCards(){
+  return [...document.querySelectorAll('#schedProfiles .sched-card')].map(card=>{
+    const g=s=>{const el=card.querySelector(s); return el?el.value:'';};
+    const c=s=>{const el=card.querySelector(s); return !!(el&&el.checked);};
+    return {name:g('.p-name'), domain:g('.p-domain'), keywords:g('.p-kw'),
+            use_bing:c('.p-bing'), use_tranco:c('.p-tranco')};
+  });
+}
+/* Single entry point: replay EVERY dynamic, language-dependent renderer.
+   Called once by langToggle after applyLang() has refreshed static chrome. */
+function renderAllDynamic(){
+  updateCenterLabels();
+  renderProfileNote();
+  if(TIPS) renderTips();
+  if(LAST) render(LAST);                    // analysis table, filters, sources, limitations
+  if(POOL) renderPool(POOL);                // pool stats / tree / chips / rows
+  if(SCHED){
+    renderSchedStatus();                    // status pills
+    renderSchedRuns();                     // run-history rows
+    renderProfiles(collectProfileCards()); // profile cards (values preserved)
+  }
+  if(LAST_CHANNELS.length) renderChannels(LAST_CHANNELS, LAST_ROTATION);
+  loadOverview();                           // SVG chart labels
+  if(LAST_ERR) $('err').textContent=LANG==='en'?LAST_ERR.en:LAST_ERR.zh;
+  if(LAST_IMPORT_MSG) $('importMsg2').textContent=LANG==='en'?LAST_IMPORT_MSG.en:LAST_IMPORT_MSG.zh;
+  renderBusyButtons();
+  refreshAllSortUI();                      // th.title tooltips for rebuilt tables
+}
 
 /* ---------- center domain (all tabs revolve around this) ---------- */
 let SWITCH_TIMER = null;
@@ -754,13 +834,8 @@ async function loadProfile(domain){
     $('competitors').value=(p.competitors||[]).join('\n');
     // Existing backlinks are per-run operator input: never inherited from a profile.
     $('existing').value='';
-    const pn=$('profileNote');
-    if(pn){
-      const src=p.source||'none';
-      pn.textContent=(LANG==='en'?'Profile ':'档案 ') + domain
-        + ' ['+src+']' + (p.note?(' · '+p.note):'')
-        + (src==='none' ? (LANG==='en'?' · no profile yet, keywords are empty':' · 尚无档案，关键词为空'):'');
-    }
+    LAST_PROFILE=Object.assign({domain:domain}, p);
+    renderProfileNote();
   }catch(e){ console.warn('[loadProfile]', e); }
 }
 async function switchDomain(oldD, newD){
@@ -812,7 +887,7 @@ function svgRatio(el, ratio, warn){
   s+=`<rect x="0" y="12" width="${W}" height="20" rx="6" fill="#222b38"/>`;
   s+=`<rect x="0" y="12" width="${fillW}" height="20" rx="6" fill="${col}"/>`;
   s+=`<line x1="${thrX}" y1="6" x2="${thrX}" y2="38" stroke="#f0883e" stroke-width="2" stroke-dasharray="4 3"/>`;
-  s+=`<text x="${thrX+5}" y="9" fill="#f0883e" font-size="10">30% threshold</text>`;
+  s+=`<text x="${thrX+5}" y="9" fill="#f0883e" font-size="10">${LANG==='en'?'30% threshold':'30% 阈值'}</text>`;
   s+=`<text x="${Math.min(fillW+6,W-30)}" y="27" fill="var(--text)" font-size="12">${(ratio*100).toFixed(0)}%</text>`;
   s+='</svg>';
   el.innerHTML=s;
@@ -863,7 +938,7 @@ async function loadOverview(){
       }).sort((a,b)=>b.value-a.value);
       svgBars($('ovObtain'), items, {labelW:92});
     }
-  }catch(e){ showErr('Overview load failed: '+e.message); }
+  }catch(e){ showErr('Overview load failed: '+e.message, '总体概况加载失败：'+e.message); }
 }
 
 /* ---------- Tips ---------- */
@@ -900,11 +975,15 @@ function renderTips(){
     const hl = (k==='reciprocal'||k==='directory') ? ' style="background:rgba(255,200,80,0.07)"' : '';
     const tag = (k==='reciprocal') ? '<span class="badge" style="background:#7a5a1a;color:#ffd27a">'+ (LANG==='en'?'distinct type':'独立类型') +'</span> ' : '';
     const head = (prim||'').split(LANG==='en'?'. ':'。')[0];
+    // value_weight and reciprocal_note are free-text data fields; tips.json
+    // carries an explicit _en variant so EN mode never shows Chinese labels.
+    const vw = LANG==='en' ? (v.value_weight_en||v.value_weight||'—') : (v.value_weight||'—');
+    const rn = LANG==='en' ? (v.reciprocal_note_en||v.reciprocal_note||'') : (v.reciprocal_note||'');
     html+=`<tr${hl}>
       <td><b>${tag}${e(head)}</b><div class="note">${e(other)}</div></td>
-      <td><span class="badge">${e(v.value_weight||'—')}</span></td>
+      <td><span class="badge">${e(vw)}</span></td>
       <td>${e(v.obtain_score||'—')}</td>
-      <td class="note">${e(prim||'')}${v.reciprocal_note?`<div class="warnbox" style="margin-top:6px">${e(v.reciprocal_note)}</div>`:''}</td>
+      <td class="note">${e(prim||'')}${rn?`<div class="warnbox" style="margin-top:6px">${e(rn)}</div>`:''}</td>
     </tr>`;
   }
   html+='</tbody></table>';
@@ -960,9 +1039,9 @@ function render(r){
     `<span class="badge">${k}: ${v.status||(v.enabled?'on':'off')}</span>`).join(' ')
     + (el ? ` <span class="badge">${LANG==='en'?'existing library':'已有外链库'}: ${el.size} (${LANG==='en'?'matched':'命中'} ${el.matched_domains})</span>` : '')
     + (dc.length ? ` <span class="badge">${LANG==='en'?'channels':'发现渠道'}: ${dc.map(c=>c.id+'='+(c.found||0)).join(', ')}</span>` : '');
-  $('lim').innerHTML=(t.limitations||[]).map(l=>`<li>${l}</li>`).join('');
+  const lims = LANG==='en' ? (t.limitations||[]) : (t.limitations_zh||t.limitations||[]);
+  $('lim').innerHTML=lims.map(l=>`<li>${esc(l)}</li>`).join('');
   if(t.pool_stats){ renderPoolStats(t.pool_stats); }
-  loadOverview();
 }
 
 function drawRows(){
@@ -987,7 +1066,7 @@ function drawRows(){
       <td>${p.relevance}</td><td>${p.authority_score}</td><td>${p.obtainability}</td>
       <td class="prio">${p.priority}</td>
       <td>${val}</td><td>${gap}</td>
-      <td class="note">${p.note||''}</td>
+      <td class="note">${esc(LANG==='en' ? (p.note_en||p.note||'') : (p.note||''))}</td>
     </tr>`;
   }).join('');
 }
@@ -1128,7 +1207,7 @@ function poolRow(d){
     :`<button class="acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Mark owned':'标记已拥有'}</button>`;
   return `<tr>
     <td><a href="${d.url||'#'}" target="_blank" rel="noopener">${d.domain}</a></td>
-    <td>${d.type_label_zh||d.type_key||''}</td>
+    <td>${esc(d.type_key ? tlabel(d.type_key) : (LANG==='en'?(d.type_label_en||d.type_label_zh||''):(d.type_label_zh||'')))}</td>
     <td>${d.authority_tier||'—'}<div class="note">Tranco ${d.tranco_global_rank!=null?d.tranco_global_rank:'—'}</div></td>
     <td class="prio">${d.priority!=null?d.priority:'—'}</td>
     <td>${val}</td><td>${st}</td>
@@ -1171,7 +1250,7 @@ async function toggleAcquired(domain, makeAcquired){
         body:JSON.stringify({domains:domain, center_domain:CENTER})});
     }
     await loadPool();
-  }catch(e){ showErr(LANG==='en'?'Update failed: ':'更新失败：'+e.message); }
+  }catch(e){ showErr('Update failed: '+e.message, '更新失败：'+e.message); }
 }
 
 let POOL_STATS_CACHE={};
@@ -1182,21 +1261,21 @@ async function loadPool(){
     POOL_STATS_CACHE=d.stats||{}; POOL=d.domains||[];
     renderPool(POOL);
     if($('tab-ov').classList.contains('active')) loadOverview();
-  }catch(e){ showErr(LANG==='en'?'Pool load failed: ':'外链池加载失败：'+e.message); }
+  }catch(e){ showErr('Pool load failed: '+e.message, '外链池加载失败：'+e.message); }
 }
 async function importExisting(){
   const txt=$('importExisting').value.trim();
-  if(!txt){ showErr(LANG==='en'?'Enter existing backlink domains first':'请先填入已有外链域名'); return; }
-  $('importMsg2').textContent= LANG==='en'?'Importing…':'导入中…';
+  if(!txt){ showErr('Enter existing backlink domains first', '请先填入已有外链域名'); return; }
+  setImportMsg('Importing…', '导入中…');
   try{
     const r=await fetch('/api/store/sync-existing',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({domains:txt, center_domain:CENTER})});
     const d=await r.json();
     if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
     POOL_STATS_CACHE=d.stats;
-    $('importMsg2').textContent= LANG==='en'? ('marked '+d.added) : ('已新增标记 '+d.added+' 个');
+    setImportMsg('marked '+d.added, '已新增标记 '+d.added+' 个');
     await loadPool();
-  }catch(e){ $('importMsg2').textContent=''; showErr(LANG==='en'?'Import failed: ':'导入失败：'+e.message); }
+  }catch(e){ setImportMsg(null,null); showErr('Import failed: '+e.message, '导入失败：'+e.message); }
 }
 
 /* ---------- Scheduler / backend service ---------- */
@@ -1208,7 +1287,7 @@ async function loadSchedule(){
     const r=await fetch('/api/schedule'); const d=await r.json();
     if(!d.ok) throw new Error(d.error||'fail');
     SCHED=d.snapshot||{}; renderSchedule(); return SCHED;
-  }catch(e){ showErr(LANG==='en'?'Scheduler load failed: ':'调度配置加载失败：'+e.message); }
+  }catch(e){ showErr('Scheduler load failed: '+e.message, '调度配置加载失败：'+e.message); }
 }
 function renderSchedule(){
   if(!SCHED) return;
@@ -1241,7 +1320,7 @@ function renderProfiles(profiles){
 }
 function schedAddFromForm(){
   const dom=$('domain').value.trim();
-  if(!dom){ showErr(LANG==='en'?'Fill target domain in Analyze tab first':'请先在分析页填写目标域名'); return; }
+  if(!dom){ showErr('Fill target domain in Analyze tab first', '请先在分析页填写目标域名'); return; }
   const kw=$('keywords').value.trim() || 'sound, soundboard, sound buttons, sound effects';
   const card=document.createElement('div');
   card.className='sched-card';
@@ -1286,7 +1365,7 @@ async function loadChannels(){
   }catch(e){
     console.error('[loadChannels] Error:', e);
     const nb=$('cacheNotice'); if(nb) nb.style.display='block';
-    showErr(LANG==='en'?'Channels load failed: ':'渠道加载失败：'+e.message);
+    showErr('Channels load failed: '+e.message, '渠道加载失败：'+e.message);
   }
 }
 let LAST_CHANNEL_STATS = {};  // per-channel status from last analysis
@@ -1339,7 +1418,7 @@ async function toggleChannel(id, enable){
     LAST_CHANNEL_STATS = {};
     (d.channels||[]).forEach(c=>{ LAST_CHANNEL_STATS[c.id] = { status: c.enabled ? 'ready' : 'disabled' }; });
     renderChannels(d.channels, LAST_ROTATION);
-  }catch(e){ showErr(LANG==='en'?'Update failed: ':'更新失败：'+e.message); }
+  }catch(e){ showErr('Update failed: '+e.message, '更新失败：'+e.message); }
 }
 let LAST_ROTATION = {};
 function renderSchedRuns(){
@@ -1369,18 +1448,18 @@ async function schedSave(){
   }).filter(p=>p.domain);
   const body={enabled:$('schedEnabled').checked,
               interval_hours:(+$('schedInterval').value)||24, profiles};
-  $('schedSave').disabled=true; $('schedSave').textContent= LANG==='en'?'Saving…':'保存中…';
+  $('schedSave').disabled=true; setBusy('schedSave','Saving…','保存中…');
   try{
     const r=await fetch('/api/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
     SCHED={config:d.config||SCHED.config, status:d.status||SCHED.status, runs:SCHED.runs||[]};
     renderSchedule();
-  }catch(e){ showErr(LANG==='en'?'Save failed: ':'保存失败：'+e.message); }
-  finally{ $('schedSave').disabled=false; $('schedSave').textContent= LANG==='en'?'Save config':'保存配置'; }
+  }catch(e){ showErr('Save failed: '+e.message, '保存失败：'+e.message); }
+  finally{ $('schedSave').disabled=false; setBusy('schedSave',null); }
 }
 async function schedRun(){
-  $('schedRun').disabled=true; $('schedRun').textContent= LANG==='en'?'Running…':'运行中…';
+  $('schedRun').disabled=true; setBusy('schedRun','Running…','运行中…');
   try{
     const r=await fetch('/api/schedule/run',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     const d=await r.json();
@@ -1388,22 +1467,23 @@ async function schedRun(){
     SCHED={config:SCHED.config, status:d.status||SCHED.status, runs:d.runs||SCHED.runs};
     renderSchedule();
     await loadPool();
-  }catch(e){ showErr(LANG==='en'?'Run failed: ':'立即运行失败：'+e.message); }
-  finally{ $('schedRun').disabled=false; $('schedRun').textContent= LANG==='en'?'Run now':'立即运行'; }
+  }catch(e){ showErr('Run failed: '+e.message, '立即运行失败：'+e.message); }
+  finally{ $('schedRun').disabled=false; setBusy('schedRun',null); }
 }
 
 /* ---------- actions ---------- */
 async function analyze(){
   hideErr();
-  $('run').disabled=true; $('run').textContent= LANG==='en'?'Analyzing…':'分析中…';
+  $('run').disabled=true; setBusy('run','Analyzing…','分析中…');
   try{
     const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload())});
     const data=await res.json();
     if(!res.ok||data.ok===false) throw new Error(data.error||('HTTP '+res.status));
     render(data);
-  }catch(e){ showErr(LANG==='en'?'Analyze failed: ':'分析失败：'+e.message); }
-  finally{ $('run').disabled=false; $('run').textContent= LANG==='en'?'Analyze':'分析'; }
+    loadOverview();
+  }catch(e){ showErr('Analyze failed: '+e.message, '分析失败：'+e.message); }
+  finally{ $('run').disabled=false; setBusy('run',null); }
 }
 async function downloadCsv(){
   hideErr();
@@ -1415,7 +1495,7 @@ async function downloadCsv(){
     const fn=res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]||'backlink-prospects.csv';
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click();
     URL.revokeObjectURL(a.href);
-  }catch(e){ showErr(LANG==='en'?'CSV download failed: ':'CSV 下载失败：'+e.message); }
+  }catch(e){ showErr('CSV download failed: '+e.message, 'CSV 下载失败：'+e.message); }
 }
 async function downloadPoolCsv(){
   try{
@@ -1425,16 +1505,13 @@ async function downloadPoolCsv(){
     const fn=res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1]||'backlink-pool.csv';
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click();
     URL.revokeObjectURL(a.href);
-  }catch(e){ showErr(LANG==='en'?'Pool CSV failed: ':'池 CSV 下载失败：'+e.message); }
+  }catch(e){ showErr('Pool CSV failed: '+e.message, '池 CSV 下载失败：'+e.message); }
 }
 
 $('langToggle').addEventListener('click',()=>{
   LANG = LANG==='zh' ? 'en' : 'zh';
-  applyLang(); renderTips(); refreshCenterUI(); loadOverview();
-  if(LAST_CHANNELS.length) renderChannels(LAST_CHANNELS, LAST_ROTATION);
-  if(POOL) renderPool(POOL);
-  if(typeof SCHED!=='undefined' && SCHED && SCHED.runs) renderSchedRuns();  // run-history rows are built per-language
-  refreshAllSortUI();
+  applyLang();        // static chrome: data-i18n elements
+  renderAllDynamic(); // every runtime-built string (see the registry above)
 });
 $('centerDomain').addEventListener('input', onCenterTyped);
 $('centerDomain').addEventListener('change', refreshCenterUI);

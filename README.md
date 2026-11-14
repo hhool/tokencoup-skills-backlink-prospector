@@ -104,6 +104,8 @@ seeds/seed-<domain>.json
 python3 tools/migrate_pools.py --domain <domain> --apply --sanitize-legacy
 # End-to-end selftest (real Chrome: channel table / domain switch / no cross-niche leak / sorting)
 python3 tools/selftest.py https://backlink-prospector.fly.dev/
+# Bilingual audit of every runtime-built string (130 checks, incl. in-page language toggle)
+python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
 ```
 
 > `tools/migrate_pools.py` only **migrates** and **quarantines** (dropped entries go to
@@ -152,6 +154,41 @@ The Pool page includes a **type tree** that organizes backlinks by type and doub
 - **Faceted counts**: node counts follow the status facet but **not** the type facet itself (standard faceting), so a count always equals "rows you'd see by clicking".
 - **Full taxonomy always visible**: a type with 0 entries (e.g. reciprocal) still renders (dimmed), making "nothing collected for this type yet" obvious.
 - Filters affect **display only**; pool data is untouched. "Mark acquired / unmark" lives in the table's Edit column.
+
+---
+
+### D6. Bilingual UI — dynamic output
+
+The UI is Chinese by default with a one-click `EN` toggle. Static chrome uses
+`data-i18n` + `applyLang()`; **every string built at runtime by a render
+function** is covered by one replay pass:
+
+- `renderAllDynamic()` is the single entry point invoked by the language toggle.
+  It replays analysis results, pool stats/tree/chips/rows, tips, channels,
+  scheduler status/profiles/run history, overview SVG labels, sort tooltips,
+  center-domain labels and cached transient messages. Any new LANG-dependent
+  renderer **must** be registered there, otherwise the previous language
+  survives until the next data reload.
+- Cached state (`LAST`, `POOL`, `SCHED`, `LAST_CHANNELS`, `LAST_PROFILE`,
+  `TIPS`) avoids refetching during replay. Profile cards are rebuilt from the
+  DOM with `collectProfileCards()`, so unsaved operator edits survive a switch.
+- Transient text (error banner, import badge, in-progress button labels) is
+  stored as `{zh, en}` pairs and re-translated, rather than frozen in the
+  language that happened to be active when the event fired.
+- Free-text data is bilingual at the source: seed rows carry `note` +
+  `note_en`, tips carry `value_weight` / `value_weight_en` and
+  `reciprocal_note` / `reciprocal_note_en`, profiles carry `note` / `note_en`,
+  and the analysis result carries `limitations` (EN) / `limitations_zh`.
+  `analyze.py::note_en()` degrades to a neutral English descriptor for legacy
+  rows, so a Chinese-only operator note can never leak into EN mode.
+- Deliberate bilingual pairs (type labels `zh / en`, channel `name_zh /
+  name_en`, tips primary + secondary text, the sort hint, `已拥有 Acquired`)
+  intentionally show both languages and are excluded from the "no Chinese in
+  EN" assertions.
+
+`tools/i18n_audit.py` drives real Chrome, loads every tab, then audits
+ZH → EN → ZH including runtime states (error/busy messages, unsaved edits).
+It is the regression guard for this contract (130 assertions).
 
 ---
 
@@ -213,10 +250,11 @@ Request body (`/api/analyze`):
 ## 5. CSV Fields
 
 **Analysis CSV (`/api/analyze/csv`)**:
-`url, domain, type_key, type_label_zh, type_label_en, authority_tier, relevance, authority_score, obtainability, priority, valid, http_status, is_gap, is_competitor, already_have, tranco_global_rank, source, note`
+`url, domain, type_key, type_label_zh, type_label_en, authority_tier, relevance, authority_score, obtainability, priority, valid, http_status, is_gap, is_competitor, already_have, tranco_global_rank, source, note, note_en`
 
 - `valid`: real HTTP reachability at analysis time (`true` = reachable; 403/401/429 treated as existing-but-blocking; 404/timeout as dead).
 - `source`: `seed` (seed library) or `bing_discovery` (live discovery).
+- `note` / `note_en`: the Chinese and English operator note (both exported so a CSV is language-independent).
 
 **Pool CSV (`/api/store/csv`)**:
 `domain, url, type_key, type_label_zh, authority_tier, tranco_global_rank, priority, valid, http_status, acquired, is_gap, times_discovered, first_seen, last_seen`

@@ -77,7 +77,7 @@ CSV_COLS = [
     ("is_gap", "is_gap"), ("is_competitor", "is_competitor"),
     ("already_have", "already_have"),
     ("tranco_global_rank", "authority.tranco_global_rank"),
-    ("source", "source"), ("note", "note"),
+    ("source", "source"), ("note", "note"), ("note_en", "note_en"),
 ]
 
 

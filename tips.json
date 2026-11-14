@@ -21,6 +21,7 @@
       "zh": "行业媒体/测评站。价值权重：最高（相关+权威双高）。可获取：难(12/30)。说明：如 BabyGearLab 同类测评站，正文/评测内链权重高、相关性强，是优先拓展对象。",
       "en": "Industry media / review. Value weight: highest (high relevance + authority). Obtainability: hard (12/30). E.g. BabyGearLab-class review sites; in-content links carry high weight and relevance.",
       "value_weight": "最高",
+      "value_weight_en": "Highest",
       "obtain_score": "12/30",
       "reciprocal_note": ""
     },
@@ -28,6 +29,7 @@
       "zh": "客座博客(Guest Post)。价值权重：高。可获取：中(22/30)。说明：家庭户外/育儿/亲子出行类博客，链接落正文或作者 bio；可控、可规模化，重在内容质量与相关性。",
       "en": "Guest post. Value weight: high. Obtainability: medium (22/30). Parenting/outdoor blogs; links in body or author bio; controllable and scalable.",
       "value_weight": "高",
+      "value_weight_en": "High",
       "obtain_score": "22/30",
       "reciprocal_note": ""
     },
@@ -35,6 +37,7 @@
       "zh": "资源页/链接列表。价值权重：高（性价比好）。可获取：易(26/30)。说明：\"Best balance bike resources\" 类 curated 页面天然收录外链，是高效获取来源。",
       "en": "Resource / link list. Value weight: high (good ROI). Obtainability: easy (26/30). Curated 'best resources' pages naturally list outbound links.",
       "value_weight": "高",
+      "value_weight_en": "High",
       "obtain_score": "26/30",
       "reciprocal_note": ""
     },
@@ -42,13 +45,16 @@
       "zh": "目录/导航站。价值权重：单链接偏低（多为低质/群发）。可获取：最易(28/30)。互链说明：目录天生收录链接，\"你链我我链你\"是其原生玩法；但 Google 把「以操纵 PageRank 为目的的互链」列为 link scheme，会降权/判违规。仅做有编辑标准的垂直目录（如儿童安全协会/骑行协会名录）互链，比例要自然。",
       "en": "Directory. Value weight: low per-link (often low-quality/mass-submitted). Obtainability: easiest (28/30). Reciprocal note: directories natively list links, but manipulative reciprocal linking is a link scheme. Only curated topical directories; keep ratio natural.",
       "value_weight": "偏低",
+      "value_weight_en": "Low-ish",
       "obtain_score": "28/30",
-      "reciprocal_note": "directory 与 reciprocal 已分开：本类型为「单向被收录」，不含互链关系；互链请归到独立的 reciprocal 类型。"
+      "reciprocal_note": "directory 与 reciprocal 已分开：本类型为「单向被收录」，不含互链关系；互链请归到独立的 reciprocal 类型。",
+      "reciprocal_note_en": "Directory is one-way listing only and is tracked separately from reciprocal; mutual exchanges belong to the distinct reciprocal type."
     },
     "community": {
       "zh": "社区/论坛/问答。价值权重：多 nofollow，重引流/品牌。可获取：中(20/30)。说明：Reddit / Quora / 育儿论坛，带来流量与品牌信号，nofollow 居多。",
       "en": "Community / forum / Q&A. Value weight: mostly nofollow, traffic/brand value. Obtainability: medium (20/30). Reddit/Quora/parenting forums drive traffic and brand signals.",
       "value_weight": "品牌/引流",
+      "value_weight_en": "Brand / traffic",
       "obtain_score": "20/30",
       "reciprocal_note": ""
     },
@@ -56,6 +62,7 @@
       "zh": "社媒资料页。价值权重：nofollow，重品牌信号。可获取：易(16/30)。说明：Pinterest（儿童品类重镇）、Instagram、YouTube 简介外链。",
       "en": "Social profile. Value weight: nofollow, brand signal. Obtainability: easy (16/30). Pinterest (strong for kids gear), Instagram, YouTube bio links.",
       "value_weight": "品牌",
+      "value_weight_en": "Brand",
       "obtain_score": "16/30",
       "reciprocal_note": ""
     },
@@ -63,6 +70,7 @@
       "zh": "互补品牌/合作站。价值权重：中高（非竞品盟友）。可获取：中(18/30)。说明：儿童头盔/护具/童装/亲子旅行品牌，互换或协同内容。",
       "en": "Partner / complementary brand. Value weight: medium-high (non-competitor ally). Obtainability: medium (18/30). Kids-helmet/apparel/travel brands; swap or co-create content.",
       "value_weight": "中高",
+      "value_weight_en": "Medium-high",
       "obtain_score": "18/30",
       "reciprocal_note": ""
     },
@@ -70,6 +78,7 @@
       "zh": "安全/权威机构(.gov/.org)。价值权重：信任权重最高。可获取：最难(8/30)。说明：儿童安全组织、骑行协会、gov 安全指南，信任度极高但极难获取，优先级权重最高。",
       "en": "Safety / authority (.gov/.org). Value weight: highest trust. Obtainability: hardest (8/30). Child-safety orgs, cycling associations, gov safety guides; very high trust, very hard to earn.",
       "value_weight": "信任最高",
+      "value_weight_en": "Highest trust",
       "obtain_score": "8/30",
       "reciprocal_note": ""
     },
@@ -77,6 +86,7 @@
       "zh": "数字PR/新闻源。价值权重：被引用则极高。可获取：难(10/30)。说明：通过 HARO / 记者求助提供专家观点，获取媒体 / .edu 外链。",
       "en": "Digital PR / news. Value weight: extremely high if cited. Obtainability: hard (10/30). Use HARO / journalist queries to provide expert quotes for media / .edu links.",
       "value_weight": "极高(若被引)",
+      "value_weight_en": "Very high (if cited)",
       "obtain_score": "10/30",
       "reciprocal_note": ""
     },
@@ -84,8 +94,10 @@
       "zh": "互链(双向交换)。价值权重：单条最低（铺量兜底，非主力权重来源）。可获取：最易(29/30)。说明：与对方互相挂链；与 directory 已分开统计。必须控比例（超 30% 触发告警），仅与有编辑标准的垂直站点/互补品牌互链，避免 link scheme 降权。",
       "en": "Reciprocal link (mutual exchange). Value weight: lowest per-link (volume backstop, not primary authority). Obtainability: easiest (29/30). You and the partner link to each other; tracked separately from directory. Ratio must be controlled (warn above 30%); only with curated topical sites / complementary brands to avoid link-scheme discount.",
       "value_weight": "最低",
+      "value_weight_en": "Lowest",
       "obtain_score": "29/30",
-      "reciprocal_note": "独立类型，与 directory 分开；系统对互链占比做告警（阈值 30%）。"
+      "reciprocal_note": "独立类型，与 directory 分开；系统对互链占比做告警（阈值 30%）。",
+      "reciprocal_note_en": "Distinct type, separate from directory; the system warns when the reciprocal ratio exceeds the 30% threshold."
     }
   }
 }

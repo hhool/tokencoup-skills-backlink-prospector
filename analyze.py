@@ -61,6 +61,23 @@ TYPE_LABEL_EN = {
     "reciprocal": "Reciprocal link (mutual exchange)",
 }
 
+def note_en(c):
+    """English text for the free-text operator note shown in the results table.
+
+    Seed rows carry an explicit ``note_en``. Legacy / operator-supplied rows may
+    not, so never fall back to a Chinese-only string in EN mode: a neutral
+    type-based descriptor is used instead. Language-neutral notes pass through.
+    """
+    explicit = (c.get("note_en") or "").strip()
+    if explicit:
+        return explicit
+    raw = (c.get("note") or "").strip()
+    if raw and not any("\u4e00" <= ch <= "\u9fff" for ch in raw):
+        return raw
+    label = TYPE_LABEL_EN.get(c.get("type"), c.get("type") or "Backlink")
+    return "%s candidate (operator note available in Chinese)" % label
+
+
 TYPE_BASELINE = {  # neutral relevance baseline when no keyword supplied
     "industry_media": 20, "guest": 24, "resource": 26, "directory": 28,
     "community": 22, "social": 18, "partner": 24, "authority": 22, "digital_pr": 20,
@@ -248,6 +265,7 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
                 found[d] = {
                     "url": link, "type": ttype, "authorityTier": "Medium",
                     "tags": [q], "note": ch["name_zh"] + " 实时发现: " + q,
+                    "note_en": (ch.get("name_en") or ch["name_zh"]) + " live discovery: " + q,
                     "source": ch["id"],
                     "kw_match": "strong" if strong else "weak",
                 }
@@ -333,6 +351,30 @@ def is_blocked(domain):
     return any(d.endswith("." + b) for b in BLOCKED_DOMAINS)
 
 
+def _merge_bilingual_seeds(rows, reference):
+    """Backfill note / note_en from the versioned seed library.
+
+    A Fly volume can carry an operator-uploaded data/seed-<domain>.json that
+    predates the bilingual fields. URL-matched rows in the shipped seeds/ copy
+    are the source of truth for those translations, so EN mode never falls back
+    to a Chinese-only note just because a legacy override shadows the file.
+    """
+    by_url = {}
+    for r in reference or []:
+        if isinstance(r, dict) and r.get("url"):
+            by_url[str(r["url"]).rstrip("/").lower()] = r
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        ref = by_url.get(str(r.get("url") or "").rstrip("/").lower())
+        if not ref:
+            continue
+        for key in ("note", "note_en"):
+            if not r.get(key) and ref.get(key):
+                r[key] = ref[key]
+    return rows
+
+
 def load_seed_for(target_domain):
     """Load seed candidates scoped to a center domain.
 
@@ -357,6 +399,11 @@ def load_seed_for(target_domain):
                 if isinstance(data, dict):
                     data = data.get("sites") or data.get("items") or []
                 if isinstance(data, list) and data:
+                    if label == "data":
+                        ref = load_json(os.path.join(SEEDS_DIR, "seed-%s.json" % safe), [])
+                        if isinstance(ref, dict):
+                            ref = ref.get("sites") or ref.get("items") or []
+                        data = _merge_bilingual_seeds(data, ref if isinstance(ref, list) else [])
                     return data, "%s/seed-%s.json" % (label, safe)
     all_seed = load_json(SEED_PATH, [])
     if not isinstance(all_seed, list):
@@ -575,6 +622,7 @@ def analyze(input):
             "is_competitor": bool(b["is_comp"]),
             "is_gap": is_gap, "already_have": already,
             "note": c.get("note", ""),
+            "note_en": note_en(c),
             "source": c.get("source", "seed"),
         })
     prospects.sort(key=lambda p: (-p["priority"], not p["valid"]))
@@ -613,6 +661,16 @@ def analyze(input):
             "Authority tier in seed.json is an editorial estimate; Tranco global rank is the only free quantitative signal used.",
             "The seed library is domain-scoped: only rows whose 'domains' contain the center domain (or a per-domain data/seed-<domain>.json) are injected, so one niche never leaks into another.",
             "The persistent pool is automatically treated as the existing-backlink library: every run dedups against it (matched domains are marked already_have and excluded from the gap).",
+        ],
+        # Chinese counterpart of the English-primary limitations above. The UI
+        # picks this list in ZH mode; CSV / machine consumers keep `limitations`.
+        "limitations_zh": [
+            "商业 DR/DA 与外链数量一律不估算，统一标记为 status:unavailable。",
+            "实时发现按 channels.json 在免费渠道（Bing RSS / Bing cite / DuckDuckGo HTML）间轮询；各渠道均为 best-effort，被限流时自动降级为空结果。",
+            "缺口基于你导入的已有外链计算；未导入时，所有非竞品候选都视为待拓展缺口。",
+            "seed.json 中的 authorityTier 是编辑判断；Tranco 全球排名是唯一使用的免费量化信号。",
+            "种子库按域名隔离：仅注入 domains 含当前中心域名的行（或 data/seed-<domain>.json 覆盖文件），避免不同品类互相污染。",
+            "持久化外链池会自动作为已有外链库：每次运行都对它去重（命中域名标记 already_have 并从缺口中排除）。",
         ],
     }
     return result

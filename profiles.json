@@ -15,7 +15,8 @@
         "myinstants.com",
         "voicemod.net"
       ],
-      "note": "meme 音效板 / 音效工具"
+      "note": "meme 音效板 / 音效工具",
+      "note_en": "Meme soundboard / sound-effect tool"
     },
     "balancebiketoddler.com": {
       "keywords": [
@@ -28,7 +29,8 @@
         "toddler balance bike"
       ],
       "competitors": [],
-      "note": "儿童平衡车 / 幼儿自行车评测（竞品待补充）"
+      "note": "儿童平衡车 / 幼儿自行车评测（竞品待补充）",
+      "note_en": "Kids balance bike / toddler bike reviews (competitors to be added)"
     }
   }
 }

@@ -98,6 +98,8 @@ seeds/seed-<domain>.json
 python3 tools/migrate_pools.py --domain <domain> --apply --sanitize-legacy
 # 端到端自测（真实 Chrome：渠道表渲染 / 域名切换换词 / 结果不串域名 / 全站列表排序）
 python3 tools/selftest.py https://backlink-prospector.fly.dev/
+# 动态输出中英文审计（130 项断言，含「数据加载完成后原地切语言」场景）
+python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
 ```
 
 > `tools/migrate_pools.py` 只**迁移**与**隔离**（写入 `data/store.quarantine-<ts>.json` 存档），不静默删除任何数据。
@@ -144,6 +146,20 @@ python3 tools/selftest.py https://backlink-prospector.fly.dev/
 - **分面计数**：节点计数跟随状态筛选变化，但**不**受类型筛选自身影响（标准分面行为），因此计数始终等于「点下去会看到多少行」。
 - **完整分类法常驻**：即使某个类型当前 0 条（如互链）也照样显示（置灰），便于确认「该类型尚未收集到条目」。
 - 筛选只影响**展示**，不修改池数据；「标记已拥有 / 取消已拥有」仍在表格「编辑」列。
+
+---
+
+### D6. 页面中英双语 · 动态输出
+
+界面默认中文，点 `EN` 一键切换。静态文案走 `data-i18n` + `applyLang()`；**所有由 render 函数运行时拼出的字符串**由统一重绘流程覆盖：
+
+- `renderAllDynamic()` 是语言切换的唯一入口，依次重绘：分析结果、外链池统计/目录树/类型芯片/表格行、类型说明、渠道表、后台状态/定时档案/运行历史、概况 SVG 标签、排序表头提示、中心域名标签以及已缓存的临时消息。新增任何依赖 `LANG` 的渲染函数都**必须**登记到这里，否则旧语言会一直残留到下次数据重载。
+- 重绘只读缓存状态（`LAST`、`POOL`、`SCHED`、`LAST_CHANNELS`、`LAST_PROFILE`、`TIPS`），不重新请求接口。定时档案通过 `collectProfileCards()` 从 DOM 反向收集再重绘，因此运营者未保存的编辑不会被切换语言冲掉。
+- 临时文案（错误条、导入提示、按钮「进行中」状态）以 `{zh, en}` 对存储并跟随语言重新渲染，而不是冻结在事件发生的那一刻。
+- 自由文本数据在源头就双语：种子行 `note` + `note_en`，类型说明 `value_weight` / `value_weight_en` 与 `reciprocal_note` / `reciprocal_note_en`，档案 `note` / `note_en`，分析结果 `limitations`（英文）/ `limitations_zh`。`analyze.py::note_en()` 对历史数据降级为中性英文描述，确保纯中文备注不会漏进英文界面。
+- 有意保留的双语对照（类型标签 `zh / en`、渠道 `name_zh / name_en`、类型说明主/辅文本、排序提示、`已拥有 Acquired`）两种语言同时显示，不计入「英文界面无中文」断言。
+
+`tools/i18n_audit.py` 用真实 Chrome 加载全部 Tab，按 ZH → EN → ZH 逐项审计，并覆盖错误/运行中消息与未保存输入等运行时状态，共 130 项断言，是该契约的回归防线。
 
 ---
 
@@ -200,10 +216,11 @@ python3 server.py --port 8787
 ## 4. CSV 字段
 
 **分析 CSV（`/api/analyze/csv`）**：
-`url, domain, type_key, type_label_zh, type_label_en, authority_tier, relevance, authority_score, obtainability, priority, valid, http_status, is_gap, is_competitor, already_have, tranco_global_rank, source, note`
+`url, domain, type_key, type_label_zh, type_label_en, authority_tier, relevance, authority_score, obtainability, priority, valid, http_status, is_gap, is_competitor, already_have, tranco_global_rank, source, note, note_en`
 
 - `valid`：分析时真实 HTTP 存活校验结果（`true`=可达；403/401/429 视为页面存在但拒爬；404/超时视为失效）。
 - `source`：`seed`（种子库）或 `bing_discovery`（实时发现）。
+- `note` / `note_en`：中文与英文运营备注，成对导出，使 CSV 与界面语言无关。
 
 **外链池 CSV（`/api/store/csv`）**：
 `domain, url, type_key, type_label_zh, authority_tier, tranco_global_rank, priority, valid, http_status, acquired, is_gap, times_discovered, first_seen, last_seen`

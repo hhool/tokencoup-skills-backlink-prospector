@@ -10,6 +10,7 @@
       "tech roundup"
     ],
     "note": "科技/生活媒体，常做「最佳 soundboard 应用」盘点，可做测评/客座外链",
+    "note_en": "Tech/lifestyle media; runs 'best soundboard apps' roundups, good for review or guest-post links.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -24,6 +25,7 @@
       "app roundup"
     ],
     "note": "科技测评站，best soundboard apps 盘点，权重高",
+    "note_en": "Tech review site with 'best soundboard apps' roundups; high authority.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -38,6 +40,7 @@
       "sound buttons"
     ],
     "note": "消费科技指南站，常做 app 盘点与推荐",
+    "note_en": "Consumer tech guide; frequently publishes app roundups and recommendations.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -52,6 +55,7 @@
       "tech media"
     ],
     "note": "科技媒体，可做客座/资源外链",
+    "note_en": "Tech publication; open to guest posts and resource-page links.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -67,6 +71,7 @@
       "guest post"
     ],
     "note": "音乐制作博客，接受客座文章",
+    "note_en": "Music-production blog that accepts guest articles.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -81,6 +86,7 @@
       "audio"
     ],
     "note": "音乐制作教学站，接受投稿",
+    "note_en": "Music-production education site that accepts contributions.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -96,6 +102,7 @@
       "guest"
     ],
     "note": "EDM 制作社区，客座博客",
+    "note_en": "EDM production community with a guest-post programme.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -111,6 +118,7 @@
       "samples"
     ],
     "note": "免费音效/采样资源平台，资源页天然收录外链",
+    "note_en": "Free sound-effect/sample platform; resource pages naturally host outbound links.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -125,6 +133,7 @@
       "sound effects"
     ],
     "note": "免费音乐/音效资源站",
+    "note_en": "Free music and sound-effect resource site.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -140,6 +149,7 @@
       "free"
     ],
     "note": "免费采样/loop 社区资源",
+    "note_en": "Free sample/loop community resource.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -155,6 +165,7 @@
       "free"
     ],
     "note": "Creative Commons 音乐资源社区",
+    "note_en": "Creative Commons music resource community.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -170,6 +181,7 @@
       "forum"
     ],
     "note": "音频/耳机论坛，引流与品牌信号",
+    "note_en": "Audio/headphone forum; useful for referral traffic and brand signals.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -185,6 +197,7 @@
       "forum"
     ],
     "note": "虚拟乐器/音频制作论坛",
+    "note_en": "Virtual-instrument and audio-production forum.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -200,6 +213,7 @@
       "partner"
     ],
     "note": "乐器/音频设备电商，互补品牌合作",
+    "note_en": "Music/audio gear retailer; complementary-brand partnership.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -215,6 +229,7 @@
       "partner"
     ],
     "note": "直播工具（主播常用 soundboard），互补合作",
+    "note_en": "Streaming tools (streamers use soundboards); complementary partnership.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -230,6 +245,7 @@
       "partner"
     ],
     "note": "音乐分发/母带平台，互补合作",
+    "note_en": "Music distribution/mastering platform; complementary partnership.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -244,6 +260,7 @@
       "association"
     ],
     "note": "国际音乐产品协会，行业权威（极难获取，优先级最高）",
+    "note_en": "International music-products association; top industry authority (very hard to obtain, highest priority).",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -258,6 +275,7 @@
       "recording academy"
     ],
     "note": "格莱美/录音学院官网，权威背书",
+    "note_en": "GRAMMY / Recording Academy official site; strong authority signal.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -272,6 +290,7 @@
       "directory"
     ],
     "note": "开放音乐元数据目录/导航，可提交收录",
+    "note_en": "Open music-metadata directory; accepts site submissions.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -286,6 +305,7 @@
       "reciprocal"
     ],
     "note": "免费采样博客，互补非竞品，可双向互链",
+    "note_en": "Free-sample blog; complementary, non-competitor, reciprocal links possible.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -301,6 +321,7 @@
       "reciprocal"
     ],
     "note": "采样社区，互补非竞品，可双向互链",
+    "note_en": "Sample community; complementary, non-competitor, reciprocal links possible.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -316,6 +337,7 @@
       "reciprocal"
     ],
     "note": "免费采样站，互补非竞品，可双向互链",
+    "note_en": "Free-sample site; complementary, non-competitor, reciprocal links possible.",
     "domains": [
       "soundbuttons.cc"
     ]
@@ -330,6 +352,7 @@
       "meme"
     ],
     "note": "知名 soundboard 站（直接竞品，默认排除）",
+    "note_en": "Well-known soundboard site (direct competitor, excluded by default).",
     "isCompetitor": true,
     "domains": [
       "soundbuttons.cc"
@@ -345,6 +368,7 @@
       "streaming"
     ],
     "note": "音效/变声软件（直接竞品，默认排除）",
+    "note_en": "Sound-effect/voice-changer software (direct competitor, excluded by default).",
     "isCompetitor": true,
     "domains": [
       "soundbuttons.cc"
