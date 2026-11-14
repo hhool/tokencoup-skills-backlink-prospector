@@ -140,7 +140,7 @@
   <p class="sub" data-i18n="sub">为某一域名查找真实、有效的可用外链目标地址 · 后台服务 + CSV + 前端 · 仅用免费数据源（Tranco / Bing / 种子库 / 本地外链导入）</p>
 
   <div class="center-dom">
-    <span class="badge">中心域名 · Center domain</span>
+    <span class="badge" data-i18n="center_badge">中心域名 · Center domain</span>
     <span class="lab" data-i18n="center_lab">分析对象（所有 Tab 围绕此域名展开）：</span>
     <input type="text" id="centerDomain" value="soundbuttons.cc" spellcheck="false">
     <span class="hint" data-i18n="center_hint">切换域名后，分析/外链池/后台档案默认均以该域名为中心</span>
@@ -213,7 +213,7 @@
         </div>
         <div>
           <label><span data-i18n="lbl_existing">已有外链域名 / Existing backlinks（每行一个，留空则自动以「外链池」作为已有库去重）</span></label>
-          <textarea id="existing" placeholder="粘贴 GSC / Ahrefs 导出的已有外链域名，每行一个"></textarea>
+          <textarea id="existing" data-i18n-ph="ph_existing" placeholder="粘贴 GSC / Ahrefs 导出的已有外链域名，每行一个"></textarea>
         </div>
       </div>
       <div class="row">
@@ -443,6 +443,9 @@ const TYPE_LABEL_EN = {industry_media:'Industry media',authority:'Authority',dig
 const I18N = {
   zh: {
     title:'外链目标发现器 <span style="color:var(--muted);font-weight:400;font-size:14px">· Backlink Prospector</span>',
+    doc_title:'外链目标发现器 · Backlink Prospector',
+    center_badge:'中心域名 · Center domain',
+    ph_existing:'粘贴 GSC / Ahrefs 导出的已有外链域名，每行一个',
     sub:'为某一域名查找真实、有效的可用外链目标地址 · 后台服务 + CSV + 前端 · 仅用免费数据源（Tranco / Bing / 种子库 / 本地外链导入）',
     center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'切换域名后，分析/外链池/后台档案默认均以该域名为中心',
     tab_ov:'📊 总体概况', tab_analyze:'🔍 分析', tab_tips:'📖 类型说明 & 权重', tab_pool:'🗃 外链池 · 已有 vs 空缺', tab_sched:'⚙ 后台服务 · 周期查询',
@@ -481,7 +484,10 @@ const I18N = {
     ov_ok:'互链占比受控（≤30%）。共 {r} 个互链类型外链，{t} 个累计发现。'
   },
   en: {
-    title:'Backlink Prospector <span style="color:var(--muted);font-weight:400;font-size:14px">· 外链目标发现器</span>',
+    title:'Backlink Prospector',
+    doc_title:'Backlink Prospector',
+    center_badge:'Center domain',
+    ph_existing:'Paste existing backlink domains exported from GSC / Ahrefs, one per line',
     sub:'Find real, valid backlink target addresses for a domain · backend service + CSV + frontend · free-only data sources (Tranco / Bing / seed library / local backlink import)',
     center_lab:'Analysis target (all tabs center on this domain):', center_hint:'After switching, analysis / pool / scheduler profiles all default to this domain',
     tab_ov:'📊 Overview', tab_analyze:'🔍 Analyze', tab_tips:'📖 Types & Weights', tab_pool:'🗃 Pool · Owned vs Gap', tab_sched:'⚙ Backend · Scheduler',
@@ -504,9 +510,9 @@ const I18N = {
     ps_total:'Discovered', ps_acq:'Acquired', ps_gap:'Gap', ps_gapv:'Gap & valid', ps_recip:'Reciprocal %',
     imp_label:'Import existing backlinks (GSC / Ahrefs / Common Crawl export, one domain per line) → mark "acquired"', imp_btn:'Import & mark acquired',
     bytype_label:'Distribution by type', bytype_hint:'Click "Load pool" to see distribution.',
-    sort_hint:'Click a column header to sort · 点击表头可排序',
+    sort_hint:'Click a column header to sort',
     tree_title:'Type tree · click to filter (multi-select)', tree_legend:'Counts: total / acquired / gap',
-    flt_status:'Status filter', flt_acquired:'Acquired 已拥有', flt_gap:'Gap 缺口',
+    flt_status:'Status filter', flt_acquired:'Acquired', flt_gap:'Gap',
     flt_type:'Type filter (multi-select)', flt_reset:'Reset filters',
     ph_domain:'Domain', ph_type:'Type', ph_auth:'Authority', ph_prio:'Priority', ph_check:'Check', ph_status:'Status', ph_times:'Times', ph_seen:'First / Last seen', ph_edit:'Edit',
     sched_title:'Backend Service · Scheduled Queries <span class="badge">auto-merge into pool</span>', sched_run:'Run now', sched_save:'Save config',
@@ -531,6 +537,16 @@ function applyLang(){
     el.innerHTML=I18N[LANG][k];
     if(keep.length) el.insertAdjacentHTML('beforeend', keep.join(''));
   });
+  // Attribute-level copy (placeholder / title / aria-label) is NOT reachable
+  // through textContent, so it needs its own declarative channel. Without this,
+  // a language switch leaves form hints in the previous language.
+  document.querySelectorAll('[data-i18n-ph],[data-i18n-title],[data-i18n-aria]').forEach(el=>{
+    [['ph','placeholder'],['title','title'],['aria','aria-label']].forEach(([s,a])=>{
+      const k=el.getAttribute('data-i18n-'+s);
+      if(k && I18N[LANG][k]!=null) el.setAttribute(a, I18N[LANG][k]);
+    });
+  });
+  document.title = I18N[LANG].doc_title || document.title;
   $('langToggle').textContent = LANG==='zh' ? 'EN' : '中';
 }
 
@@ -660,7 +676,7 @@ function initSorting(){
   });
   defineSortable('chTable', {                        // 发现渠道
     accessor: {
-      name:     {get:c=>c.name_zh||c.id||'', dir:1},
+      name:     {get:c=>(LANG==='en'?(c.name_en||c.name_zh||c.id):(c.name_zh||c.id))||'', dir:1},
       kind:     {get:c=>c.kind||'', dir:1},
       enabled:  {get:c=>c.enabled?1:0, dir:-1},
       interval: {get:c=>c.interval_minutes==null?0:c.interval_minutes, dir:1},
@@ -971,7 +987,9 @@ function renderTips(){
   for(const row of tipRows){
     const k=row.key, v=row.v;
     const prim = LANG==='en'? (v.en||v.zh) : (v.zh||v.en);
-    const other = LANG==='en'? (v.zh||'') : (v.en||'');
+    // ZH shows the English paragraph as a secondary line. EN shows English
+    // only — a full Chinese paragraph under an English heading is a leak.
+    const other = LANG==='en'? '' : (v.en||'');
     const hl = (k==='reciprocal'||k==='directory') ? ' style="background:rgba(255,200,80,0.07)"' : '';
     const tag = (k==='reciprocal') ? '<span class="badge" style="background:#7a5a1a;color:#ffd27a">'+ (LANG==='en'?'distinct type':'独立类型') +'</span> ' : '';
     const head = (prim||'').split(LANG==='en'?'. ':'。')[0];
@@ -980,7 +998,7 @@ function renderTips(){
     const vw = LANG==='en' ? (v.value_weight_en||v.value_weight||'—') : (v.value_weight||'—');
     const rn = LANG==='en' ? (v.reciprocal_note_en||v.reciprocal_note||'') : (v.reciprocal_note||'');
     html+=`<tr${hl}>
-      <td><b>${tag}${e(head)}</b><div class="note">${e(other)}</div></td>
+      <td><b>${tag}${e(head)}</b>${other?`<div class="note">${e(other)}</div>`:''}</td>
       <td><span class="badge">${e(vw)}</span></td>
       <td>${e(v.obtain_score||'—')}</td>
       <td class="note">${e(prim||'')}${rn?`<div class="warnbox" style="margin-top:6px">${e(rn)}</div>`:''}</td>
@@ -1027,7 +1045,9 @@ function render(r){
   const sel=$('f_type'); const cur=sel.value;
   sel.innerHTML='<option value="">'+ (LANG==='en'?'All':'全部') +'</option>'+[...types].map(k=>{
     const p=t.prospects.find(x=>x.type_key===k);
-    return `<option value="${k}">${p.type_label_zh} / ${p.type_label_en}</option>`;
+    const label = LANG==='en' ? (p.type_label_en||tlabel(k)||k)
+                              : `${p.type_label_zh} / ${p.type_label_en}`;
+    return `<option value="${k}">${esc(label)}</option>`;
   }).join('');
   sel.value=cur;
   drawRows();
@@ -1059,9 +1079,13 @@ function drawRows(){
              :p.already_have?`<span class="pill comp">${LANG==='en'?'Owned':'已拥有'}</span>`
              :p.is_gap?`<span class="pill gap">${LANG==='en'?'Gap':'缺口'}</span>`:`<span class="pill">—</span>`;
     const tr=p.authority&&p.authority.tranco_global_rank!=null?p.authority.tranco_global_rank:'—';
+    // Type labels are bilingual in the payload. EN mode shows English only;
+    // ZH mode keeps the Chinese primary + English secondary comparison.
+    const tl = LANG==='en' ? (p.type_label_en||tlabel(p.type_key)||'')
+                           : (p.type_label_zh||tlabel(p.type_key)||'');
     return `<tr>
       <td><a href="${p.url}" target="_blank" rel="noopener">${p.domain}</a><div class="note">${p.url}</div></td>
-      <td>${p.type_label_zh}<div class="note">${p.type_label_en}</div></td>
+      <td>${esc(tl)}${LANG==='zh'&&p.type_label_en?`<div class="note">${esc(p.type_label_en)}</div>`:''}</td>
       <td>${p.authority_tier||'—'}<div class="note">Tranco ${tr}</div></td>
       <td>${p.relevance}</td><td>${p.authority_score}</td><td>${p.obtainability}</td>
       <td class="prio">${p.priority}</td>
@@ -1341,7 +1365,11 @@ function renderSchedStatus(){
   const c=SCHED.config||{}, st=SCHED.status||{};
   const running=st.running?'<span class="pill gap">'+ (LANG==='en'?'Running':'运行中') +'</span>':'<span class="pill ok">'+ (LANG==='en'?'Idle':'空闲') +'</span>';
   const enabled=c.enabled?'<span class="pill ok">'+ (LANG==='en'?'Enabled':'已启用') +'</span>':'<span class="pill no">'+ (LANG==='en'?'Disabled':'已停用') +'</span>';
-  const err=st.last_error?`<span class="pill no" title="${escAttr(st.last_error)}">${LANG==='en'?'Error':'有错误'}</span>`:'<span class="pill ok">'+ (LANG==='en'?'None':'无') +'</span>';
+  // Raw server error text is kept in data-raw (diagnostics only). The visible
+  // tooltip must follow the UI language, otherwise EN shows a Chinese string.
+  const err=st.last_error
+    ? `<span class="pill no" data-raw="${escAttr(st.last_error)}" title="${LANG==='en'?'Last error (raw text in server log)':escAttr(st.last_error)}">${LANG==='en'?'Error':'有错误'}</span>`
+    : '<span class="pill ok">'+ (LANG==='en'?'None':'无') +'</span>';
   $('schedStatus').innerHTML=`<div class="kv">
     <div class="item">${LANG==='en'?'Status':'状态'} ${enabled}</div>
     <div class="item">${LANG==='en'?'Running':'运行中'} ${running}</div>
@@ -1400,7 +1428,7 @@ function renderChannels(channels, rotation){
       ?`<button class="ghost ch-toggle" data-id="${c.id}" data-en="0" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Disable':'停用'}</button>`
       :`<button class="ch-toggle" data-id="${c.id}" data-en="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Enable':'启用'}</button>`;
     return `<tr>
-      <td>${c.name_zh||c.id}<div class="note">${c.name_en||''}</div></td>
+      <td>${esc(LANG==='en'?(c.name_en||c.name_zh||c.id):(c.name_zh||c.id))}${LANG==='zh'&&c.name_en?`<div class="note">${esc(c.name_en)}</div>`:''}</td>
       <td><code>${c.kind}</code><div class="note">${c.id}</div></td>
       <td>${st}</td>
       <td>${c.interval_minutes?(c.interval_minutes+(LANG==='en'?' min':' 分钟')):'—'}</td>

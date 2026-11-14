@@ -157,9 +157,11 @@ python3 tools/i18n_audit.py https://backlink-prospector.fly.dev/
 - 重绘只读缓存状态（`LAST`、`POOL`、`SCHED`、`LAST_CHANNELS`、`LAST_PROFILE`、`TIPS`），不重新请求接口。定时档案通过 `collectProfileCards()` 从 DOM 反向收集再重绘，因此运营者未保存的编辑不会被切换语言冲掉。
 - 临时文案（错误条、导入提示、按钮「进行中」状态）以 `{zh, en}` 对存储并跟随语言重新渲染，而不是冻结在事件发生的那一刻。
 - 自由文本数据在源头就双语：种子行 `note` + `note_en`，类型说明 `value_weight` / `value_weight_en` 与 `reciprocal_note` / `reciprocal_note_en`，档案 `note` / `note_en`，分析结果 `limitations`（英文）/ `limitations_zh`。`analyze.py::note_en()` 对历史数据降级为中性英文描述，确保纯中文备注不会漏进英文界面。
-- 有意保留的双语对照（类型标签 `zh / en`、渠道 `name_zh / name_en`、类型说明主/辅文本、排序提示、`已拥有 Acquired`）两种语言同时显示，不计入「英文界面无中文」断言。
+- 属性文案同属该契约：`data-i18n-ph` / `data-i18n-title` / `data-i18n-aria` 分别驱动 `placeholder` / `title` / `aria-label`，`applyLang()` 同时设置 `document.title`。只查 innerText 的审计看不到这些字符串——中文表单提示曾因此躲过一次语言切换。
+- 数据里的双语字段（类型标签 `type_label_zh/en`、渠道 `name_zh/name_en`、类型说明 `zh/en`）按语言切换而非同时展示：英文界面只显示英文，中文界面为中文主 + 英文副。服务端原始错误文本改存 `data-raw`，不再以中文 tooltip 直接暴露。
+- **英文界面全 DOM 零 CJK**（文本节点 + placeholder / title / aria-label / alt）。唯一白名单是 `#langToggle`，它显示的是目标语言「中」，不是界面文案。
 
-`tools/i18n_audit.py` 用真实 Chrome 加载全部 Tab，按 ZH → EN → ZH 逐项审计，并覆盖错误/运行中消息与未保存输入等运行时状态，共 130 项断言，是该契约的回归防线。
+`tools/i18n_audit.py` 用真实 Chrome 加载全部 Tab，按 ZH → EN → ZH 逐项审计，并覆盖错误/运行中消息、未保存输入、属性文案与全 DOM 零 CJK 断言，共 157 项断言，是该契约的回归防线。
 
 ---
 

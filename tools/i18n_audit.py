@@ -5,8 +5,10 @@
 Unlike a static data-i18n check, this exercises every string that a render
 function builds at runtime: analysis results, pool rows/tree/chips, tips,
 channels, scheduler profiles/status/run history, SVG chart labels, transient
-error/import/busy messages and sort tooltips. The decisive case is an IN-PAGE
-language toggle after all data has loaded, not a reload in the other language.
+error/import/busy messages and sort tooltips. It also audits non-text copy
+(document.title, placeholder, title, aria-label, alt) and asserts that EN mode
+has ZERO CJK across the whole DOM. The decisive case is an IN-PAGE language
+toggle after all data has loaded, not a reload in the other language.
 
 Usage: python3 tools/i18n_audit.py [base_url]
 Exit code 0 = all checks passed, 1 = at least one failure.
@@ -63,8 +65,9 @@ STRICT = [
 ]
 
 # Single-language cells: ZH must contain Chinese, EN must contain no Chinese.
-# Intentionally bilingual pairs (type_label_zh/en, channel name_zh/en, tips
-# primary/secondary text) are deliberately excluded from this list.
+# Bilingual payload pairs (type_label_zh/en, channel name_zh/en, tips
+# primary/secondary) are covered by DYNAMIC_BILINGUAL and the DOM-wide
+# zero-CJK assertion below instead of being excluded.
 CJK_FREE_IN_EN = [
     ("limitations items", "#lim li"),
     ("analysis note column", "#tbody tr td:last-child"),
@@ -91,6 +94,77 @@ def text_of(page, selector, limit=None):
         selector,
         "els => els.map(e => (e.innerText || e.textContent || '').trim()).join(' | ')",
     )
+
+
+# Runtime-built cells that carry two languages in the payload. EN must show
+# English only; ZH keeps the Chinese primary + English secondary comparison.
+DYNAMIC_BILINGUAL = [
+    ("analysis type column", "#tbody tr td:nth-child(2)"),
+    ("type filter options", "#f_type option"),
+    ("channel name column", "#chBody tr td:first-child"),
+    ("tips primary column", "#tipsBody tr td:first-child"),
+]
+
+
+def dom_cjk_hits(page):
+    """Every CJK string reachable by the user, including attribute copy.
+
+    innerText-only audits miss placeholder / title / aria-label / alt, which
+    is how a Chinese form hint survived an EN switch in production. The only
+    whitelist is #langToggle, which shows the TARGET language (中), not a UI
+    string. Raw server diagnostics live in data-raw and are not scanned.
+    """
+    return page.evaluate("""() => {
+      const cjk = s => /[\\u3400-\\u9fff]/.test(s || '');
+      const out = [];
+      const skip = el => !!el && !!el.closest('script, style, #langToggle');
+      document.querySelectorAll('*').forEach(el => {
+        if (skip(el)) return;
+        ['placeholder', 'title', 'aria-label', 'alt'].forEach(a => {
+          const v = el.getAttribute(a);
+          if (v && cjk(v)) out.push(a + ': ' + v.slice(0, 70));
+        });
+      });
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let n;
+      while (n = w.nextNode()) {
+        const v = (n.nodeValue || '').trim();
+        if (v && cjk(v) && !skip(n.parentElement)) out.push('text: ' + v.slice(0, 70));
+      }
+      return out;
+    }""")
+
+
+def audit_dom_wide(page, lang):
+    """Assert the whole rendered page, not just selected regions."""
+    title = page.title()
+    ph = page.get_attribute("#existing", "placeholder") or ""
+    h1 = page.inner_text("h1")
+    badge = page.inner_text(".center-dom .badge")
+    if lang == "en":
+        check("EN document title", not has_cjk(title) and "Backlink Prospector" in title, title)
+        check("EN existing-backlink placeholder", bool(ph) and not has_cjk(ph), ph)
+        check("EN h1", not has_cjk(h1), h1)
+        check("EN center-domain badge", not has_cjk(badge), badge)
+    else:
+        check("ZH document title", has_cjk(title), title)
+        check("ZH existing-backlink placeholder", has_cjk(ph), ph)
+        check("ZH h1", has_cjk(h1), h1)
+        check("ZH center-domain badge", has_cjk(badge), badge)
+
+    for name, sel in DYNAMIC_BILINGUAL:
+        txt = text_of(page, sel)
+        if lang == "en":
+            check("EN cjk-free: %s" % name, bool(txt.strip()) and not has_cjk(txt),
+                  repr(txt[:100]))
+        else:
+            check("ZH cjk-present: %s" % name, has_cjk(txt), repr(txt[:100]))
+
+    hits = dom_cjk_hits(page)
+    if lang == "en":
+        check("EN zero CJK across DOM + attributes", not hits, hits[:5])
+    else:
+        check("ZH renders Chinese", bool(hits), hits[:2])
 
 
 def audit_language(page, lang):
@@ -128,6 +202,8 @@ def audit_language(page, lang):
     check("no bare i18n keys", not bare, bare)
     check("no empty i18n elements", not blank, blank)
     check("no replacement characters", moji == 0, moji)
+
+    audit_dom_wide(page, lang)
 
 
 def run(base):

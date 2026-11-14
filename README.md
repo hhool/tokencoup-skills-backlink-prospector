@@ -181,14 +181,23 @@ function** is covered by one replay pass:
   and the analysis result carries `limitations` (EN) / `limitations_zh`.
   `analyze.py::note_en()` degrades to a neutral English descriptor for legacy
   rows, so a Chinese-only operator note can never leak into EN mode.
-- Deliberate bilingual pairs (type labels `zh / en`, channel `name_zh /
-  name_en`, tips primary + secondary text, the sort hint, `已拥有 Acquired`)
-  intentionally show both languages and are excluded from the "no Chinese in
-  EN" assertions.
+- Attribute-level copy is part of the same contract: `data-i18n-ph`,
+  `data-i18n-title` and `data-i18n-aria` drive `placeholder`, `title` and
+  `aria-label`, and `applyLang()` also sets `document.title`. An innerText-only
+  audit cannot see these strings, which is how a Chinese form hint once
+  survived a switch to English.
+- Bilingual payload pairs (type labels `type_label_zh/en`, channel
+  `name_zh/name_en`, tips `zh/en`) are language-aware rather than jointly
+  displayed: EN renders English only, ZH renders the Chinese primary with the
+  English secondary line. Raw server diagnostics live in `data-raw` instead of
+  a visible Chinese tooltip.
+- **EN mode is CJK-free across the entire DOM** (text nodes plus placeholder /
+  title / aria-label / alt). The sole whitelist is `#langToggle`, which shows
+  the target language (中), not a UI string.
 
 `tools/i18n_audit.py` drives real Chrome, loads every tab, then audits
-ZH → EN → ZH including runtime states (error/busy messages, unsaved edits).
-It is the regression guard for this contract (130 assertions).
+ZH → EN → ZH including runtime states (error/busy messages, unsaved edits),
+attribute copy and the DOM-wide zero-CJK assertion (157 assertions).
 
 ---
 
