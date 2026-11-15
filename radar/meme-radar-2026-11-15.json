@@ -1,0 +1,170 @@
+{
+ "meta": {
+  "generated_at": "2026-11-15T10:10:13Z",
+  "date": "2026-11-15",
+  "api_base": "https://soundbuttons.cc",
+  "candidates_seen": 14,
+  "probed": 14,
+  "sources": {
+   "google_trends": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 3
+   },
+   "reddit_rising": {
+    "status": "ok",
+    "raw": 25,
+    "kept": 10
+   },
+   "know_your_meme": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "tiktok_hashtags": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "9gag_hot": {
+    "status": "ok",
+    "raw": 8,
+    "kept": 1
+   }
+  }
+ },
+ "rows": [
+  {
+   "term": "Beautiful nature",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Extraordinary circumstances",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Just realised",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Microslop",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Occams razor",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Seriously impressive",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Tasty",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Tough crowd",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Wario",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 3,
+   "hit_titles": [
+    "Weird in Wario Land",
+    "Mario and Wario Scream in Fear",
+    "Wario Being Scared"
+   ],
+   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
+  },
+  {
+   "term": "Wood",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 3,
+   "hit_titles": [
+    "Wood/Rock/Wyvern Hit/Damage (Terraria)",
+    "Wood Swish Ruler Whoosh Fast Movement In Air (SFX)",
+    "Wood Swish Ruler Whoosh Fast Movement In Air (SFX)"
+   ],
+   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
+  },
+  {
+   "term": "corrosive",
+   "sources": [
+    "reddit_rising"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "maika monroe",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "shameless",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "winter storm",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  }
+ ]
+}
