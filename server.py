@@ -204,6 +204,10 @@ def run_analysis(params, center_domain=None):
     }
     if str(params.get("persist", "1")).lower() in ("1", "true", "yes", "on"):
         merged = st.merge_result(pool, result)
+        # Reconcile before the snapshot: a competitor named in this very run's
+        # form must not stay counted as an available address in what the next
+        # diff compares against.
+        st.sync_competitors(pool, center_domain)
         # Snapshot after the merge so the next run can be diffed against what
         # this one actually produced (the diff is the operator's "what changed").
         snap = st.record_run(pool, label=(params.get("run_label") or "analyze"))
@@ -456,6 +460,8 @@ class Handler(BaseHTTPRequestHandler):
                 quota = qs.get("quota", [None])[0]
                 refill = str(qs.get("refill", ["0"])[0]).lower() in ("1", "true", "yes")
                 pool = st.load_store(center_domain)
+                if st.sync_competitors(pool, center_domain):
+                    st.save_store(pool, center_domain)
                 return self._json(200, {"ok": True,
                                         "queue": st.daily_queue(pool, center_domain, date=date,
                                                                 quota=quota, refill=refill),
@@ -473,6 +479,11 @@ class Handler(BaseHTTPRequestHandler):
                 center_domain = qs.get("domain", [None])[0]
                 date = qs.get("date", [None])[0]
                 pool = st.load_store(center_domain)
+                # "Every load re-checks the pool against the competitor list":
+                # naming a competitor in the profile must retire its rows from
+                # the counts without waiting for the next analysis.
+                if st.sync_competitors(pool, center_domain):
+                    st.save_store(pool, center_domain)
                 return self._json(200, {"ok": True,
                                         "stats": st.store_stats(pool),
                                         "domains": st.domain_list(pool),

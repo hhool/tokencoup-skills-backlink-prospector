@@ -216,6 +216,40 @@ def unmark_existing(store, domains):
     return removed
 
 
+def sync_competitors(store, center_domain=None):
+    """Reconcile the pool against the profile's competitor list.
+
+    A prospect discovered before its host was named a competitor (or pushed in
+    by an import) would keep posing as an available address. This pass marks
+    every pool row matching a competitor host as `is_competitor`, so the
+    counts stop counting a site you can never place a link on.
+
+    Deliberately additive-only (naming a competitor then removing it does not
+    un-mark rows — an old link prospect does not become placeable again), and
+    deliberately NOT the whitelist: a competitor means "no placement possible",
+    the whitelist means "exists but excluded from statistics". Conflating them
+    would make the numbers mean two things at once.
+
+    Returns the number of rows newly marked.
+    """
+    comps = {_bare_domain(c) for c in (load_profile(center_domain).get("competitors") or [])}
+    comps.discard("")
+    if not comps:
+        return 0
+    marked = 0
+    for d, entry in (store.get("domains") or {}).items():
+        if not isinstance(entry, dict) or entry.get("is_competitor"):
+            continue
+        host = _bare_domain(d)
+        if not host:
+            continue
+        if any(host == c or host.endswith("." + c) for c in comps):
+            entry["is_competitor"] = True
+            entry["competitor_marked_at"] = _now()
+            marked += 1
+    return marked
+
+
 # ---------------------------------------------------------------------------
 # Run history: what actually changed since the last analysis.
 #
@@ -543,6 +577,10 @@ def store_stats(store):
     # Competitor domains are deliberately excluded, so they are neither
     # "acquired" nor a real "gap to pursue".
     competitors = sum(1 for d, e in counted if e.get("is_competitor"))
+    # The names go with the count: the whitelist panel shows these as muted
+    # read-only chips, so "auto-excluded" is something you can see and audit,
+    # not just a number that quietly shrank.
+    competitor_list = sorted(d for d, e in counted if e.get("is_competitor"))[:100]
     gap = sum(1 for d, e in counted
               if not owned(d, e) and not e.get("is_competitor"))
     gap_valid = sum(1 for d, e in counted
@@ -564,6 +602,10 @@ def store_stats(store):
     return {
         "total_discovered": total,
         "acquired": acquired,
+        # Competitors are neither supply nor gap; surfacing the count keeps the
+        # reconciliation visible instead of silently shrinking the numbers.
+        "competitors": competitors,
+        "competitor_list": competitor_list,
         "valid": valid,
         "gap": gap,
         "gap_valid": gap_valid,

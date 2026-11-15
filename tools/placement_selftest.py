@@ -1478,6 +1478,185 @@ def section_l():
               (code, (body.get("refill") or {}).keys()))
 
 
+def section_m():
+    """Competitor reconciliation: a named competitor stops posing as supply.
+
+    The pool is discovered ahead of opinions — rows land before the operator
+    names their host a competitor. Without this pass the counts would keep
+    advertising an address that can never carry a link.
+    """
+    print("\n=== M. competitor reconciliation ===")
+    import server as srv
+    srv.SCHED.stop()
+
+    center = TEST_DOMAIN + "-m"
+
+    def fresh():
+        return {"domains": {}, "placements": {}, "suppressions": {},
+                "acquired_domains": [], "whitelist": {}, "settings": {},
+                "center_domain": center}
+
+    def add_pool(s, names):
+        for d in names:
+            s["domains"][d] = {"url": "https://" + d, "valid": True, "priority": 50,
+                               "type_key": "directory", "acquired": False}
+
+    # The profile is per-domain: give this center a competitor list, then make
+    # sure other domains are untouched by it.
+    st.save_profile(center, ["kw"], ["myinstants.com", "voicemod.net"])
+    try:
+        s = fresh()
+        add_pool(s, ["myinstants.com", "www.voicemod.net", "blog.myinstants.com",
+                     "soundbuttons.example", "unrelated.example"])
+        n = st.sync_competitors(s, center)
+        check("the pass marks hosts and their subdomains as competitors",
+              n == 3 and all(s["domains"][d].get("is_competitor") for d in
+                             ("myinstants.com", "www.voicemod.net", "blog.myinstants.com")),
+              (n, {d: s["domains"][d].get("is_competitor") for d in s["domains"]}))
+        check("unrelated rows are never marked",
+              not any(s["domains"][d].get("is_competitor")
+                      for d in ("soundbuttons.example", "unrelated.example")),
+              [d for d in s["domains"] if s["domains"][d].get("is_competitor")])
+        check("a marked row carries the audit stamp",
+              bool(s["domains"]["myinstants.com"].get("competitor_marked_at")),
+              s["domains"]["myinstants.com"].get("competitor_marked_at"))
+        n2 = st.sync_competitors(s, center)
+        check("the pass is idempotent", n2 == 0, n2)
+
+        # counts must treat a marked row like any other competitor: not supply
+        stats = st.store_stats(s)
+        check("marked rows leave the inventory and the gap",
+              stats["competitors"] == 3 and st.inventory_count(s) == 2,
+              (stats["competitors"], st.inventory_count(s)))
+
+        # additive-only: removing the name must not resurrect the rows
+        s2 = fresh()
+        add_pool(s2, ["voicemod.net"])
+        st.save_profile(center, ["kw"], ["myinstants.com", "voicemod.net"])
+        st.sync_competitors(s2, center)
+        st.save_profile(center, ["kw"], ["myinstants.com"])
+        st.sync_competitors(s2, center)
+        check("removing a competitor from the profile does not un-mark rows",
+              s2["domains"]["voicemod.net"].get("is_competitor") is True,
+              s2["domains"]["voicemod.net"])
+        check("no competitor list means the pass is a no-op",
+              st.sync_competitors(s2, center) == 0)
+
+        # the whitelist semantic is never touched
+        s3 = fresh()
+        add_pool(s3, ["myinstants.com"])
+        st.add_whitelist(s3, ["myinstants.com"])
+        st.sync_competitors(s3, center)
+        check("the pass marks without touching the whitelist map",
+              "myinstants.com" in st.whitelist_map(s3), st.whitelist_map(s3))
+    finally:
+        try:
+            path = st.get_store_path(center)
+            if os.path.isfile(path):
+                os.remove(path)
+            prof_path = st._profile_path(center)
+            if prof_path and os.path.isfile(prof_path):
+                os.remove(prof_path)
+        except OSError:
+            pass
+
+    if not NO_WRITE:
+        # the queue and store endpoints reconcile on load, so merely visiting
+        # the panel retires a newly named competitor from the counts
+        api_center = center + "-http"
+        st.save_profile(api_center, ["kw"], ["comp.example"])
+        try:
+            pool = st.load_store(api_center)
+            add_pool(pool, ["comp.example", "keep.example"])
+            st.record_run(pool, "seed")
+            st.save_store(pool, api_center)
+            code, body = http("/api/store?domain=%s" % api_center)
+            check("a store load reconciles the competitor list",
+                  code == 200 and body["stats"]["competitors"] == 1,
+                  body.get("stats", {}).get("competitors"))
+            saved = st.load_store(api_center)
+            check("the reconciliation is persisted on load",
+                  saved["domains"]["comp.example"].get("is_competitor") is True,
+                  saved["domains"]["comp.example"])
+            code, body = http("/api/queue?domain=%s" % api_center)
+            check("the queue reconciles too",
+                  code == 200 and body.get("ok") is True, code)
+        finally:
+            for c in (api_center,):
+                st.prune_queues(c, keep_days=-1)
+                try:
+                    path = st.get_store_path(c)
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    prof_path = st._profile_path(c)
+                    if prof_path and os.path.isfile(prof_path):
+                        os.remove(prof_path)
+                except OSError:
+                    pass
+
+
+def section_n():
+    """Competitor query templates: filling competitors must grow the pool.
+
+    The old answer to "I entered competitors, why no new sites?" was that
+    competitors only ever excluded. With `competitor_templates` a channel gets
+    a second query family whose evidence is the competitor name itself.
+    """
+    print("\n=== N. competitor query templates ===")
+    import analyze as an
+    import server as srv
+    srv.SCHED.stop()
+
+    ch = {
+        "id": "fake", "kind": "fake_comp", "name_zh": "fake", "name_en": "fake",
+        "templates": {"resource": ["{kw} resources"]},
+        "competitor_templates": {"resource": ['"{comp}" links']},
+    }
+    urls = ["https://somesite.example/great-tools",      # niche keyword in URL
+            "https://fanpage.example/myinstants-review",  # competitor mention
+            "https://random.example/nothing-relevant"]    # neither
+
+    def fake_runner(query, limit):
+        an.LAST_QUERIES.append(query)
+        return list(urls)
+
+    saved = dict(an.CHANNEL_RUNNERS)
+    an.CHANNEL_RUNNERS["fake_comp"] = fake_runner
+    an.LAST_QUERIES = []
+    try:
+        found, raw = an.run_channel(ch, ["sound"], "center.example",
+                                    ["myinstants.com"], 40, 8)
+        queries = list(an.LAST_QUERIES)
+        check("competitor queries are generated from the profile",
+              any("myinstants" in q for q in queries), queries)
+        check("competitor queries still share the per-channel quota",
+              len(queries) <= 8, len(queries))
+        doms = {f["url"] for f in found}
+        check("a competitor mention passes the evidence gate without a keyword hit",
+              "https://fanpage.example/myinstants-review" in doms, sorted(doms))
+        check("an unrelated URL is still rejected",
+              "https://random.example/nothing-relevant" not in doms, sorted(doms))
+        row = next(f for f in found if "myinstants" in f["url"])
+        check("competitor rows carry via_competitor for the merge boost",
+              row.get("via_competitor") == "myinstants.com"
+              and row.get("kw_match") == "competitor", row)
+
+        an.LAST_QUERIES = []
+        found2, _ = an.run_channel(ch, [], "center.example",
+                                   ["myinstants.com"], 40, 8)
+        check("a competitors-only profile still discovers",
+              any("myinstants" in f["url"] for f in found2),
+              [f["url"] for f in found2])
+        found3, _ = an.run_channel(ch, [], "center.example", [], 40, 8)
+        check("no keywords and no competitors discovers nothing",
+              found3 == [], found3)
+    finally:
+        an.CHANNEL_RUNNERS.clear()
+        an.CHANNEL_RUNNERS.update(saved)
+        if hasattr(an, "LAST_QUERIES"):
+            del an.LAST_QUERIES
+
+
 if __name__ == "__main__":
     print("placement_selftest -> %s" % BASE)
     section_a()
@@ -1495,6 +1674,8 @@ if __name__ == "__main__":
     section_j()
     section_k()
     section_l()
+    section_m()
+    section_n()
     # Remove only this run's throwaway store file when the server is local.
     # data/ is gitignored machine-local state; nothing versioned is touched.
     try:

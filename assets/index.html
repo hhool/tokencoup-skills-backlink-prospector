@@ -233,6 +233,7 @@
       <div class="card gap"><div class="n" id="ov_gap">0</div><div class="l" data-i18n="ov_gap">空缺 Gap</div></div>
       <div class="card gap"><div class="n" id="ov_gapv">0</div><div class="l" data-i18n="ov_gapv">空缺且有效 Gap &amp; valid</div></div>
         <div class="card rec"><div class="n" id="ov_recip">0%</div><div class="l" data-i18n="ov_recip">互链占比 Reciprocal</div></div>
+        <div class="card"><div class="n" id="ov_comp">0</div><div class="l" data-i18n="ov_comp">竞品(不计) Competitors</div></div>
     </div>
     <p class="note" id="ovCenter" style="margin:0 0 14px"></p>
 
@@ -424,6 +425,10 @@
           <span class="badge" id="wlMsg"></span>
         </div>
         <div class="chips" id="wlChips" style="margin-top:8px"></div>
+        <div id="wlCompWrap" class="hidden" style="margin-top:6px">
+          <span class="note" data-i18n="wl_comp_auto">竞品（自动排除，不计统计）</span>
+          <div class="chips" id="wlCompChips" style="margin-top:4px"></div>
+        </div>
       </div>
       <div class="poolfilters">
         <div class="tree-card">
@@ -668,6 +673,7 @@ const I18N = {
     center_lab:'分析对象（所有 Tab 围绕此域名展开）：', center_hint:'下拉可选已有域名（带池/种子数量）；也可直接输入新域名',
     tab_ov:'📊 总体概况', tab_analyze:'🔍 分析', tab_tips:'📖 类型说明 & 权重', tab_pool:'🗃 外链池 · 已有 vs 空缺', tab_sched:'⚙ 后台服务 · 周期查询',
     ov_total:'累计发现 Discovered', ov_acq:'已拥有 Acquired', ov_gap:'空缺 Gap', ov_gapv:'空缺且有效 Gap & valid', ov_recip:'互链占比 Reciprocal',
+    ov_comp:'竞品(不计) Competitors',
     q_title:'今日队列 · Daily queue', q_quota:'日配额 quota', q_avail:'本批可领 in batch',
     q_claimed:'今日已领 claimed', q_gap:'供给缺口 gap', q_inv:'库存 inventory',
     q_claim:'领取本批',
@@ -685,6 +691,7 @@ const I18N = {
     wl_title:'白名单 · 不计入外链统计', wl_add:'加入白名单',
     wl_hint:'加白名单的域名仍留在池里，但总数、缺口、今日队列都不再算它；可随时移出。',
     wl_none:'还没有白名单域名', wl_added:'已加入 {n} 个', wl_removed:'已移出 {n} 个',
+    wl_comp_auto:'竞品（自动排除，不计统计）', wl_comp_tip:'来自档案竞品列表，自动标记，不计入候选与统计',
     wl_on:'加入白名单', wl_off:'移出白名单', wl_pill:'白名单',
     q_note:'批次 {id} · 本批 {b} 条 · 库存 {i} 条。缺口 = 配额 − 本批；库存不够时先去「分析」跑一次，或补一份 harvest 文件。',
     q_note_short:'批次 {id} · 本批 {b} 条 · 库存 {i} 条（配额 {q}）。缺口只能靠跑一次分析或补一份 harvest 文件来填。',
@@ -751,6 +758,7 @@ const I18N = {
     center_lab:'Analysis target (all tabs center on this domain):', center_hint:'Pick a known domain from the list (with pool/seed counts) or type a new one',
     tab_ov:'📊 Overview', tab_analyze:'🔍 Analyze', tab_tips:'📖 Types & Weights', tab_pool:'🗃 Pool · Owned vs Gap', tab_sched:'⚙ Backend · Scheduler',
     ov_total:'Discovered', ov_acq:'Acquired', ov_gap:'Gap', ov_gapv:'Gap & valid', ov_recip:'Reciprocal %',
+    ov_comp:'Competitors (excl.)',
     q_title:'Daily queue', q_quota:'daily quota', q_avail:'in batch',
     q_claimed:'claimed today', q_gap:'supply gap', q_inv:'pool inventory',
     q_claim:'Claim batch',
@@ -768,6 +776,7 @@ const I18N = {
     wl_title:'Whitelist · excluded from backlink stats', wl_add:'Add to whitelist',
     wl_hint:'Whitelisted domains stay in the pool but leave every number: totals, gap and the daily queue. Remove them any time.',
     wl_none:'No whitelisted domains yet', wl_added:'{n} added', wl_removed:'{n} removed',
+    wl_comp_auto:'Competitors (auto-excluded from stats)', wl_comp_tip:'Marked automatically from the profile competitor list; never counted as candidates or stats',
     wl_on:'Whitelist', wl_off:'Un-whitelist', wl_pill:'Whitelisted',
     q_note:'Batch {id} · {b} in this batch · {i} in inventory. Gap = quota − batch; when inventory is short, run an analysis or ship a harvest file.',
     q_note_short:'Batch {id} · {b} in this batch · {i} in inventory (quota {q}). Only a fresh analysis or a harvest file can close the gap.',
@@ -1289,6 +1298,7 @@ async function loadDomainPicker(){
    配额是硬闸门（服务端 claim 时拦截），改这里只是改配置，不是「临时放宽」。 */
 let QUEUE = null;
 let WL = [];                 // whitelist rows from the server (per center domain)
+let STORE_STATS = null;      // last /api/store stats snapshot (competitor_list etc.)
 let WL_SET = new Set();      // fast membership for row rendering
 function todayLocal(){
   const d=new Date();
@@ -1473,10 +1483,18 @@ function renderWhitelist(){
   $('wlCount').textContent=WL.length;
   if(!WL.length){
     box.innerHTML=`<span class="note">${esc(I18N[LANG].wl_none)}</span>`;
-    return;
+  }else{
+    box.innerHTML=WL.map(x=>`<span class="chip on" title="${escAttr((x.note||'')+(x.in_pool?'':' · not in pool'))}">`
+      +`${esc(x.domain)}<span class="wlx" data-wl="${escAttr(x.domain)}" data-act="rm" title="${escAttr(I18N[LANG].wl_off)}">×</span></span>`).join('');
   }
-  box.innerHTML=WL.map(x=>`<span class="chip on" title="${escAttr((x.note||'')+(x.in_pool?'':' · not in pool'))}">`
-    +`${esc(x.domain)}<span class="wlx" data-wl="${escAttr(x.domain)}" data-act="rm" title="${escAttr(I18N[LANG].wl_off)}">×</span></span>`).join('');
+  // Auto-excluded competitors, read-only: naming a competitor in the profile
+  // is all it takes for its pool rows to land here — no manual upkeep.
+  const cw=$('wlCompWrap'), cc=$('wlCompChips');
+  if(cw && cc){
+    const list=(STORE_STATS&&STORE_STATS.competitor_list)||[];
+    cw.classList.toggle('hidden', !list.length);
+    cc.innerHTML=list.map(d=>`<span class="chip" style="opacity:.65" title="${escAttr(I18N[LANG].wl_comp_tip)}">${esc(d)}</span>`).join('');
+  }
 }
 async function whitelistPost(action, domains){
   const r=await fetch('/api/whitelist',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1502,6 +1520,7 @@ async function loadOverview(){
     const r=await fetch('/api/store?domain='+encodeURIComponent(CENTER)+'&date='+todayLocal()); const d=await r.json();
     if(!d.ok) throw new Error(d.error||'fail');
     const s=d.stats||{};
+    STORE_STATS=s;
     QUEUE=d.queue||QUEUE; renderQueue();
     WL=d.whitelist||WL; WL_SET=new Set(WL.map(x=>x.domain)); renderWhitelist();
     renderLost(s.lost_list, s.lost_days);
@@ -1514,6 +1533,7 @@ async function loadOverview(){
     const ratio=s.reciprocal_ratio||0;
     $('ov_recip').textContent=(ratio*100).toFixed(0)+'%';
     $('ov_recip').style.color = s.reciprocal_ratio_warn?'var(--bad)':'var(--accent2)';
+    const oc=$('ov_comp'); if(oc) oc.textContent=s.competitors||0;
 
     const bt=s.by_type||{};
     const torder=['industry_media','authority','digital_pr','guest','resource','partner','directory','reciprocal','community','social'];

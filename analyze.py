@@ -199,7 +199,16 @@ CHANNEL_RUNNERS = {
 
 
 def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
-    """Execute one discovery channel; returns list of candidate dicts."""
+    """Execute one discovery channel; returns list of candidate dicts.
+
+    Two query families share the quota:
+      - keyword x type templates (the classic path);
+      - competitor templates when the channel declares `competitor_templates`
+        and the profile names competitors. A result qualifies if its URL
+        mentions the competitor — "a page that references a competitor is
+        niche-adjacent" is evidence, not a keyword match, and the row carries
+        `via_competitor` so the merge can boost it like harvested backlinks.
+    """
     runner = CHANNEL_RUNNERS.get(ch.get("kind"))
     if not runner:
         return []
@@ -208,16 +217,37 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
     if isinstance(keywords, str):
         keywords = [k.strip() for k in keywords.split(",") if k.strip()]
     keywords = [k for k in (keywords or []) if str(k).strip()]
-    if not keywords:
-        return []
+
     templates = ch.get("templates") or {}
+    comp_templates = ch.get("competitor_templates") or {}
+    comp_tokens = {}
+    for comp in list(comp_domains or [])[:2]:
+        c = str(comp or "").strip().lower()
+        if c:
+            toks = {t for t in re.split(r"[^a-z0-9]+", c) if len(t) >= 4}
+            if toks and comp_templates:
+                comp_tokens[c] = toks
+    if not keywords and not comp_tokens:
+        return [], 0
     kws = keywords[:2]
     queries = []
     for kw in kws:
         for ttype, tmpls in templates.items():
             for tmpl in tmpls[:1]:
                 queries.append((ttype, tmpl.format(kw=kw)))
+    # Reserve room for competitor queries so a keyword-heavy template set can
+    # not crowd them out entirely (they answer a different question: who links
+    # to the sites we compete with).
+    queries = queries[:max_queries - (min(2, len(comp_tokens)) if comp_tokens else 0)]
+    for comp in comp_tokens:
+        for ttype, tmpls in comp_templates.items():
+            for tmpl in tmpls[:1]:
+                queries.append((ttype, tmpl.format(comp=comp)))
     queries = queries[:max_queries]
+    comp_by_query = {}
+    for comp in comp_tokens:
+        for _ttype, tmpls in comp_templates.items():
+            comp_by_query[tmpls[0].format(comp=comp)] = comp
 
     noise = NOISE_DOMAINS | EXTRA_NOISE
     # normalised keyword forms + significant single tokens for the relevance gate
@@ -253,22 +283,32 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
                     continue
                 raw_seen += 1
                 low = link.lower()
-                # relevance gate: the keyword must actually appear in the RESULT
-                # URL. The previous version also accepted "keyword appears in the
-                # query", which was always true (the query is built FROM the
-                # keyword) and therefore let every off-topic hit through.
                 low_n = _norm_text(low)
-                strong = any(n and n in low_n for n in kw_norm)
-                weak = any(tok in low for tok in kw_tokens)
-                if not (strong or weak):
-                    continue
+                comp_hit = comp_by_query.get(q)
+                if comp_hit:
+                    # Evidence gate: the result must reference the competitor
+                    # itself. A page about the competitor is exactly the kind
+                    # of page that might link to us too.
+                    if not any(tok in low for tok in comp_tokens[comp_hit]):
+                        continue
+                else:
+                    # relevance gate: the keyword must actually appear in the RESULT
+                    # URL. The previous version also accepted "keyword appears in the
+                    # query", which was always true (the query is built FROM the
+                    # keyword) and therefore let every off-topic hit through.
+                    strong = any(n and n in low_n for n in kw_norm)
+                    weak = any(tok in low for tok in kw_tokens)
+                    if not (strong or weak):
+                        continue
                 found[d] = {
                     "url": link, "type": ttype, "authorityTier": "Medium",
                     "tags": [q], "note": ch["name_zh"] + " 实时发现: " + q,
                     "note_en": (ch.get("name_en") or ch["name_zh"]) + " live discovery: " + q,
                     "source": ch["id"],
-                    "kw_match": "strong" if strong else "weak",
+                    "kw_match": "competitor" if comp_hit else ("strong" if strong else "weak"),
                 }
+                if comp_hit:
+                    found[d]["via_competitor"] = comp_hit
                 if len(found) >= max_results:
                     break
             if len(found) >= max_results:
