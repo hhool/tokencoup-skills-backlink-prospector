@@ -1693,6 +1693,42 @@ def section_n():
               row.get("via_competitor") == "myinstants.com"
               and row.get("kw_match") == "competitor", row)
 
+        # Page-text verification: a comp-query hit whose URL does not contain
+        # the competitor name is the NORMAL case - the engine matched page
+        # text. It must be verified by fetching, then accepted or rejected.
+        an.LAST_QUERIES = []
+        text_url = "https://roundup.example/curated-toollist"
+        def runner_text(query, limit):
+            an.LAST_QUERIES.append(query)
+            return [text_url]
+        an.CHANNEL_RUNNERS["fake_comp"] = runner_text
+        mentions = {text_url: True}
+        saved_pm = an._page_mentions
+        an._page_mentions = lambda url, toks, timeout=10, max_bytes=200000: mentions.get(url, False)
+        try:
+            found4, _ = an.run_channel(ch, ["sound"], "center.example",
+                                       ["myinstants.com"], 40, 8)
+            check("a comp hit verified via page text is accepted",
+                  any(f["url"] == text_url for f in found4), [f["url"] for f in found4])
+            check("page-verified rows still carry via_competitor",
+                  all(f.get("via_competitor") == "myinstants.com" for f in found4), found4)
+            mentions[text_url] = False
+            found5, _ = an.run_channel(ch, ["sound"], "center.example",
+                                       ["myinstants.com"], 40, 8)
+            check("a page that does not mention the competitor stays rejected",
+                  found5 == [], found5)
+        finally:
+            an._page_mentions = saved_pm
+
+        # Competitor #3 used to be a silent no-op (only the first 2 were used)
+        an.LAST_QUERIES = []
+        an.CHANNEL_RUNNERS["fake_comp"] = fake_runner
+        an.run_channel(ch, ["sound"], "center.example",
+                       ["compone.com", "comptwo.com", "compthree.com"], 40, 8)
+        qs = list(an.LAST_QUERIES)
+        check("up to 4 competitors generate live queries",
+              any("compthree" in q for q in qs), qs)
+
         an.LAST_QUERIES = []
         found2, _ = an.run_channel(ch, [], "center.example",
                                    ["myinstants.com"], 40, 8)

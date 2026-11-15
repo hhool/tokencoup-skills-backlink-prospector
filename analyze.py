@@ -191,6 +191,24 @@ def _bing_rss(query, n=20, timeout=15):
     return out
 
 
+def _page_mentions(url, tokens, timeout=10, max_bytes=200_000):
+    """True if any token appears in the page HTML (first max_bytes).
+
+    Competitor search queries ("comp.com" resources) match pages that MENTION
+    the competitor in their text; the URL usually does not. This fetch is the
+    honest verification of that mention. Fetch failures reject (no evidence).
+    """
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA,
+                                                   "Accept-Language": "en-US,en;q=0.9"})
+        with urllib.request.urlopen(req, timeout=timeout, context=CTX) as resp:
+            html = resp.read(max_bytes).decode("utf-8", "replace")
+    except Exception:
+        return False
+    low = html.lower()
+    return any(tok in low for tok in tokens)
+
+
 CHANNEL_RUNNERS = {
     "bing_rss": lambda q, n: _bing_rss(q, n),
     "bing_cite": lambda q, n: _bing_cite_domains(q)[:n],
@@ -221,7 +239,9 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
     templates = ch.get("templates") or {}
     comp_templates = ch.get("competitor_templates") or {}
     comp_tokens = {}
-    for comp in list(comp_domains or [])[:2]:
+    # Up to 4 competitors get live queries. The old [:2] made competitor #3+
+    # a silent no-op: the user adds names and nothing changes.
+    for comp in list(comp_domains or [])[:4]:
         c = str(comp or "").strip().lower()
         if c:
             toks = {t for t in re.split(r"[^a-z0-9]+", c) if len(t) >= 4}
@@ -230,19 +250,26 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
     if not keywords and not comp_tokens:
         return [], 0
     kws = keywords[:2]
-    queries = []
+    kw_queries = []
     for kw in kws:
         for ttype, tmpls in templates.items():
             for tmpl in tmpls[:1]:
-                queries.append((ttype, tmpl.format(kw=kw)))
-    # Reserve room for competitor queries so a keyword-heavy template set can
-    # not crowd them out entirely (they answer a different question: who links
-    # to the sites we compete with).
-    queries = queries[:max_queries - (min(2, len(comp_tokens)) if comp_tokens else 0)]
+                kw_queries.append((ttype, tmpl.format(kw=kw)))
+    comp_queries = []
     for comp in comp_tokens:
         for ttype, tmpls in comp_templates.items():
             for tmpl in tmpls[:1]:
-                queries.append((ttype, tmpl.format(comp=comp)))
+                comp_queries.append((ttype, tmpl.format(comp=comp)))
+    # Fair share: round-robin interleave, then one truncation. The old
+    # reserve-then-append let the tail comp queries fall off the quota edge
+    # (later competitors lost their queries before earlier ones did).
+    queries = []
+    ki = ci = 0
+    while ki < len(kw_queries) or ci < len(comp_queries):
+        if ki < len(kw_queries):
+            queries.append(kw_queries[ki]); ki += 1
+        if ci < len(comp_queries):
+            queries.append(comp_queries[ci]); ci += 1
     queries = queries[:max_queries]
     comp_by_query = {}
     for comp in comp_tokens:
@@ -267,10 +294,19 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
 
     found = {}
     raw_seen = 0
+    # Competitor-evidence verification: pages fetched per channel run. Each
+    # verified domain is cached so duplicates cost nothing; the budget keeps
+    # one channel from spending minutes on page fetches.
+    verify_left = 24
+    mentions_cache = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
         for results in ex.map(fetch_one, queries):
             for ttype, q, link in results:
                 try:
+                    # bing_cite yields bare domains ("example.com"); without a
+                    # scheme every one of them was dropped as unparsable.
+                    if "://" not in link and "." in link and " " not in link:
+                        link = "https://" + link
                     p = urllib.parse.urlparse(link)
                 except Exception:
                     continue
@@ -286,11 +322,21 @@ def run_channel(ch, keywords, target_d, comp_domains, max_results, max_queries):
                 low_n = _norm_text(low)
                 comp_hit = comp_by_query.get(q)
                 if comp_hit:
-                    # Evidence gate: the result must reference the competitor
-                    # itself. A page about the competitor is exactly the kind
-                    # of page that might link to us too.
-                    if not any(tok in low for tok in comp_tokens[comp_hit]):
-                        continue
+                    # Evidence gate: the result must reference the competitor.
+                    # The search engine matched page TEXT, so the URL usually
+                    # does not contain the name — fall back to fetching the
+                    # page and verifying the mention for real.
+                    toks = comp_tokens[comp_hit]
+                    if not any(tok in low for tok in toks):
+                        if verify_left <= 0:
+                            continue
+                        verdict = mentions_cache.get(d)
+                        if verdict is None:
+                            verify_left -= 1
+                            verdict = _page_mentions(link, toks)
+                            mentions_cache[d] = verdict
+                        if not verdict:
+                            continue
                 else:
                     # relevance gate: the keyword must actually appear in the RESULT
                     # URL. The previous version also accepted "keyword appears in the
@@ -680,9 +726,12 @@ def analyze(input):
                       or (c.get("type") in ("authority", "reciprocal")
                           and target_d and target_d in (c.get("domains") or []))]
 
-    # 2) live multi-channel discovery (rotated per channels.json)
+    # 2) live multi-channel discovery (rotated per channels.json).
+    #    Competitors alone are a valid discovery input: naming a competitor
+    #    with no keywords still asks "who talks about the sites we compete
+    #    with", so do not require keywords here.
     discovered, channel_stats = [], []
-    if bing_on and kws:
+    if bing_on and (kws or comp_domains):
         try:
             discovered, channel_stats = discover_all(kws, target_d, comp_domains)
         except Exception:
