@@ -53,6 +53,19 @@
   .pill.comp{color:var(--warn);border-color:#7a4a1f}
   .pill.have{color:var(--accent2);border-color:#2f6b3a}
   .badge{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--panel2);border:1px solid var(--border);color:var(--muted)}
+  /* Pagination bar under every long list; kept quiet like the sortbar. */
+  .pager-slot:not(:empty){margin-top:8px}
+  .pager{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:12px;color:var(--muted)}
+  .pager .pg-nav{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+  .pager .pg-btn{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+    border-radius:6px;padding:3px 9px;font-size:12px;font-weight:400;cursor:pointer}
+  .pager .pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .pager .pg-btn.cur{background:var(--accent);color:#08111c;border-color:var(--accent);font-weight:700}
+  .pager .pg-btn:disabled{opacity:.4;cursor:not-allowed}
+  .pager .pg-dots{color:var(--muted);padding:0 2px}
+  .pager .pg-size{display:flex;gap:6px;align-items:center;margin-left:auto}
+  .pager .pg-size select{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:3px 6px;font-size:12px;font-family:inherit}
   .prio{font-weight:700}
   .note{color:var(--muted);font-size:12px}
   .qbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--panel);
@@ -369,6 +382,7 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+      <div id="resPager" class="pager-slot"></div>
       <div class="src" id="src"></div>
       <ul class="lim" id="lim"></ul>
     </div>
@@ -472,6 +486,7 @@
           <tbody id="poolBody"></tbody>
         </table>
       </div>
+      <div id="poolPager" class="pager-slot"></div>
 
       <div class="panel" style="margin-top:14px">
         <b data-i18n="pl_title">投放台账 · 已上线的投放位不再复用</b>
@@ -522,6 +537,7 @@
             <tbody id="plBody"></tbody>
           </table>
         </div>
+        <div id="plPager" class="pager-slot"></div>
       </div>
 
       <div style="margin-top:10px">
@@ -958,8 +974,88 @@ function setSort(tableId, key, dir){
   applySortMarks(tableId);
 }
 
+/* ---------- generic pagination engine ---------- */
+/* Same philosophy as the sort registry: state lives here, not in the DOM,
+   so the current page and page size survive every re-render. Each paged
+   table renders a .pager bar into its own <div class="pager-slot">. */
+const PAGE_SIZES=[10,20,50,100,200];
+const PAGE_TABLES=Object.create(null);
+
+function definePaged(tableId, opts){
+  opts=opts||{};
+  let size=opts.defaultSize||50;
+  try{
+    const saved=+localStorage.getItem('bp.pgsize.'+tableId);
+    if(PAGE_SIZES.includes(saved)) size=saved;   // remember per user, per table
+  }catch(e){}
+  PAGE_TABLES[tableId]={size:size, page:1, rerender:opts.rerender||null};
+}
+function paginateRows(tableId, rows){
+  rows=rows||[];
+  const t=PAGE_TABLES[tableId];
+  if(!t) return {slice:rows, total:rows.length, page:1, pages:1, size:rows.length||1};
+  const total=rows.length;
+  const pages=Math.max(1, Math.ceil(total/t.size));
+  if(t.page>pages) t.page=pages;
+  if(t.page<1) t.page=1;
+  const start=(t.page-1)*t.size;
+  return {slice:rows.slice(start, start+t.size), total:total, page:t.page, pages:pages, size:t.size};
+}
+function pagerRerender(tableId){
+  const t=PAGE_TABLES[tableId];
+  if(t && t.rerender){ t.rerender(); return; }
+  const st=SORT_TABLES[tableId];
+  if(st && st.rerender) st.rerender();
+}
+function setPagerPage(tableId, p){
+  const t=PAGE_TABLES[tableId]; if(!t) return;
+  t.page=p;
+  pagerRerender(tableId);
+}
+function setPagerSize(tableId, n){
+  const t=PAGE_TABLES[tableId]; if(!t) return;
+  if(!PAGE_SIZES.includes(n)) return;
+  t.size=n; t.page=1;
+  try{ localStorage.setItem('bp.pgsize.'+tableId, String(n)); }catch(e){}
+  pagerRerender(tableId);
+}
+/* Filters and fresh data should land on page 1 again; sorting must not. */
+function resetPager(tableId){
+  const t=PAGE_TABLES[tableId]; if(t) t.page=1;
+}
+function pagerBar(tableId, info){
+  const t=PAGE_TABLES[tableId]; if(!t || !info || !info.total) return '';
+  const zh=LANG!=='en';
+  const pg=info.page, pages=info.pages;
+  const btn=(label,page,dis,cur)=>`<button type="button" class="pg-btn${cur?' cur':''}"
+    data-pg-table="${tableId}" data-pg="${page}"${dis?' disabled':''}>${label}</button>`;
+  // compact window: first, last, and ±2 around the current page
+  const win=[];
+  for(let i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-pg)<=2) win.push(i);
+  }
+  const nums=[]; let last=0;
+  win.forEach(i=>{
+    if(last && i-last>1) nums.push('<span class="pg-dots">…</span>');
+    nums.push(btn(String(i), i, false, i===pg));
+    last=i;
+  });
+  const from=(pg-1)*info.size+1, to=Math.min(pg*info.size, info.total);
+  const sizeOpts=PAGE_SIZES.map(n=>`<option value="${n}"${n===info.size?' selected':''}>${n}</option>`).join('');
+  return `<div class="pager">
+    <span class="pg-info">${zh?'显示 ':''}${from}–${to}${zh?' / 共 ':''} ${info.total}${zh?' 条':''}</span>
+    <span class="pg-nav">${btn('‹', pg-1, pg<=1)}${nums.join('')}${btn('›', pg+1, pg>=pages)}</span>
+    <label class="pg-size">${zh?'每页':'Per page'}
+      <select data-pg-size="${tableId}">${sizeOpts}</select>
+    </label>
+  </div>`;
+}
+
 /* ---------- register every sortable list ---------- */
 function initSorting(){
+  definePaged('resTable', {defaultSize:50, rerender:()=>drawRows()});
+  definePaged('poolTable', {defaultSize:50, rerender:()=>renderPool(POOL)});
+  definePaged('plTable', {defaultSize:50, rerender:()=>renderPlacements()});
   defineSortable('resTable', {                       // 分析结果
     accessor: {
       domain:    {get:p=>p.domain||'', dir:1},
@@ -1699,9 +1795,11 @@ function drawRows(){
       ? `No candidates found. Check the keyword, or add a seed library at seeds/seed-${(CENTER||'domain')}.json.`
       : `未找到候选。请检查关键词，或为该域名在 seeds/seed-${(CENTER||'domain')}.json 添加种子库。`;
     $('tbody').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--muted)">${esc(hint)}</td></tr>`;
+    $('resPager').innerHTML='';
     return;
   }
-  $('tbody').innerHTML=rows.map(p=>{
+  const pg=paginateRows('resTable', rows);
+  $('tbody').innerHTML=pg.slice.map(p=>{
     const val=p.valid?`<span class="pill ok">✓ ${p.http_status}</span>`
                      :`<span class="pill no">✗ ${p.http_status||p.valid_error||'dead'}</span>`;
     const gap=p.is_competitor?`<span class="pill comp">${LANG==='en'?'Competitor':'竞品'}</span>`
@@ -1716,7 +1814,7 @@ function drawRows(){
     // ZH mode keeps the Chinese primary + English secondary comparison.
     const tl = LANG==='en' ? (p.type_label_en||tlabel(p.type_key)||'')
                            : (p.type_label_zh||tlabel(p.type_key)||'');
-    return `<tr>
+    return `    <tr>
       <td><a href="${p.url}" target="_blank" rel="noopener">${p.domain}</a><div class="note">${p.url}</div></td>
       <td>${esc(tl)}${p.source==='competitor_backlink'
             ?`<div><span class="pill comp" title="${esc(p.note_en||'')}">${esc(I18N[LANG].badge_via)}: ${esc((p.via_competitors||[]).join(', '))}</span></div>`
@@ -1728,6 +1826,7 @@ function drawRows(){
       <td class="note">${esc(LANG==='en' ? (p.note_en||p.note||'') : (p.note||''))}</td>
     </tr>`;
   }).join('');
+  $('resPager').innerHTML=pagerBar('resTable', pg);
 }
 
 /* ---------- Pool ---------- */
@@ -1899,7 +1998,9 @@ function renderPool(domains){
     + (wlN ? (LANG==='en'? ' · '+wlN+' whitelisted' : ' · 白名单 '+wlN) : '');
   $('existingMsg').textContent = bad ? (LANG==='en'? (bad+' need re-check'): (bad+' 条需复核')) : (LANG==='en'?'all checked':'全部已校验');
   const rows=sortRows('poolTable', shown);
-  $('poolBody').innerHTML=rows.map(poolRow).join('');
+  const pg=paginateRows('poolTable', rows);
+  $('poolBody').innerHTML=pg.slice.map(poolRow).join('');
+  $('poolPager').innerHTML=pagerBar('poolTable', pg);
   $('poolTable').classList.remove('hidden');
   applySortMarks('poolTable');
   renderPoolTree(all);
@@ -2004,7 +2105,8 @@ function renderPlacements(){
     +(LANG==='en'?' · excluded ':' · 已排除 ')+(s.suppressed||0)
     +(s.imported?(LANG==='en'?' · imported ':' · 导入 ')+s.imported:'')
     +((PL_RC.due||0)?(LANG==='en'?' · due for recheck ':' · 待复查 ')+PL_RC.due:'');
-  const rows=PLACEMENTS.map(p=>{
+  const pg=paginateRows('plTable', PLACEMENTS);
+  const rows=pg.slice.map(p=>{
     const v=p.verify||{}, st=p.state||'';
     const act=(st==='claimed'||st==='submitted')
       ? `<button class="pl-row-live" data-id="${escAttr(p.id)}" style="padding:3px 10px;font-size:12px">${plLabel('pl_live')}</button>`
@@ -2026,6 +2128,7 @@ function renderPlacements(){
   $('plTable').classList.remove('hidden');
   $('plBody').innerHTML = rows ||
     `<tr><td colspan="6" class="note">${esc(plLabel('pl_empty'))}</td></tr>`;
+  $('plPager').innerHTML=pagerBar('plTable', pg);
 }
 async function plRecheck(){
   setPlMsg('Rechecking links…','复查中…');
@@ -2356,6 +2459,7 @@ async function analyze(){
       body:JSON.stringify(payload())});
     const data=await res.json();
     if(!res.ok||data.ok===false) throw new Error(data.error||('HTTP '+res.status));
+    resetPager('resTable');          // fresh analysis -> start on page 1
     render(data);
     loadOverview();
     // persist=1 merges into the pool, so the Pool tab / ledger must not stay stale.
@@ -2402,7 +2506,10 @@ $('tipsToggle').addEventListener('click', async ()=>{
   if(b.classList.contains('hidden')){ await loadTips(); b.classList.remove('hidden'); }
   else { b.classList.add('hidden'); }
 });
-['f_type','f_min','f_gap','f_valid'].forEach(id=>$(id).addEventListener('input',drawRows));
+['f_type','f_min','f_gap','f_valid'].forEach(id=>$(id).addEventListener('input',()=>{
+  resetPager('resTable');          // a changed filter is a new result set
+  drawRows();
+}));
 $('run').addEventListener('click',analyze);
 $('csv').addEventListener('click',downloadCsv);
 $('poolLoad').addEventListener('click',loadPool);
@@ -2462,23 +2569,27 @@ $('poolTree').addEventListener('click',(ev)=>{
     const allOn=types.length && types.every(t=>POOL_FILTER.types.has(t));
     types.forEach(t=>{ if(allOn) POOL_FILTER.types.delete(t); else POOL_FILTER.types.add(t); });
   }
+  resetPager('poolTable');
   renderPool(POOL||[]);
 });
 $('poolTypeChips').addEventListener('click',(ev)=>{
   const c=ev.target.closest('.chip'); if(!c) return;
   const t=c.dataset.type;
   if(POOL_FILTER.types.has(t)) POOL_FILTER.types.delete(t); else POOL_FILTER.types.add(t);
+  resetPager('poolTable');
   renderPool(POOL||[]);
 });
 document.querySelectorAll('.st-acq,.st-gap').forEach(el=>el.addEventListener('change',()=>{
   POOL_FILTER.acquired=document.querySelector('.st-acq').checked;
   POOL_FILTER.gap=document.querySelector('.st-gap').checked;
+  resetPager('poolTable');
   renderPool(POOL||[]);
 }));
 $('poolFilterReset').addEventListener('click',()=>{
   POOL_FILTER.types.clear(); POOL_FILTER.acquired=true; POOL_FILTER.gap=true;
   document.querySelector('.st-acq').checked=true;
   document.querySelector('.st-gap').checked=true;
+  resetPager('poolTable');
   renderPool(POOL||[]);
 });
 $('schedSave').addEventListener('click',schedSave);
@@ -2507,6 +2618,16 @@ $('wlChips').addEventListener('click', async (ev)=>{
 document.addEventListener('click', (ev)=>{
   const b=ev.target.closest('.wl-toggle'); if(!b) return;
   toggleWhitelist(b.dataset.dom, b.dataset.wl==='1');
+});
+// Pager bars are re-rendered on every page turn, so their events are delegated
+// at document level too (one handler serves all paged tables).
+document.addEventListener('click', (ev)=>{
+  const b=ev.target.closest('.pg-btn'); if(!b || b.disabled) return;
+  setPagerPage(b.dataset.pgTable, +b.dataset.pg);
+});
+document.addEventListener('change', (ev)=>{
+  const s=ev.target.closest('select[data-pg-size]'); if(!s) return;
+  setPagerSize(s.dataset.pgSize, +s.value);
 });
 initSorting();
 initTabs();
