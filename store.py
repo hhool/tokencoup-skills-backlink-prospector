@@ -650,6 +650,7 @@ def domain_list(store):
             "acquired": acquired,
             "is_gap": (not acquired) and (not listed),
             "whitelisted": listed,
+            "is_competitor": bool(e.get("is_competitor")),
             "source": e.get("source", "seed"),
             "via_competitors": e.get("via_competitors") or [],
             "first_seen": e.get("first_seen"),
