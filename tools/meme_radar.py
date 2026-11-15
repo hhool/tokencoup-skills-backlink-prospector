@@ -117,7 +117,10 @@ def src_know_your_meme():
     "Attention Required" challenge page in curl, headless browser, AND the
     user's real Chrome). Not a UA/fingerprint issue; an IP-reputation block.
     Source stays wired here and may remain unavailable; rescue requires a
-    different egress network, not better client plumbing.
+    residential-quality egress, not better client plumbing. Retested
+    2026-11-15 evening: routing knowyourmeme.com through a US datacenter
+    node of the proxy pool is ALSO 403 — the airport's datacenter ranges
+    are blocked wholesale, same as GitHub Actions runners.
     """
     html = _fetch("https://knowyourmeme.com/trendingpage")
     out = []
