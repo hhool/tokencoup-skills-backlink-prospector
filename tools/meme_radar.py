@@ -120,7 +120,10 @@ def src_know_your_meme():
     residential-quality egress, not better client plumbing. Retested
     2026-11-15 evening: routing knowyourmeme.com through a US datacenter
     node of the proxy pool is ALSO 403 — the airport's datacenter ranges
-    are blocked wholesale, same as GitHub Actions runners.
+    are blocked wholesale, same as GitHub Actions runners and Fly.io
+    (sin region, verified via ssh console 2026-11-15). Egress-dependence
+    cuts both ways: 9gag is 200 from GH Actions but 403 from Fly sin —
+    revalidate ALL sources whenever the fetch egress changes.
     """
     html = _fetch("https://knowyourmeme.com/trendingpage")
     out = []
