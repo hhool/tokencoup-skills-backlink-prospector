@@ -1,0 +1,48 @@
+# Meme radar (PRD §0.5 G3): daily 5-source trend scan -> on-site hit check ->
+# action board, committed to radar/ in this repo. Independent of the prospector
+# tick on purpose (PRD §9 Q5): a scraping failure here must not stall the
+# quota engine. Scheduling note: the local launchd attempt was blocked by
+# macOS TCC (repo lives under ~/Desktop, launchd-spawned processes get
+# "Operation not permitted"), so the schedule lives here. KYM/TikTok may stay
+# "unavailable" from datacenter IPs (bot-gated); the other three sources carry
+# the run.
+
+name: meme-radar
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 09:00 Beijing / 01:00 UTC, daily
+  workflow_dispatch: {} # manual run for verification
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meme-radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run radar (stdlib only, no deps)
+        run: python3 tools/meme_radar.py --limit 25 --out-dir radar
+
+      - name: Commit the daily board
+        run: |
+          git config user.name "meme-radar bot"
+          git config user.email "links-cc@soundbuttons.cc"
+          git add radar/
+          if git diff --cached --quiet; then
+            echo "No changes — board identical to yesterday."
+          else
+            git commit -m "meme-radar: $(date -u +%F) board"
+            git push
+          fi
