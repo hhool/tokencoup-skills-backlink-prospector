@@ -1197,7 +1197,17 @@ def section_k():
         full = fresh()
         add_pool(full, ["f%d.example" % i for i in range(st.REFILL_THRESHOLD + 5)])
         rf = st.refill_state(full, center)
-        check("a stocked shelf is never due", rf["due"] is False and rf["low"] is False,
+        # The shelf target follows the daily quota (default 100), so 35 rows is
+        # still a low shelf even though it clears the fixed 30 floor.
+        check("the shelf target follows the daily quota, not the fixed floor",
+              rf["threshold"] == max(st.REFILL_THRESHOLD, st.DEFAULT_DAILY_QUOTA)
+              and rf["low"] is True,
+              (rf["threshold"], rf["low"], rf["inventory"]))
+        add_pool(full, ["g%d.example" % i
+                        for i in range(max(st.REFILL_THRESHOLD, st.DEFAULT_DAILY_QUOTA) + 5)])
+        rf = st.refill_state(full, center)
+        check("a shelf stocked to the quota is never due",
+              rf["due"] is False and rf["low"] is False,
               (rf["due"], rf["inventory"], rf["threshold"]))
 
         # ---------------- run_refill (server) with an injected runner ----------------
@@ -1313,7 +1323,8 @@ def section_k():
             code, body = http("/api/store?domain=%s" % api_center)
             check("/api/store carries refill state and the diff",
                   code == 200 and "refill" in body and "diff" in body
-                  and body["refill"].get("threshold") == st.REFILL_THRESHOLD,
+                  and body["refill"].get("threshold")
+                      == max(st.REFILL_THRESHOLD, st.DEFAULT_DAILY_QUOTA),
                   (code, list(body.keys())[:6]))
             code, body = http("/api/refill", {"center_domain": api_center})
             check("/api/refill refuses a domain with no profile",

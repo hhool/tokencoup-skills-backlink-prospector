@@ -914,6 +914,12 @@ def refill_state(store, center_domain=None, quota=None, now=None):
     if quota is None:
         quota = configured
     inv = inventory_count(store)
+    # The shelf exists to feed the daily batch, so its low-water mark must be
+    # judged against the quota, not a small fixed constant: with the default
+    # 100/day quota a fixed 30 threshold stops restocking at ~30 candidates and
+    # the queue can then never actually claim 100. The env knob survives as a
+    # floor for tiny quotas (and can still raise the target above the quota).
+    threshold = max(REFILL_THRESHOLD, int(quota or 0))
     last = {}
     for rec in reversed(store.get("refills") or []):
         if isinstance(rec, dict) and rec.get("ts"):
@@ -939,21 +945,22 @@ def refill_state(store, center_domain=None, quota=None, now=None):
             # store) must not produce a cooldown longer than the configured one.
             age_h = max(0.0, (dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 3600.0)
             cooldown_left = max(0.0, round(cooldown_h - age_h, 2))
-    low = inv < REFILL_THRESHOLD
+    low = inv < threshold
     due = bool(low and cooldown_left <= 0)
     if not low:
-        reason = "inventory %d >= threshold %d" % (inv, REFILL_THRESHOLD)
+        reason = "inventory %d >= threshold %d" % (inv, threshold)
     elif cooldown_left > 0:
         reason = "cooldown %.1fh left%s" % (cooldown_left,
                                             "" if backoff == 1 else " (x%d backoff)" % backoff)
     else:
-        reason = "inventory %d < threshold %d" % (inv, REFILL_THRESHOLD)
+        reason = "inventory %d < threshold %d" % (inv, threshold)
     return {
         "center_domain": center_domain,
         "inventory": inv,
         "quota": quota,
         "supply_gap": max(0, quota - inv),
-        "threshold": REFILL_THRESHOLD,
+        "threshold": threshold,
+        "threshold_env": REFILL_THRESHOLD,
         "cooldown_h": cooldown_h,
         "base_cooldown_h": REFILL_COOLDOWN_H,
         "backoff": backoff,
@@ -967,14 +974,16 @@ def refill_state(store, center_domain=None, quota=None, now=None):
     }
 
 
-def mark_refill(store, kind="auto", available=None, added=None, note="", reason=""):
+def mark_refill(store, kind="auto", available=None, added=None, note="", reason="",
+                threshold=None):
     """Book one refill attempt. Persisted so a restart cannot reset the cooldown."""
     rows = store.setdefault("refills", [])
     if not isinstance(rows, list):
         rows = store["refills"] = []
     rec = {"ts": _now(), "kind": str(kind or "auto")[:20],
            "available": available, "added": added,
-           "threshold": REFILL_THRESHOLD, "cooldown_h": REFILL_COOLDOWN_H,
+           "threshold": int(threshold) if threshold else REFILL_THRESHOLD,
+           "cooldown_h": REFILL_COOLDOWN_H,
            "reason": str(reason or "")[:140], "note": str(note or "")[:200]}
     rows.append(rec)
     del rows[:-REFILL_KEEP]

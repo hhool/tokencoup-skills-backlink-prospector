@@ -260,6 +260,7 @@ def run_refill(params, quota=None, kind="auto", runner=None):
     after = st.inventory_count(pool)
     booked = st.mark_refill(pool, kind=kind, available=after, added=after - before,
                             reason=state.get("reason"),
+                            threshold=state.get("threshold"),
                             note="%+d candidates" % (after - before))
     st.save_store(pool, center or None)
     return {"ok": True, "center_domain": center, "kind": kind,
