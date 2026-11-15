@@ -2347,6 +2347,11 @@ async function analyze(){
   hideErr();
   $('run').disabled=true; setBusy('run','Analyzing…','分析中…');
   try{
+    // Persist the form first: editing competitors (or keywords) and hitting
+    // Analyze is the natural moment the operator considers the change made.
+    // Without this the write only happened on domain switch or refill, and
+    // the next run silently reverted to the stale profile.
+    await saveProfile(CENTER);
     const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload())});
     const data=await res.json();
