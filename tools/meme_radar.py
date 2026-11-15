@@ -110,7 +110,15 @@ _KYM_LINK_RE = re.compile(r'href="(/memes/[a-z0-9-]+)"[^>]*>([^<]{2,60})<', re.I
 
 
 def src_know_your_meme():
-    """KYM trending page: trending meme entry links."""
+    """KYM trending page: trending meme entry links.
+
+    MEASURED 2026-11-15: Cloudflare hard-blocks this site for BOTH our egress
+    paths — proxy pool exit 103.151.172.x AND direct home connection (403
+    "Attention Required" challenge page in curl, headless browser, AND the
+    user's real Chrome). Not a UA/fingerprint issue; an IP-reputation block.
+    Source stays wired here and may remain unavailable; rescue requires a
+    different egress network, not better client plumbing.
+    """
     html = _fetch("https://knowyourmeme.com/trendingpage")
     out = []
     for slug, label in _KYM_LINK_RE.findall(html):
@@ -130,8 +138,13 @@ def src_know_your_meme():
 def src_tiktok_hashtags():
     """Best effort: TikTok Creative Center popular hashtags.
 
-    The page is JS-gated and the internal API moves; this source is allowed to
-    stay unavailable without affecting the run (PRD §9 Q5).
+    MEASURED 2026-11-15: the SPA page loads in a real browser and shows the
+    US top-3 hashtags anonymously (#veteransday / #mymoonmyman /
+    #lamansionvip that day); "View more" needs login. The underlying JSON API
+    requires signed headers — path variants under /creative/creativeCenter/api/
+    return SPA HTML or need signatures, so a stdlib fetch cannot reach it.
+    Keep this source best-effort in CI; a browser-assisted top-up (3 rows max,
+    run where a real browser exists) is the only working retrieval path.
     """
     url = (
         "https://ads.tiktok.com/creative_center/api/v2/hashtag/list?"
