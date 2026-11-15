@@ -216,6 +216,11 @@ def unmark_existing(store, domains):
     return removed
 
 
+# Operator cap: a competitor list is a curation act, not a dump — past ~32
+# hosts the "auto-exclude" pass would swamp the real candidate supply.
+COMPETITOR_MAX = 32
+
+
 def sync_competitors(store, center_domain=None):
     """Reconcile the pool against the profile's competitor list.
 
@@ -224,11 +229,11 @@ def sync_competitors(store, center_domain=None):
     every pool row matching a competitor host as `is_competitor`, so the
     counts stop counting a site you can never place a link on.
 
-    Deliberately additive-only (naming a competitor then removing it does not
-    un-mark rows — an old link prospect does not become placeable again), and
-    deliberately NOT the whitelist: a competitor means "no placement possible",
-    the whitelist means "exists but excluded from statistics". Conflating them
-    would make the numbers mean two things at once.
+    Deliberately additive-only in this pass (the explicit removal lever is
+    remove_competitor, driven from a pool row's button), and deliberately NOT
+    the whitelist: a competitor means "no placement possible", the whitelist
+    means "exists but excluded from statistics". Conflating them would make
+    the numbers mean two things at once.
 
     Returns the number of rows newly marked.
     """
@@ -248,6 +253,68 @@ def sync_competitors(store, center_domain=None):
             entry["competitor_marked_at"] = _now()
             marked += 1
     return marked
+
+
+def _pool_rows_matching(store, host):
+    """Yield (domain, entry) for pool rows under `host` or its subdomains."""
+    for d, entry in (store.get("domains") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        h = _bare_domain(d)
+        if h and (h == host or h.endswith("." + host)):
+            yield d, entry
+
+
+def add_competitor(store, center_domain, domain):
+    """Name one more competitor host (the pool row's 加入竞品 button).
+
+    Persists to the profile (so the auto-exclude pass agrees on reload) and
+    marks the matching pool rows immediately, without waiting for the next
+    analysis. Honors COMPETITOR_MAX.
+    Returns the number of rows newly marked.
+    """
+    host = _bare_domain(domain)
+    if not host:
+        raise ValueError("invalid competitor domain")
+    prof = load_profile(center_domain)
+    comps = [c for c in (prof.get("competitors") or []) if _bare_domain(c)]
+    if not any(_bare_domain(c) == host for c in comps):
+        if len(comps) >= COMPETITOR_MAX:
+            raise ValueError("competitor list is full (%d max)" % COMPETITOR_MAX)
+        comps.append(host)
+        save_profile(center_domain, prof.get("keywords") or [], comps,
+                     note=prof.get("note") or "")
+    marked = 0
+    for d, entry in _pool_rows_matching(store, host):
+        if not entry.get("is_competitor"):
+            entry["is_competitor"] = True
+            entry["competitor_marked_at"] = _now()
+            marked += 1
+    return marked
+
+
+def remove_competitor(store, center_domain, domain):
+    """Drop a host from the competitor list (the pool row's 移除竞品 button).
+
+    The reverse lever the operator asked for: the host leaves the profile and
+    its pool rows become placeable candidates again, so counts and the queue
+    recover on the next read. Returns the number of rows un-marked.
+    """
+    host = _bare_domain(domain)
+    if not host:
+        raise ValueError("invalid competitor domain")
+    prof = load_profile(center_domain)
+    comps = [c for c in (prof.get("competitors") or []) if _bare_domain(c)]
+    kept = [c for c in comps if _bare_domain(c) != host]
+    if len(kept) != len(comps):
+        save_profile(center_domain, prof.get("keywords") or [], kept,
+                     note=prof.get("note") or "")
+    unmarked = 0
+    for d, entry in _pool_rows_matching(store, host):
+        if entry.get("is_competitor"):
+            entry["is_competitor"] = False
+            unmarked += 1
+    return unmarked
 
 
 # ---------------------------------------------------------------------------
@@ -1136,6 +1203,9 @@ def save_profile(center_domain, keywords, competitors, note=None):
     if not p:
         raise ValueError("invalid center_domain")
     kws, comps = _as_list(keywords), _as_list(competitors)
+    # Cap here too: the row-level add_competitor enforces it, but a hand-typed
+    # 40-line form must not smuggle the list past the limit on save.
+    comps = comps[:COMPETITOR_MAX]
     if not (kws or comps or (note or "").strip()):
         return {"version": "1.0.0", "center_domain": center_domain,
                 "keywords": kws, "competitors": comps, "note": "",

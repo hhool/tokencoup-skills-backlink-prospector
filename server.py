@@ -580,7 +580,7 @@ class Handler(BaseHTTPRequestHandler):
                         "/api/placements/transition",
                         "/api/placements/suppress",
                         "/api/whitelist", "/api/settings", "/api/refill",
-                        "/api/cron/tick"):
+                        "/api/competitors", "/api/cron/tick"):
             return self._error(404, "unknown path")
         try:
             # Token gate before anything else: an unauthorised caller should not
@@ -670,6 +670,32 @@ class Handler(BaseHTTPRequestHandler):
                                         "changed": changed,
                                         "whitelist": st.whitelist_rows(pool),
                                         "count": len(st.whitelist_map(pool)),
+                                        "stats": st.store_stats(pool),
+                                        "center_domain": center_domain})
+
+            if path == "/api/competitors":
+                # Row-level competitor levers (pool table buttons): name or
+                # un-name one host, then reconcile the pool rows in place so
+                # counts and the queue move without waiting for an analysis.
+                center_domain = (params.get("center_domain") or params.get("domain") or "").strip().lower()
+                if not center_domain:
+                    raise ValueError("center_domain is required")
+                domain = (params.get("domain") or "").strip()
+                op = str(params.get("op") or "").strip().lower()
+                if not domain:
+                    raise ValueError("domain is required")
+                safe_text(domain, 300)
+                pool = st.load_store(center_domain)
+                if op == "add":
+                    changed = st.add_competitor(pool, center_domain, domain)
+                elif op == "remove":
+                    changed = st.remove_competitor(pool, center_domain, domain)
+                else:
+                    raise ValueError("op must be 'add' or 'remove'")
+                st.save_store(pool, center_domain)
+                return self._json(200, {"ok": True, "op": op, "changed": changed,
+                                        "competitors": st.load_profile(center_domain).get("competitors") or [],
+                                        "competitor_max": st.COMPETITOR_MAX,
                                         "stats": st.store_stats(pool),
                                         "center_domain": center_domain})
 

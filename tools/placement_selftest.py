@@ -1560,6 +1560,47 @@ def section_m():
         st.sync_competitors(s3, center)
         check("the pass marks without touching the whitelist map",
               "myinstants.com" in st.whitelist_map(s3), st.whitelist_map(s3))
+
+        # row-level levers: add_competitor names + marks in one step, and the
+        # explicit remove_competitor is the reverse (rows become supply again)
+        s4 = fresh()
+        add_pool(s4, ["quora.com", "blog.quora.com", "other.example"])
+        st.add_competitor(s4, center, "quora.com")
+        prof = st.load_profile(center)
+        check("add_competitor persists the host to the profile",
+              "quora.com" in (prof.get("competitors") or []), prof.get("competitors"))
+        check("add_competitor marks the host and its subdomains",
+              s4["domains"]["quora.com"].get("is_competitor")
+              and s4["domains"]["blog.quora.com"].get("is_competitor")
+              and not s4["domains"]["other.example"].get("is_competitor"),
+              {d: s4["domains"][d].get("is_competitor") for d in s4["domains"]})
+        st.remove_competitor(s4, center, "quora.com")
+        prof2 = st.load_profile(center)
+        check("remove_competitor drops the host from the profile",
+              "quora.com" not in (prof2.get("competitors") or []), prof2.get("competitors"))
+        check("remove_competitor un-marks the rows so they count as supply again",
+              not s4["domains"]["quora.com"].get("is_competitor")
+              and not s4["domains"]["blog.quora.com"].get("is_competitor")
+              and st.inventory_count(s4) == 3,
+              st.inventory_count(s4))
+        # the cap holds on the row-level lever and on a hand-typed form save
+        full = fresh()
+        add_pool(full, ["cap%d.example" % i for i in range(st.COMPETITOR_MAX + 3)])
+        raised = False
+        for i in range(st.COMPETITOR_MAX + 3):
+            try:
+                st.add_competitor(full, center, "cap%d.example" % i)
+            except ValueError:
+                raised = True
+                break
+        check("add_competitor refuses past the cap", raised and
+              len(st.load_profile(center).get("competitors") or []) == st.COMPETITOR_MAX,
+              len(st.load_profile(center).get("competitors") or []))
+        st.save_profile(center, ["kw"], ["over%d.example" % i
+                                         for i in range(st.COMPETITOR_MAX + 5)])
+        check("save_profile clamps an oversized form to the cap",
+              len(st.load_profile(center).get("competitors") or []) == st.COMPETITOR_MAX,
+              len(st.load_profile(center).get("competitors") or []))
     finally:
         try:
             path = st.get_store_path(center)

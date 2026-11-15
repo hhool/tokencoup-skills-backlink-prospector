@@ -325,7 +325,7 @@
       <p class="note" id="profileNote" style="margin:8px 0 0"></p>
       <div class="grid" style="margin-top:14px">
         <div>
-          <label><span data-i18n="lbl_competitors">竞品域名 / Competitors（逗号或换行分隔，自动排除）</span></label>
+          <label><span data-i18n="lbl_competitors">竞品域名 / Competitors（逗号或换行分隔，自动排除，最多 32 个）</span></label>
           <textarea id="competitors" placeholder="myinstants.com&#10;voicemod.net"></textarea>
         </div>
         <div>
@@ -460,6 +460,7 @@
             <label><input type="checkbox" class="st-gap" checked> <span data-i18n="flt_gap">缺口 Gap</span></label>
             <label><input type="checkbox" class="st-comp" checked> <span data-i18n="flt_comp">竞品 Competitor</span></label>
             <label><input type="checkbox" class="st-wl" checked> <span data-i18n="flt_wl">白名单 Whitelist</span></label>
+            <label><input type="checkbox" class="st-valid" checked> <span data-i18n="flt_valid">校验有效 Valid (2xx)</span></label>
           </div>
           <div class="tree-head" style="margin-top:12px"><span data-i18n="flt_type">类型筛选（可多选）</span></div>
           <div class="chips" id="poolTypeChips"></div>
@@ -711,6 +712,7 @@ const I18N = {
     wl_none:'还没有白名单域名', wl_added:'已加入 {n} 个', wl_removed:'已移出 {n} 个',
     wl_comp_auto:'竞品（自动排除，不计统计）', wl_comp_tip:'来自档案竞品列表，自动标记，不计入候选与统计',
     wl_on:'加入白名单', wl_off:'移出白名单', wl_pill:'白名单',
+    comp_add:'加入竞品', comp_rm:'移除竞品',
     q_note:'批次 {id} · 本批 {b} 条 · 库存 {i} 条。缺口 = 配额 − 本批；库存不够时先去「分析」跑一次，或补一份 harvest 文件。',
     q_note_short:'批次 {id} · 本批 {b} 条 · 库存 {i} 条（配额 {q}）。缺口只能靠跑一次分析或补一份 harvest 文件来填。',
     q_claimed_msg:'已领取 {n} 条，被拦截 {b} 条（已在台账 / 已排除 / 冷却中）',
@@ -720,7 +722,7 @@ const I18N = {
     ov_recip_title:'互链占比监控', ov_recip_sub:'互链超过 30% 阈值即触发 link scheme 风险告警（互链类型已与 directory 分开统计）',
     ov_obtain_title:'各类型可获取性对比（越高越易拿）', ov_obtain_sub:'来源：类型说明 Tips（obtain_score，满分 30）',
     lbl_domain:'目标域名 / Target domain', lbl_keywords:'品类关键词 / Niche keywords（逗号分隔）',
-    lbl_competitors:'竞品域名 / Competitors（逗号或换行分隔，自动排除）', lbl_existing:'已有外链域名 / Existing backlinks（每行一个；仅用于本次分析的缺口差分。「见过」≠「已拥有」，持久标记请到「外链池」页导入）',
+    lbl_competitors:'竞品域名 / Competitors（逗号或换行分隔，自动排除，最多 32 个）', lbl_existing:'已有外链域名 / Existing backlinks（每行一个；仅用于本次分析的缺口差分。「见过」≠「已拥有」，持久标记请到「外链池」页导入）',
     c_bing:'Bing 实时发现', c_tranco:'Tranco 权威信号', c_persist:'并入外链池',
     btn_analyze:'分析', btn_csv:'下载 CSV',
     c_cand:'候选地址 Candidates', c_valid:'有效地址 Valid (HTTP reachable)', c_gap:'缺口 Gap (未拥有)', c_gapv:'缺口且有效 Gap & valid',
@@ -750,6 +752,7 @@ const I18N = {
     tree_title:'目录树 · 类型（点击筛选，可多选）', tree_legend:'计数：总数 / 已拥有 / 缺口',
     flt_status:'状态筛选', flt_acquired:'已拥有 Acquired', flt_gap:'缺口 Gap',
     flt_comp:'竞品 Competitor', flt_wl:'白名单 Whitelist',
+    flt_valid:'校验有效 Valid (2xx)',
     flt_type:'类型筛选（可多选）', flt_reset:'重置筛选',
     ph_domain:'域名', ph_type:'类型', ph_auth:'权威', ph_prio:'优先级', ph_check:'校验', ph_status:'状态', ph_times:'发现次数', ph_seen:'首见 / 末见', ph_edit:'编辑', ph_placement:'投放',
     pl_title:'投放台账 · 已上线的投放位不再复用', pl_hint:'「领取」占用一个投放位；「登记已上线」必须填写落地页与验证方式作为证据。上线后该位永久锁定，同域名 90 天内不再领取其它位。',
@@ -797,6 +800,7 @@ const I18N = {
     wl_none:'No whitelisted domains yet', wl_added:'{n} added', wl_removed:'{n} removed',
     wl_comp_auto:'Competitors (auto-excluded from stats)', wl_comp_tip:'Marked automatically from the profile competitor list; never counted as candidates or stats',
     wl_on:'Whitelist', wl_off:'Un-whitelist', wl_pill:'Whitelisted',
+    comp_add:'Mark competitor', comp_rm:'Unmark competitor',
     q_note:'Batch {id} · {b} in this batch · {i} in inventory. Gap = quota − batch; when inventory is short, run an analysis or ship a harvest file.',
     q_note_short:'Batch {id} · {b} in this batch · {i} in inventory (quota {q}). Only a fresh analysis or a harvest file can close the gap.',
     q_claimed_msg:'Claimed {n}, blocked {b} (already in ledger / suppressed / cooling down)',
@@ -806,7 +810,7 @@ const I18N = {
     ov_recip_title:'Reciprocal ratio monitor', ov_recip_sub:'Above 30% triggers a link-scheme risk warning (reciprocal is tracked separately from directory)',
     ov_obtain_title:'Obtainability by type (higher = easier)', ov_obtain_sub:'Source: Types & Weights Tips (obtain_score, out of 30)',
     lbl_domain:'Target domain', lbl_keywords:'Niche keywords (comma-separated)',
-    lbl_competitors:'Competitors (comma/newline, auto-excluded)', lbl_existing:'Existing backlinks (one domain per line; used only for the current run gap diff. Seen is not owned — import persistently on the Pool tab)',
+    lbl_competitors:'Competitors (comma/newline, auto-excluded, max 32)', lbl_existing:'Existing backlinks (one domain per line; used only for the current run gap diff. Seen is not owned — import persistently on the Pool tab)',
     c_bing:'Bing live discovery', c_tranco:'Tranco authority', c_persist:'Merge into pool',
     btn_analyze:'Analyze', btn_csv:'Download CSV',
     c_cand:'Candidates', c_valid:'Valid (HTTP reachable)', c_gap:'Gap (not owned)', c_gapv:'Gap & valid',
@@ -836,6 +840,7 @@ const I18N = {
     tree_title:'Type tree · click to filter (multi-select)', tree_legend:'Counts: total / acquired / gap',
     flt_status:'Status filter', flt_acquired:'Acquired', flt_gap:'Gap',
     flt_comp:'Competitor', flt_wl:'Whitelist',
+    flt_valid:'Valid check (2xx)',
     flt_type:'Type filter (multi-select)', flt_reset:'Reset filters',
     ph_domain:'Domain', ph_type:'Type', ph_auth:'Authority', ph_prio:'Priority', ph_check:'Check', ph_status:'Status', ph_times:'Times', ph_seen:'First / Last seen', ph_edit:'Edit', ph_placement:'Placement',
     pl_title:'Delivery ledger · live slots are never reused', pl_hint:'Claim reserves one slot; registering a live link requires a landing URL and a verification method as evidence. A live slot is locked permanently and no other slot on the same domain can be claimed for 90 days.',
@@ -1889,16 +1894,20 @@ const TYPE_GROUPS = [
   {key:'market',  zh:'商业与伙伴', en:'Partners & Marketplaces', types:['partner','directory','social']},
   {key:'recip',   zh:'互链（独立类型）', en:'Reciprocal (distinct type)', types:['reciprocal']}
 ];
-const POOL_FILTER = {types:new Set(), acquired:true, gap:true, competitors:true, whitelisted:true};
+const POOL_FILTER = {types:new Set(), acquired:true, gap:true, competitors:true,
+                     whitelisted:true, valid:true};
 
-/* Status facet with four toggles. A competitor host and a whitelisted domain
+/* Status facet with five toggles. A competitor host and a whitelisted domain
    are both "not placeable", so they get their own switches on top of the
-   acquired/gap pair; all four checked = show everything (the old behavior). */
+   acquired/gap pair; the valid switch hides dead rows (✗ 403/…) regardless of
+   category. All five checked = show everything (the old behavior). */
 function poolStatusOk(d){
-  if(d.is_competitor) return POOL_FILTER.competitors;
-  if(d.whitelisted) return POOL_FILTER.whitelisted;
-  if(POOL_FILTER.acquired && POOL_FILTER.gap) return true;   // both on = everything
-  return d.acquired ? POOL_FILTER.acquired : POOL_FILTER.gap;
+  if(d.is_competitor){ if(!POOL_FILTER.competitors) return false; }
+  else if(d.whitelisted){ if(!POOL_FILTER.whitelisted) return false; }
+  else if(!(POOL_FILTER.acquired && POOL_FILTER.gap)){
+    if(!(d.acquired ? POOL_FILTER.acquired : POOL_FILTER.gap)) return false;
+  }
+  return POOL_FILTER.valid || !!d.valid;   // dead rows hide when 校验有效 is off
 }
 function poolTypeOk(d){
   if(!POOL_FILTER.types.size) return true;
@@ -1976,6 +1985,8 @@ function poolRow(d){
     :`<button class="acq-toggle" data-dom="${escAttr(d.domain)}" data-acq="1" style="padding:3px 10px;font-size:12px">${LANG==='en'?'Mark owned':'标记已拥有'}</button>`;
   const wlBtn=`<button class="ghost wl-toggle" data-dom="${escAttr(d.domain)}" data-wl="${d.whitelisted?'0':'1'}"
       style="padding:3px 10px;font-size:12px;margin-top:4px">${d.whitelisted?esc(I18N[LANG].wl_off):esc(I18N[LANG].wl_on)}</button>`;
+  const compBtn=`<button class="ghost comp-toggle" data-dom="${escAttr(d.domain)}" data-op="${d.is_competitor?'remove':'add'}"
+      style="padding:3px 10px;font-size:12px;margin-top:4px">${esc(d.is_competitor?I18N[LANG].comp_rm:I18N[LANG].comp_add)}</button>`;
   const ps=d.placement_state||'';
   const pcls=d.suppressed?'no':(ps==='live'?'have':((ps==='lost'||ps==='rejected'||ps==='error')?'no':'gap'));
   const pstate=`<span class="pill ${pcls}">${esc(d.suppressed?plLabel('pl_st_suppressed'):plStateLabel(ps))}</span>`;
@@ -1992,7 +2003,7 @@ function poolRow(d){
     <td>${d.times_discovered||1}</td>
     <td class="note">${d.first_seen||''}<br>${d.last_seen||''}</td>
     <td>${pstate}</td>
-    <td>${btn}${use}${wlBtn}</td>
+    <td>${btn}${use}${wlBtn}${compBtn}</td>
   </tr>`;
 }
 function sortPoolRows(rows){
@@ -2025,8 +2036,22 @@ function renderPool(domains){
          ? (LANG==='en'?' · no status selected':' · 未选择状态') : '');
   }
 }
-async function toggleAcquired(domain, makeAcquired){
+/* Row-level competitor lever: name or un-name a host, then refresh every view
+   that shows competitor-derived numbers. The response carries the capped
+   profile list so the analyze form's textarea can be re-synced in place. */
+async function toggleCompetitor(domain, op){
   try{
+    const r=await fetch('/api/competitors',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({center_domain:CENTER, domain:domain, op:op})});
+    const d=await r.json();
+    if(!r.ok||d.ok===false) throw new Error(d.error||('HTTP '+r.status));
+    const ta=$('competitors');
+    if(ta) ta.value=(d.competitors||[]).join('\n');
+    await loadPool();
+    if($('tab-ov').classList.contains('active')) loadOverview();
+  }catch(e){ showErr('Competitor update failed: '+e.message, '竞品更新失败：'+e.message); }
+}
+async function toggleAcquired(domain, makeAcquired){  try{
     if(makeAcquired){
       await fetch('/api/store/sync-existing',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({domains:domain, center_domain:CENTER})});
@@ -2539,6 +2564,8 @@ $('chBody').addEventListener('click', (ev)=>{
 $('poolBody').addEventListener('click', (ev)=>{
   const b=ev.target.closest('.acq-toggle');
   if(b){ toggleAcquired(b.dataset.dom, b.dataset.acq==='1'); return; }
+  const c=ev.target.closest('.comp-toggle');
+  if(c){ toggleCompetitor(c.dataset.dom, c.dataset.op); return; }
   const u=ev.target.closest('.pl-use');
   if(u){
     $('plDomain').value=u.dataset.dom||'';
@@ -2591,21 +2618,23 @@ $('poolTypeChips').addEventListener('click',(ev)=>{
   resetPager('poolTable');
   renderPool(POOL||[]);
 });
-document.querySelectorAll('.st-acq,.st-gap,.st-comp,.st-wl').forEach(el=>el.addEventListener('change',()=>{
+document.querySelectorAll('.st-acq,.st-gap,.st-comp,.st-wl,.st-valid').forEach(el=>el.addEventListener('change',()=>{
   POOL_FILTER.acquired=document.querySelector('.st-acq').checked;
   POOL_FILTER.gap=document.querySelector('.st-gap').checked;
   POOL_FILTER.competitors=document.querySelector('.st-comp').checked;
   POOL_FILTER.whitelisted=document.querySelector('.st-wl').checked;
+  POOL_FILTER.valid=document.querySelector('.st-valid').checked;
   resetPager('poolTable');
   renderPool(POOL||[]);
 }));
 $('poolFilterReset').addEventListener('click',()=>{
   POOL_FILTER.types.clear(); POOL_FILTER.acquired=true; POOL_FILTER.gap=true;
-  POOL_FILTER.competitors=true; POOL_FILTER.whitelisted=true;
+  POOL_FILTER.competitors=true; POOL_FILTER.whitelisted=true; POOL_FILTER.valid=true;
   document.querySelector('.st-acq').checked=true;
   document.querySelector('.st-gap').checked=true;
   document.querySelector('.st-comp').checked=true;
   document.querySelector('.st-wl').checked=true;
+  document.querySelector('.st-valid').checked=true;
   resetPager('poolTable');
   renderPool(POOL||[]);
 });
