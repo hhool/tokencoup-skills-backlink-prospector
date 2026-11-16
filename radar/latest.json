@@ -1,7 +1,7 @@
 {
  "meta": {
-  "generated_at": "2026-11-15T10:10:13Z",
-  "date": "2026-11-15",
+  "generated_at": "2026-11-16T01:09:09Z",
+  "date": "2026-11-16",
   "api_base": "https://soundbuttons.cc",
   "candidates_seen": 14,
   "probed": 14,
@@ -9,12 +9,12 @@
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 3
+    "kept": 7
    },
    "reddit_rising": {
     "status": "ok",
     "raw": 25,
-    "kept": 10
+    "kept": 6
    },
    "know_your_meme": {
     "status": "unavailable",
@@ -26,7 +26,7 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 8,
+    "raw": 10,
     "kept": 1
    }
   }
@@ -42,43 +42,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Extraordinary circumstances",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Just realised",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Microslop",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Occams razor",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Seriously impressive",
+   "term": "Miss Greenland",
    "sources": [
     "9gag_hot"
    ],
@@ -131,6 +95,33 @@
    "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
   },
   {
+   "term": "anthony davis",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "carmelo anthony",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "cincinnati weather",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
    "term": "corrosive",
    "sources": [
     "reddit_rising"
@@ -140,7 +131,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "maika monroe",
+   "term": "ferris state football",
    "sources": [
     "google_trends"
    ],
@@ -149,7 +140,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "shameless",
+   "term": "jack nicklaus",
    "sources": [
     "google_trends"
    ],
@@ -158,7 +149,16 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "winter storm",
+   "term": "project helix console",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "steelers schedule",
    "sources": [
     "google_trends"
    ],
