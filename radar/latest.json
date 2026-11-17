@@ -1,20 +1,20 @@
 {
  "meta": {
-  "generated_at": "2026-11-16T01:09:09Z",
-  "date": "2026-11-16",
+  "generated_at": "2026-11-17T01:08:03Z",
+  "date": "2026-11-17",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 14,
-  "probed": 14,
+  "candidates_seen": 11,
+  "probed": 11,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 7
+    "kept": 6
    },
    "reddit_rising": {
     "status": "ok",
     "raw": 25,
-    "kept": 6
+    "kept": 2
    },
    "know_your_meme": {
     "status": "unavailable",
@@ -26,23 +26,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 10,
-    "kept": 1
+    "raw": 8,
+    "kept": 3
    }
   }
  },
  "rows": [
   {
-   "term": "Beautiful nature",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Miss Greenland",
+   "term": "First class",
    "sources": [
     "9gag_hot"
    ],
@@ -51,7 +42,16 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Tasty",
+   "term": "James Bond",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Just just just just",
    "sources": [
     "reddit_rising"
    ],
@@ -60,9 +60,9 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Tough crowd",
+   "term": "Stormtrooper goes duck hunting",
    "sources": [
-    "reddit_rising"
+    "9gag_hot"
    ],
    "hits": 0,
    "hit_titles": [],
@@ -82,20 +82,7 @@
    "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
   },
   {
-   "term": "Wood",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 3,
-   "hit_titles": [
-    "Wood/Rock/Wyvern Hit/Damage (Terraria)",
-    "Wood Swish Ruler Whoosh Fast Movement In Air (SFX)",
-    "Wood Swish Ruler Whoosh Fast Movement In Air (SFX)"
-   ],
-   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
-  },
-  {
-   "term": "anthony davis",
+   "term": "butch jones",
    "sources": [
     "google_trends"
    ],
@@ -104,7 +91,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "carmelo anthony",
+   "term": "deuda",
    "sources": [
     "google_trends"
    ],
@@ -113,7 +100,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "cincinnati weather",
+   "term": "estafa",
    "sources": [
     "google_trends"
    ],
@@ -122,16 +109,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "corrosive",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "ferris state football",
+   "term": "jakobi lane",
    "sources": [
     "google_trends"
    ],
@@ -140,7 +118,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "jack nicklaus",
+   "term": "james comer",
    "sources": [
     "google_trends"
    ],
@@ -149,16 +127,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "project helix console",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "steelers schedule",
+   "term": "tulsa basketball",
    "sources": [
     "google_trends"
    ],
