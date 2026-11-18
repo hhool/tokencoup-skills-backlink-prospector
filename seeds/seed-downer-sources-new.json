@@ -1,0 +1,328 @@
+{
+  "candidates": [
+    {
+      "url": "https://alternativeto.net",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "软件替代品目录，提交工具条目",
+      "authorityTier": "High",
+      "tags": [
+        "software directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "软件替代品目录，提交工具条目",
+      "source": "seed-curated-verified",
+      "verified_status": 403,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://producthunt.com",
+      "category": "launch",
+      "submit_type": "listing",
+      "title": "产品发布目录，自助提交",
+      "authorityTier": "High",
+      "tags": [
+        "launch",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "产品发布目录，自助提交",
+      "source": "seed-curated-verified",
+      "verified_status": 403,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://toolify.ai",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "AI/在线工具目录",
+      "authorityTier": "Medium",
+      "tags": [
+        "tool directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "AI/在线工具目录",
+      "source": "seed-curated-verified",
+      "verified_status": 403,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://softonic.com",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "软件下载目录投稿收录",
+      "authorityTier": "High",
+      "tags": [
+        "software directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "软件下载目录投稿收录",
+      "source": "seed-curated-verified",
+      "verified_status": 412,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://download.com",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "CNET 软件目录提交",
+      "authorityTier": "High",
+      "tags": [
+        "software directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "CNET 软件目录提交",
+      "source": "seed-curated-verified",
+      "verified_status": 412,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://snapfiles.com",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "共享软件目录提交",
+      "authorityTier": "Low",
+      "tags": [
+        "software directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "共享软件目录提交",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://filehorse.com",
+      "category": "directory",
+      "submit_type": "listing",
+      "title": "免费软件目录提交",
+      "authorityTier": "Low",
+      "tags": [
+        "software directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "免费软件目录提交",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://softpedia.com",
+      "category": "directory",
+      "submit_type": "apply",
+      "title": "软件目录收录需审核",
+      "authorityTier": "High",
+      "tags": [
+        "software directory",
+        "multi-step",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "软件目录收录需审核",
+      "source": "seed-curated-verified",
+      "verified_status": 403,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://filehippo.com",
+      "category": "directory",
+      "submit_type": "apply",
+      "title": "软件目录收录需审核",
+      "authorityTier": "High",
+      "tags": [
+        "software directory",
+        "multi-step",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "软件目录收录需审核",
+      "source": "seed-curated-verified",
+      "verified_status": 412,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://majorgeeks.com",
+      "category": "directory",
+      "submit_type": "apply",
+      "title": "软件目录提交审核",
+      "authorityTier": "Medium",
+      "tags": [
+        "software directory",
+        "multi-step",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "软件目录提交审核",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://appsumo.com",
+      "category": "launch",
+      "submit_type": "apply",
+      "title": "工具特卖平台，需申请审核",
+      "authorityTier": "High",
+      "tags": [
+        "deal platform",
+        "multi-step",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "工具特卖平台，需申请审核",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://betalist.com",
+      "category": "launch",
+      "submit_type": "listing",
+      "title": "Beta 产品目录提交",
+      "authorityTier": "Medium",
+      "tags": [
+        "beta directory",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "Beta 产品目录提交",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://stackshare.io",
+      "category": "community",
+      "submit_type": "register",
+      "title": "开发者工具档案注册",
+      "authorityTier": "Medium",
+      "tags": [
+        "dev tools",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "开发者工具档案注册",
+      "source": "seed-curated-verified",
+      "verified_status": 429,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://quora.com",
+      "category": "qna",
+      "submit_type": "answer",
+      "title": "问答平台，工具推荐回答",
+      "authorityTier": "High",
+      "tags": [
+        "qna",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source",
+        "bot-blocked"
+      ],
+      "note": "问答平台，工具推荐回答",
+      "source": "seed-curated-verified",
+      "verified_status": 403,
+      "verify_note": "bot-blocked, human access OK",
+      "domains": [
+        "downer.app"
+      ]
+    },
+    {
+      "url": "https://stackexchange.com",
+      "category": "qna",
+      "submit_type": "answer",
+      "title": "技术问答回答",
+      "authorityTier": "High",
+      "tags": [
+        "qna",
+        "one-shot",
+        "downer",
+        "video downloader",
+        "wave-source"
+      ],
+      "note": "技术问答回答",
+      "source": "seed-curated-verified",
+      "verified_status": 200,
+      "verify_note": "ok",
+      "domains": [
+        "downer.app"
+      ]
+    }
+  ]
+}

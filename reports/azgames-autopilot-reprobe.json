@@ -1,0 +1,78 @@
+{
+ "generated_at": "2026-11-17T16:58:59+08:00",
+ "candidates": "/tmp/reprobe2.json",
+ "submit": true,
+ "processed": 2,
+ "gates": {
+  "anonymous_form": 2
+ },
+ "verdicts": {
+  "rejected": 1,
+  "unknown": 1
+ },
+ "rows": [
+  {
+   "domain": "tacticlinks.com",
+   "source": "wdc",
+   "score": 42.7,
+   "started": "2026-11-17T16:58:52+08:00",
+   "home_status": 200,
+   "home_final": "https://tacticlinks.com/",
+   "home_err": "",
+   "entry_pages": 1,
+   "gate": "anonymous_form",
+   "entry_url": "https://tacticlinks.com/en/submit/",
+   "form_fields": [
+    "domain",
+    "title",
+    "description",
+    "keywords"
+   ],
+   "submit_action": "https://tacticlinks.com/en/submit/",
+   "submit_http": 405,
+   "submit_final": "https://tacticlinks.com/en/submit/",
+   "posted_fields": [
+    "command",
+    "description",
+    "domain",
+    "keywords",
+    "title"
+   ],
+   "submit_verdict": "rejected",
+   "submit_hints": [
+    "HTTP 405"
+   ],
+   "submit_excerpt": "405 method not allowed method not allowed the method is not allowed for the requested url.",
+   "submit_at": "2026-11-17T16:58:59+08:00",
+   "done": "2026-11-17T16:58:59+08:00"
+  },
+  {
+   "domain": "linkshed.net",
+   "source": "wdc",
+   "score": 36.2,
+   "started": "2026-11-17T16:58:52+08:00",
+   "home_status": 200,
+   "home_final": "https://linkshed.net/",
+   "home_err": "",
+   "entry_pages": 1,
+   "gate": "anonymous_form",
+   "entry_url": "https://linkshed.net/submit",
+   "form_fields": [
+    "long_url",
+    "custom_code"
+   ],
+   "submit_action": "https://linkshed.net/submit",
+   "submit_http": 200,
+   "submit_final": "https://linkshed.net/submit",
+   "posted_fields": [
+    "custom_code",
+    "long_url"
+   ],
+   "submit_verdict": "unknown",
+   "submit_hints": [],
+   "submit_excerpt": "free qr code generator & url shortener | linkshed 🔗 \"> shortener paper sizes social sizes free short urls & qr code generator linkshed.net/ shorten link not found. why use linkshed? linkshed is the simplest way to take long, messy urls and turn them into short, memorable links. 100% free: no credit ",
+   "submit_at": "2026-11-17T16:58:57+08:00",
+   "done": "2026-11-17T16:58:57+08:00"
+  }
+ ]
+}

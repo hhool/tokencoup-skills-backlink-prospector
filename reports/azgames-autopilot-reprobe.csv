@@ -1,0 +1,3 @@
+gate,domain,score,source,entry_url,submit_verdict,submit_http,fields,note
+anonymous_form,tacticlinks.com,42.7,wdc,https://tacticlinks.com/en/submit/,rejected,405,"domain,title,description,keywords",
+anonymous_form,linkshed.net,36.2,wdc,https://linkshed.net/submit,unknown,200,"long_url,custom_code",

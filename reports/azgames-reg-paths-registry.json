@@ -1,0 +1,2322 @@
+{
+ "acquire.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://acquire.com/sellers",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:43 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:43 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/acquire.com-20261117-174304.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "advertcn.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://www.advertcn.com/member.php?mod=register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:44 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 17:44 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/advertcn.com-20261117-174349.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "aiparabellum.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://aiparabellum.com/submit-an-article/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:45 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:45 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/aiparabellum.com-20261117-174413.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "aixploria.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.aixploria.com/en/submit-ai-tool-or-feature-company/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:45 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:45 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/aixploria.com-20261117-174541.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "alternative.me": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://alternative.me/signup/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:47 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 19:47 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/alternative.me-20261117-194332.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "amust-shop.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://amust-shop.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:46 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:46 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/amust-shop.com-20261117-174603.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "appagg.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://appagg.com/add/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:46 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:46 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/appagg.com-20261117-174609.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "auraplusplus.com": {
+  "class": "ready",
+  "register_path": {
+   "url": "https://auraplusplus.com/sign-up",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap+browser_click",
+   "resend_used": false,
+   "email_subject": "主题：Welcome to Aura++ 🚀"
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:04 · 自动注册成功并已邮箱验证"
+  },
+  "outcome": "registered_verified",
+  "note": "自动注册 11-17 20:04 · 自动注册成功并已邮箱验证",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/auraplusplus.com-20261117-200203.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "bestelinks.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://bestelinks.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:46 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:46 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/bestelinks.nl-20261117-174646.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "bizcommunity.com": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://www.bizcommunity.com/Signup.aspx?ss=homePage",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "unknown",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:10 · 提交完成但未验证（停在 AccountSignup 页（URL 带 email 参数），未验证）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "判据修正：旧逻辑把「页面有 Sign out 字样」当登录态，实际仍在注册页；改为 awaiting_verify（停在 AccountSignup 页（URL 带 email 参数），未验证）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/bizcommunity.com-20261117-181011.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "blog4u.pl": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://blog4u.pl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:47 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:47 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/blog4u.pl-20261117-174736.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "community.obsidian.md": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://community.obsidian.md",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:48 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:48 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/community.obsidian.md-20261117-174749.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "cssdesignawards.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.cssdesignawards.com/submit",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:49 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:49 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/cssdesignawards.com-20261117-174838.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "dealify.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://dealify.com/pages/run-a-deal",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:49 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:49 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/dealify.com-20261117-174938.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "designspiration.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.designspiration.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:50 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:50 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/designspiration.com-20261117-174957.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "dev.to": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://dev.to/enter?state=new-user",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:50 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 17:50 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/dev.to-20261117-175008.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "devhunt.org": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://devhunt.org/hackathons",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:13 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 20:13 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/devhunt.org-20261117-201321.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "directorycow.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://directorycow.com/#tab-register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:42 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 19:42 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/directorycow.com-20261117-194230.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "directorydepo.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://directorydepo.com/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:52 · 表单提交报错，需人工核对字段"
+  },
+  "outcome": "form_error",
+  "note": "自动注册 11-17 17:52 · 表单提交报错，需人工核对字段",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/directorydepo.com-20261117-175212.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "easywithai.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://easywithai.com/wplp?registration=disabled",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:52 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:52 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/easywithai.com-20261117-175231.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "eigenstart.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://eigenstart.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:52 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:52 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/eigenstart.nl-20261117-175235.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "escapistmagazine.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://escapistmagazine.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:52 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:52 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/escapistmagazine.com-20261117-175248.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "extensions.blender.org": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://id.blender.org/login?next=/oauth/authorize%3Fresponse_type%3Dcode%26client_id%3DRr5TTdjL7luyMvW6TukksVx4RGssCKNSGQ6p8LM5%26redirect_uri%3Dhttps%253A%252F%252Fextensions.blender.org%252Foauth%252Fauthorized%26state%3D3NUktvLA9zO3wUb9YRa3DCvGRQdt3u",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:53 · 执行异常"
+  },
+  "outcome": "error",
+  "note": "自动注册 11-17 17:53 · 执行异常",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/extensions.blender.org-20261117-175253.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "ezilon.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://ezilon.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:14 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:14 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/ezilon.com-20261117-181448.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "facebook.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.facebook.com/reg",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "unknown",
+   "wave": 3,
+   "status": "pending",
+   "owner_note": ""
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:54 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/facebook.com-20261117-175416.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "favorietje.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://favorietje.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:54 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:54 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/favorietje.nl-20261117-175432.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "favos.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://favos.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:54 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:54 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/favos.nl-20261117-175446.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "featured.com": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://featured.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "unknown",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:09 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 20:09 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/featured.com-20261117-200415.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "findstack.com": {
+  "class": "ready",
+  "register_path": {
+   "url": "https://findstack.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap+browser_click",
+   "resend_used": false,
+   "email_subject": "主题：Confirmation instructions"
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:53 · 自动注册成功并已邮箱验证"
+  },
+  "outcome": "registered_verified",
+  "note": "自动注册 11-17 18:53 · 自动注册成功并已邮箱验证",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/findstack.com-20261117-185233.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "flipboard.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://flipboard.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:55 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:55 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/flipboard.com-20261117-175545.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "folden.de": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://folden.de/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:55 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:55 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/folden.de-20261117-175549.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "folden.info": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://folden.info/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:56 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:56 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/folden.info-20261117-175556.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "fupa.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://fupa.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:57 · 执行异常"
+  },
+  "outcome": "error",
+  "note": "自动注册 11-17 17:57 · 执行异常",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/fupa.com-20261117-175605.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "geekwire.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.geekwire.com/submit-startup/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:57 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:57 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/geekwire.com-20261117-175722.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "getpocket.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://getpocket.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:57 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:57 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/getpocket.com-20261117-175727.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "growthhackers.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://growthhackers.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:58 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:58 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/growthhackers.com-20261117-175735.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "hashnode.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://hashnode.com/onboard",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:58 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 17:58 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/hashnode.com-20261117-175809.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "hostloc.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://hostloc.com/member.php?mod=register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:59 · 执行异常"
+  },
+  "outcome": "error",
+  "note": "自动注册 11-17 17:59 · 执行异常",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/hostloc.com-20261117-175826.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "howbrandsarebuilt.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://howbrandsarebuilt.com/submit/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:59 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 17:59 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/howbrandsarebuilt.com-20261117-175904.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "huggingface.co": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://huggingface.co/new-space",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 17:59 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 17:59 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/huggingface.co-20261117-175925.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "jayisgames.com": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://jayisgames.com/cgi-bin/mt4/mt-cp.cgi?__mode=register&blog_id=1&return_to=",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:51 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 19:51 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/jayisgames.com-20261117-194732.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "jouwpagina.be": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://jouwpagina.be/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:00 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:00 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/jouwpagina.be-20261117-175955.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "jouwpagina.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://jouwpagina.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:00 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:00 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/jouwpagina.nl-20261117-180013.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "killerstartups.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://killerstartups.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:00 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:00 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/killerstartups.com-20261117-180027.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "land-book.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://land-book.com/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:00 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:00 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/land-book.com-20261117-180043.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "launchvault.dev": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://www.launchvault.dev/sign-up",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:55 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 19:55 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/launchvault.dev-20261117-195117.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "marketingwebdirectory.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://marketingwebdirectory.com/user/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:16 · 表单提交报错，需人工核对字段"
+  },
+  "outcome": "form_error",
+  "note": "自动注册 11-17 18:16 · 表单提交报错，需人工核对字段",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/marketingwebdirectory.com-20261117-181559.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "medium.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://medium.com/m/signin",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:01 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:01 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/medium.com-20261117-180132.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "mercurynews.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://form.jotform.com/262354732716055",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:02 · 执行异常"
+  },
+  "outcome": "error",
+  "note": "自动注册 11-17 18:02 · 执行异常",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/mercurynews.com-20261117-180136.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "myhq.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://myhq.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:17 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:17 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/myhq.com-20261117-181710.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "neodia.fr": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://neodia.fr/index.php?option=com_content&view=article&id=143",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:02 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:02 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/neodia.fr-20261117-180227.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "newsbreak.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.newsbreak.com/publisher",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "unknown",
+   "wave": 3,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:02 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:02 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/newsbreak.com-20261117-180237.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "opencollective.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://opencollective.com/create",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:03 · 表单提交报错，需人工核对字段"
+  },
+  "outcome": "form_error",
+  "note": "自动注册 11-17 18:03 · 表单提交报错，需人工核对字段",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/opencollective.com-20261117-180254.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "openfuture.ai": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://openfuture.ai/submit-tool",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:03 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:03 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/openfuture.ai-20261117-180347.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "openhunts.com": {
+  "class": "ready",
+  "register_path": {
+   "url": "https://openhunts.com/sign-up",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": "主题：You shared some Google Account data with openhunts.com"
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:57 · 自动注册成功并已邮箱验证"
+  },
+  "outcome": "registered_verified",
+  "note": "自动注册 11-17 19:57 · 自动注册成功并已邮箱验证",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/openhunts.com-20261117-195503.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "portaportal.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://portaportal.com/users/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:04 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:04 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/portaportal.com-20261117-180419.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "pr.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://www.pr.com/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:05 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 18:05 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/pr.com-20261117-180452.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "raindrop.io": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://app.raindrop.io/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "unknown",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:10 · 提交完成但未验证（停在 /account/signup，无登录态，未验证）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "判据修正：旧逻辑把「页面有 Sign out 字样」当登录态，实际仍在注册页；改为 awaiting_verify（停在 /account/signup，无登录态，未验证）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/raindrop.io-20261117-181012.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "reddit.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.reddit.com/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "pending",
+   "owner_note": ""
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:05 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/reddit.com-20261117-180530.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "saasaitools.com": {
+  "class": "ready",
+  "register_path": {
+   "url": "https://saasaitools.com/join/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "https://saasaitools.com/signin/",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap+browser_click",
+   "resend_used": false,
+   "email_subject": "主题：Please confirm your email address"
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:24 · 自动注册成功并已邮箱验证"
+  },
+  "outcome": "registered_verified",
+  "note": "自动注册 11-17 19:24 · 自动注册成功并已邮箱验证",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/saasaitools.com-20261117-192418.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "saaspirate.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://saaspirate.com/deals/joinsecret/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:06 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 18:06 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/saaspirate.com-20261117-180613.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "search.com": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://search.com/auth/sign-up",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "https://search.com/auth/sign-in",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 19:05 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 19:05 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/search.com-20261117-190210.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "searchmonster.org": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://searchmonster.org/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:07 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:07 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/searchmonster.org-20261117-180735.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "sidebar.io": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://sidebar.io/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:15 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 20:15 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/sidebar.io-20261117-201444.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "stacksocial.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://www.stacksocial.com/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:08 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 18:08 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/stacksocial.com-20261117-180835.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "startbewijs.nl": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://startbewijs.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:08 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:08 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/startbewijs.nl-20261117-180844.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "submitdirectory.org": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://submitdirectory.org/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:15 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:15 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/submitdirectory.org-20261117-181535.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "substack.com": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://substack.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:16 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 20:16 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/substack.com-20261117-201559.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "thehiveindex.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://thehiveindex.com/submit/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:09 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:09 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/thehiveindex.com-20261117-180918.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "toolpilot.ai": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://www.toolpilot.ai/blogs/news/nsfw-ai-chat-features-7-things-to-test-before-you-sign-up",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:10 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:10 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/toolpilot.ai-20261117-180935.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "toolspedia.io": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://toolspedia.io/submit-tool/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:10 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工"
+  },
+  "outcome": "needs_extra_field",
+  "note": "自动注册 11-17 18:10 · 必填字段脚本填不了（邀请码/验证码/手机号等），需人工",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/toolspedia.io-20261117-181023.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "topai.tools": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://topai.tools/submit",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:10 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:10 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/topai.tools-20261117-181046.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "toptools.ai": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://toptools.ai/submit",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:11 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:11 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/toptools.ai-20261117-181050.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "unita.co": {
+  "class": "awaiting",
+  "register_path": {
+   "url": "https://unita.co/my-account/?register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 20:02 · 注册已提交，等待验证信（本轮未收到）"
+  },
+  "outcome": "awaiting_verify",
+  "note": "自动注册 11-17 20:02 · 注册已提交，等待验证信（本轮未收到）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/unita.co-20261117-195821.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "uwstart.nl": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://uwstart.nl/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:12 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:12 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/uwstart.nl-20261117-181153.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "v2ex.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.v2ex.com/signup",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:12 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:12 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/v2ex.com-20261117-181209.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "warriorforum.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://www.warriorforum.com/register.php",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:13 · 执行异常"
+  },
+  "outcome": "error",
+  "note": "自动注册 11-17 18:13 · 执行异常",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/warriorforum.com-20261117-181215.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "webdesign-inspiration.com": {
+  "class": "manual",
+  "register_path": {
+   "url": "https://www.webdesign-inspiration.com/user/default/register",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "https://www.webdesign-inspiration.com/user/default/register",
+   "type": "magic_link",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:13 · 注册页人机验证拦住，需人工点一次"
+  },
+  "outcome": "captcha",
+  "note": "自动注册 11-17 18:13 · 注册页人机验证拦住，需人工点一次",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/webdesign-inspiration.com-20261117-181301.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "wellfound.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://wellfound.com/recruit/all-features/post-a-job",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:13 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:13 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/wellfound.com-20261117-181337.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ },
+ "yam.com": {
+  "class": "blocked",
+  "register_path": {
+   "url": "https://yam.com/",
+   "type": "form"
+  },
+  "login_path": {
+   "url": "",
+   "type": "register_only",
+   "credentials_stored": true
+  },
+  "verify_path": {
+   "method": "imap_watch",
+   "resend_used": false,
+   "email_subject": null
+  },
+  "publish_path": {
+   "submit_type": "register",
+   "wave": 1,
+   "status": "working",
+   "owner_note": "自动注册 11-17 18:14 · 未识别到注册表单（套餐/邀请码/OAuth 前置）"
+  },
+  "outcome": "no_form",
+  "note": "自动注册 11-17 18:14 · 未识别到注册表单（套餐/邀请码/OAuth 前置）",
+  "evidence": {
+   "runlog": "/Users/hou/seo/.vault/reg-runs/yam.com-20261117-181352.jsonl",
+   "shots_dir": "/Users/hou/seo/.vault/reg-runs/shots"
+  }
+ }
+}

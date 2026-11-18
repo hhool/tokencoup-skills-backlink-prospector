@@ -1,0 +1,33 @@
+{
+ "generated_at": "2026-11-17T15:29:06+08:00",
+ "site": "https://azgames.poki2.online/",
+ "results": [
+  {
+   "domain": "uneed.best",
+   "entry": "https://uneed.best/submit",
+   "method": "POST form(name,url)",
+   "get_status": 200,
+   "http": 200,
+   "final_url": "https://www.uneed.best/submit-a-tool",
+   "err": "",
+   "verdict": "unknown",
+   "hints": [],
+   "excerpt": "Add your product to Uneed | Uneed Launchpad Community Pricing Black Friday Products More Submit your Product Let our robots do the work and gather all your product&#39;s data for you 🤩. Your product name* https://www.uneed.best/tool/ Your product address* Preview my product No ac"
+  },
+  {
+   "domain": "sitelike.org",
+   "entry": "https://sitelike.org/add-site",
+   "method": "POST AddSite.aspx(viewstate+url)",
+   "get_status": 200,
+   "http": 200,
+   "final_url": "https://www.sitelike.org/AddSite.aspx",
+   "err": "",
+   "verdict": "rejected",
+   "hints": [
+    "already",
+    "not allowed"
+   ],
+   "excerpt": "sitelike.org Add&amp;Submit Website Similar Websites Search | Similar Sites Like Home Top Most Add Latest Remove Home Top Similar Sites Most Visited Sites Latest Add/Update Site Remove Add/Submit Your Site - Change Details sitelike is completely free, you can add your website to "
+  }
+ ]
+}

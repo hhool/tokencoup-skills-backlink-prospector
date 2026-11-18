@@ -1,0 +1,241 @@
+{
+ "aitools.fyi": {
+  "url": "https://aitools.fyi/submit",
+  "status": 200,
+  "final": "https://tally.so/r/2EkV4g?ref=boostmytool.com",
+  "title": "Boost My Tool Submission",
+  "forms": 1,
+  "cap": [
+   "captcha"
+  ],
+  "login": false,
+  "fields": []
+ },
+ "betalist.com": {
+  "url": "https://betalist.com/submit",
+  "status": 200,
+  "final": "https://betalist.com/submissions/new",
+  "title": "Discover and get early access to tomorrow&#39;s startups | BetaList",
+  "forms": 1,
+  "cap": [],
+  "login": true,
+  "fields": [
+   "authenticity_token",
+   "cf_turnstile_widget",
+   "email",
+   "origin",
+   "submission[referrer]",
+   "submission[startup_attributes][website_url]"
+  ]
+ },
+ "microlaunch.net": {
+  "url": "https://microlaunch.net/submit",
+  "status": 200,
+  "final": "https://microlaunch.net/premium#pricing",
+  "title": "Microlaunch Premium - Launch Your Product Like a Pro",
+  "forms": 0,
+  "cap": [],
+  "login": false,
+  "fields": []
+ },
+ "fazier.com": {
+  "url": "https://fazier.com/submit",
+  "status": 200,
+  "final": "https://fazier.com/submit",
+  "title": "Fazier – Find your next favourite product, every day.",
+  "forms": 0,
+  "cap": [],
+  "login": false,
+  "fields": []
+ },
+ "uneed.best": {
+  "url": "https://uneed.best/submit",
+  "status": 200,
+  "final": "https://www.uneed.best/submit-a-tool",
+  "title": "Add your product to Uneed | Uneed",
+  "forms": 1,
+  "cap": [],
+  "login": false,
+  "fields": [
+   "name",
+   "url"
+  ]
+ },
+ "startupstash.com": {
+  "url": "https://startupstash.com/add",
+  "status": 200,
+  "final": "https://startupstash.com/get-listed/",
+  "title": "Get listed on Startup Stash - Startup Stash",
+  "forms": 2,
+  "cap": [
+   "recaptcha",
+   "captcha"
+  ],
+  "login": false,
+  "fields": [
+   "company_fax",
+   "email",
+   "website"
+  ]
+ },
+ "sitelike.org": {
+  "url": "https://sitelike.org/add-site",
+  "status": 200,
+  "final": "https://www.sitelike.org/add-site",
+  "title": "sitelike.org Add&amp;Submit Website",
+  "forms": 1,
+  "cap": [],
+  "login": false,
+  "fields": [
+   "__VIEWSTATE",
+   "__VIEWSTATEGENERATOR",
+   "siteURLInputN2"
+  ]
+ },
+ "jasminedirectory.com": {
+  "url": "https://jasminedirectory.com/submit",
+  "status": 200,
+  "final": "https://www.jasminedirectory.com/detail,1244967826,understanding-listing-removal-policies-at-jasmine-directory.html",
+  "title": "Understanding Listing Removal Policies at Jasmine Directory",
+  "forms": 1,
+  "cap": [],
+  "login": false,
+  "fields": [
+   "ds",
+   "q"
+  ]
+ },
+ "getpocket.com": {
+  "url": "https://getpocket.com/signup",
+  "status": 200,
+  "final": "https://getpocket.com/home",
+  "title": "Pocket",
+  "forms": 0,
+  "cap": [
+   "recaptcha",
+   "captcha"
+  ],
+  "login": false,
+  "fields": []
+ },
+ "mix.com": {
+  "url": "https://mix.com/signup",
+  "status": 200,
+  "final": "https://mix.com/signup",
+  "title": "Mix – Expand your mind",
+  "forms": 0,
+  "cap": [
+   "recaptcha",
+   "captcha"
+  ],
+  "login": true,
+  "fields": []
+ },
+ "flipboard.com": {
+  "url": "https://flipboard.com/signup",
+  "status": 200,
+  "final": "https://flipboard.com/signup",
+  "title": "Join Flipboard | Sign Up &amp; Create Your Flipboard Account",
+  "forms": 1,
+  "cap": [
+   "recaptcha",
+   "captcha"
+  ],
+  "login": true,
+  "fields": [
+   "email",
+   "password",
+   "realName"
+  ]
+ },
+ "reddit.com": {
+  "url": "https://reddit.com/register",
+  "status": 200,
+  "final": "https://www.reddit.com/register/",
+  "title": "Reddit",
+  "forms": 1,
+  "cap": [],
+  "login": false,
+  "fields": [
+   "js_challenge",
+   "jsc_orig_r",
+   "jsc_token",
+   "solution"
+  ]
+ },
+ "tinylaunch.com": {
+  "url": "https://tinylaunch.com/submit",
+  "status": 200,
+  "final": "https://www.tinylaunch.com/login?returnTo=%2Fsubmit",
+  "title": "TinyLaunch - Product Launch Platform",
+  "forms": 1,
+  "cap": [],
+  "login": true,
+  "fields": [
+   "email"
+  ]
+ },
+ "pitchwall.co": {
+  "url": "https://pitchwall.co/submit",
+  "status": 0,
+  "final": "https://pitchwall.co/submit",
+  "title": "",
+  "forms": 0,
+  "cap": [],
+  "login": false,
+  "fields": []
+ },
+ "sideprojectors.com": {
+  "url": "https://sideprojectors.com/submit",
+  "status": 200,
+  "final": "https://www.sideprojectors.com/submit",
+  "title": "Sell, buy, show off your side projects - SideProjectors | Marketplace to buy and sell side projects.",
+  "forms": 0,
+  "cap": [],
+  "login": false,
+  "fields": []
+ },
+ "f6s.com": {
+  "url": "https://f6s.com/register",
+  "status": 200,
+  "final": "https://www.f6s.com/register",
+  "title": "Checking your browser",
+  "forms": 0,
+  "cap": [
+   "captcha"
+  ],
+  "login": false,
+  "fields": []
+ },
+ "linkedin.com": {
+  "url": "https://linkedin.com/signup",
+  "status": 200,
+  "final": "https://www.linkedin.com/signup",
+  "title": "Sign Up | LinkedIn",
+  "forms": 2,
+  "cap": [
+   "recaptcha",
+   "captcha"
+  ],
+  "login": true,
+  "fields": [
+   "email-address",
+   "first-name",
+   "last-name",
+   "loginCsrfParam",
+   "registration-frontend_join-form-password",
+   "remember_me_checkbox",
+   "trk"
+  ]
+ },
+ "x.com": {
+  "url": "https://x.com/signup",
+  "status": 200,
+  "final": "https://x.com/signup",
+  "title": "X - The Everything App / X",
+  "forms": 0,
+  "cap": [],
+  "login": false,
+  "fields": []
+ }
+}

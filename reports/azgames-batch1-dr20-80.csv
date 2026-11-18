@@ -1,0 +1,15 @@
+domain,id,authority_score,authority_grade,fit_score,wave,submit_type,category,status,url,first_batch
+prlog.org,t_0005,76,high,75,2,pitch,news,pending,https://prlog.org/,否(wave2)
+openpr.com,t_0006,74,high,75,2,pitch,news,pending,https://openpr.com/,否(wave2)
+hashnode.com,t_0027,76,high,71,1,publish,community,working,https://hashnode.com/,是
+hostloc.com,t_0033,68,high,67,1,posting,community,working,https://hostloc.com/,是
+lobste.rs,t_0025,74,high,61,1,posting,community,pending,https://lobste.rs/,是
+newswire.com,t_0009,76,high,61,2,pitch,news,pending,https://newswire.com/,否(wave2)
+startupstash.com,t_0090,76,high,43,1,listing,directory,pending,https://startupstash.com/,是
+saashub.com,t_0080,74,high,42,1,listing,directory,pending,https://saashub.com/submit,是
+sortlist.com,t_0097,78,high,40,1,listing,directory,pending,https://sortlist.com/,是
+futurepedia.io,t_0093,74,high,38,1,listing,directory,pending,https://futurepedia.io/submit-tool,是
+toolify.ai,t_0091,72,high,37,1,listing,directory,pending,https://toolify.ai/submit,是
+theresanaiforthat.com,t_0092,79,high,36,1,listing,directory,pending,https://theresanaiforthat.com/submit,是
+designrush.com,t_0096,79,high,36,1,listing,directory,pending,https://designrush.com/agency/profile,是
+betalist.com,t_0104,78,high,17,1,listing,launch,pending,https://betalist.com/submit,是

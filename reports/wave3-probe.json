@@ -1,0 +1,241 @@
+{
+  "sample_size": 30,
+  "upgrade_count": 2,
+  "upgrade_rate": 0.0667,
+  "results": [
+    {
+      "domain": "allwebdesignresources.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "applelinks.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "attorneyshoppinglinks.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "bestelinks.nl",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "bestofweb.at",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "billslinksandmore.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "boogolinks.nl",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "breaklinks.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "cool-tools.org",
+      "submit_type": "listing",
+      "evidence": [
+        {
+          "path": "/",
+          "signal": "submit-link"
+        },
+        {
+          "path": "/submit",
+          "signal": "submit-link"
+        }
+      ],
+      "verdict": "upgrade-listing"
+    },
+    {
+      "domain": "coolfreebielinks.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "craftandfabriclinks.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "dir247.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "dirall.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "directoriowebz.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "directpaint.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "edlinkservices.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "elwebmaster.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "freewebmasterhelp.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "freewebmastertools.biz",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "freshlinks.net",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "land-o-links.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "linksdeinteres.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "linkshed.net",
+      "submit_type": "listing",
+      "evidence": [
+        {
+          "path": "/",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/submit",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/add",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/submit-url",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/suggest",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/submit-site",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/directory",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/resources",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/links",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/add-site",
+          "signal": "submit-form"
+        },
+        {
+          "path": "/list-your-site",
+          "signal": "submit-form"
+        }
+      ],
+      "verdict": "upgrade-listing"
+    },
+    {
+      "domain": "linksilo.de",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "linksinabox.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "linksmiau.net",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "linkstomy.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "masterlinks.nl",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "outils-webmaster-contenus.ws",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    },
+    {
+      "domain": "realestatewebmasters.com",
+      "submit_type": null,
+      "evidence": [],
+      "verdict": "keep-unknown"
+    }
+  ]
+}

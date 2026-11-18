@@ -1,0 +1,235 @@
+[
+ {
+  "domain": "advertcn.com",
+  "url": "https://www.advertcn.com/member.php?mod=register",
+  "status": 200,
+  "final": "https://www.advertcn.com/member.php?mod=register",
+  "forms": 3,
+  "captcha": [],
+  "oauth": [],
+  "password_field": true,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "dev.to",
+  "url": "https://dev.to/enter?state=new-user",
+  "status": 200,
+  "final": "https://dev.to/enter?state=new-user",
+  "forms": 7,
+  "captcha": [],
+  "oauth": [
+   "google",
+   "apple",
+   "github",
+   "facebook"
+  ],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "facebook.com",
+  "url": "https://www.facebook.com/reg",
+  "status": 400,
+  "final": "https://www.facebook.com/reg",
+  "forms": 0,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "featured.com",
+  "url": "https://featured.com/signup",
+  "status": 200,
+  "final": "https://featured.com/signup",
+  "forms": 2,
+  "captcha": [],
+  "oauth": [
+   "google"
+  ],
+  "password_field": false,
+  "email_field": true,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "flipboard.com",
+  "url": "https://flipboard.com/signup",
+  "status": 200,
+  "final": "https://flipboard.com/signup",
+  "forms": 1,
+  "captcha": [
+   "recaptcha",
+   "captcha"
+  ],
+  "oauth": [
+   "google",
+   "apple",
+   "facebook"
+  ],
+  "password_field": true,
+  "email_field": true,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "getpocket.com",
+  "url": "https://getpocket.com/signup",
+  "status": 200,
+  "final": "https://getpocket.com/home",
+  "forms": 0,
+  "captcha": [
+   "recaptcha",
+   "captcha"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "growthhackers.com",
+  "url": "https://growthhackers.com/signup",
+  "status": 0,
+  "final": "https://growthhackers.com/signup",
+  "forms": 0,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "hashnode.com",
+  "url": "https://hashnode.com/onboard",
+  "status": 200,
+  "final": "https://hashnode.com/onboard",
+  "forms": 1,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "hostloc.com",
+  "url": "https://hostloc.com/member.php?mod=register",
+  "status": 200,
+  "final": "https://hostloc.com/member.php?mod=register",
+  "forms": 2,
+  "captcha": [],
+  "oauth": [],
+  "password_field": true,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "medium.com",
+  "url": "https://medium.com/m/signin",
+  "status": 403,
+  "final": "https://medium.com/m/signin",
+  "forms": 0,
+  "captcha": [
+   "just a moment"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "newsbreak.com",
+  "url": "https://www.newsbreak.com/publisher",
+  "status": 200,
+  "final": "https://www.newsbreak.com/publisher",
+  "forms": 0,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "pr.com",
+  "url": "https://www.pr.com/register",
+  "status": 404,
+  "final": "https://www.pr.com/register",
+  "forms": 2,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "raindrop.io",
+  "url": "https://app.raindrop.io/",
+  "status": 200,
+  "final": "https://app.raindrop.io/",
+  "forms": 0,
+  "captcha": [
+   "recaptcha",
+   "captcha"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "reddit.com",
+  "url": "https://www.reddit.com/register",
+  "status": 200,
+  "final": "https://www.reddit.com/register/",
+  "forms": 1,
+  "captcha": [],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "unknown"
+ },
+ {
+  "domain": "substack.com",
+  "url": "https://substack.com/signup",
+  "status": 200,
+  "final": "https://substack.com/onboarding?flow=creator_signup",
+  "forms": 0,
+  "captcha": [
+   "captcha"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "v2ex.com",
+  "url": "https://www.v2ex.com/signup",
+  "status": 403,
+  "final": "https://www.v2ex.com/signup",
+  "forms": 0,
+  "captcha": [
+   "just a moment"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ },
+ {
+  "domain": "warriorforum.com",
+  "url": "https://www.warriorforum.com/register.php",
+  "status": 200,
+  "final": "https://www.warriorforum.com/index.php?signup=1",
+  "forms": 2,
+  "captcha": [
+   "recaptcha",
+   "captcha"
+  ],
+  "oauth": [],
+  "password_field": false,
+  "email_field": false,
+  "verdict": "captcha_block"
+ }
+]

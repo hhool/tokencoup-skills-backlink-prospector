@@ -1,0 +1,604 @@
+[
+  {
+    "url": "https://betanet.net",
+    "type": "launch",
+    "authorityTier": "Low",
+    "tags": [
+      "indie tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "独立工具分享",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://saashub.com",
+    "type": "directory",
+    "authorityTier": "Medium",
+    "tags": [
+      "saas directory",
+      "downer",
+      "video downloader"
+    ],
+    "note": "SaaS 工具目录",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://thereleasehub.com",
+    "type": "launch",
+    "authorityTier": "Low",
+    "tags": [
+      "tool launch",
+      "downer",
+      "video downloader"
+    ],
+    "note": "产品发布聚合",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://slashdot.org",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tech news",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技新闻，工具发布可投稿",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://hackernews.cc",
+    "type": "community",
+    "authorityTier": "Low",
+    "tags": [
+      "tech community",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技社区",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://dev.to",
+    "type": "community",
+    "authorityTier": "Medium",
+    "tags": [
+      "dev community",
+      "tutorial",
+      "downer",
+      "video downloader"
+    ],
+    "note": "开发者社区，工具教程型软文",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://speckyboy.com",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "web tools",
+      "resource",
+      "downer",
+      "video downloader"
+    ],
+    "note": "Web 工具资源站",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://webdesignerwall.com",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "设计/开发工具资源",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://freewarehome.com",
+    "type": "directory",
+    "authorityTier": "Low",
+    "tags": [
+      "freeware",
+      "downer",
+      "video downloader"
+    ],
+    "note": "免费软件目录",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://filmora.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "video tools",
+      "blog",
+      "downer",
+      "video downloader"
+    ],
+    "note": "视频编辑工具博客，工具评测",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://capcut.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "video tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "视频工具生态",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://canva.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "social media tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "设计工具博客，社媒内容",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://buffer.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "social media tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社媒管理博客，内容工具",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://hootsuite.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "social media",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社媒管理博客",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://later.com",
+    "type": "commercial",
+    "authorityTier": "Medium",
+    "tags": [
+      "instagram",
+      "social media",
+      "downer",
+      "video downloader"
+    ],
+    "note": "Instagram 营销博客",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://metricool.com",
+    "type": "commercial",
+    "authorityTier": "Medium",
+    "tags": [
+      "social media tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社媒分析工具博客",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://socialbee.com",
+    "type": "commercial",
+    "authorityTier": "Medium",
+    "tags": [
+      "social media",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社媒工具博客",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://mailchimp.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "marketing",
+      "downer",
+      "video downloader"
+    ],
+    "note": "营销资源博客",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://blog.hootsuite.com",
+    "type": "commercial",
+    "authorityTier": "High",
+    "tags": [
+      "social media",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社媒营销内容",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://techradar.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tech review",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技评测，视频工具栏目",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://zdnet.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tech news",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技新闻",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://makeuseof.com",
+    "type": "news",
+    "authorityTier": "Medium",
+    "tags": [
+      "how to",
+      "tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "软件教程/工具推荐",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://howtogeek.com",
+    "type": "resource",
+    "authorityTier": "High",
+    "tags": [
+      "how to",
+      "video",
+      "downer",
+      "video downloader"
+    ],
+    "note": "教程站，视频下载类主题",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://lifehacker.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tools",
+      "downer",
+      "video downloader"
+    ],
+    "note": "生活黑客工具推荐",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://theverge.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tech",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技媒体",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://wired.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "tech",
+      "downer",
+      "video downloader"
+    ],
+    "note": "科技媒体",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://tomsguide.com",
+    "type": "news",
+    "authorityTier": "Medium",
+    "tags": [
+      "software guide",
+      "downer",
+      "video downloader"
+    ],
+    "note": "软件指南",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://cnet.com",
+    "type": "news",
+    "authorityTier": "High",
+    "tags": [
+      "software review",
+      "downer",
+      "video downloader"
+    ],
+    "note": "软件评测下载",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://videohelp.com",
+    "type": "community",
+    "authorityTier": "Medium",
+    "tags": [
+      "video formats",
+      "community",
+      "downer",
+      "video downloader"
+    ],
+    "note": "视频格式/工具社区，高度相关",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://doom9.org",
+    "type": "community",
+    "authorityTier": "Medium",
+    "tags": [
+      "video codec",
+      "downer",
+      "video downloader"
+    ],
+    "note": "视频编码技术社区",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://videolan.org",
+    "type": "community",
+    "authorityTier": "High",
+    "tags": [
+      "video formats",
+      "downer",
+      "video downloader"
+    ],
+    "note": "VLC 官方社区，视频格式",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://ffmpeg.org",
+    "type": "resource",
+    "authorityTier": "High",
+    "tags": [
+      "video formats",
+      "downer",
+      "video downloader"
+    ],
+    "note": "视频处理权威资源",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://redd.it",
+    "type": "community",
+    "authorityTier": "Low",
+    "tags": [
+      "community",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社区聚合（需具体 subreddit）",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://privacyguides.org",
+    "type": "resource",
+    "authorityTier": "Medium",
+    "tags": [
+      "privacy",
+      "downer",
+      "video downloader"
+    ],
+    "note": "隐私工具指南",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://reddit.com",
+    "type": "community",
+    "authorityTier": "High",
+    "tags": [
+      "community",
+      "downer",
+      "video downloader"
+    ],
+    "note": "社区（具体 sub）",
+    "note_en": "Niche-relevant source for a video downloader tool.",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "domains": [
+      "downer.app"
+    ]
+  }
+]

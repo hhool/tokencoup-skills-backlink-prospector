@@ -1,0 +1,1002 @@
+[
+  {
+    "url": "https://alternativeto.net",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "软件替代品目录，提交工具条目",
+    "authorityTier": "High",
+    "tags": [
+      "software directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "软件替代品目录，提交工具条目",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://producthunt.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "title": "产品发布目录，自助提交",
+    "authorityTier": "High",
+    "tags": [
+      "launch",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "产品发布目录，自助提交",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://saashub.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "SaaS 工具目录",
+    "authorityTier": "Medium",
+    "tags": [
+      "saas directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "SaaS 工具目录",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://toolify.ai",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "AI/在线工具目录",
+    "authorityTier": "Medium",
+    "tags": [
+      "tool directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "AI/在线工具目录",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://softonic.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "软件下载目录投稿收录",
+    "authorityTier": "High",
+    "tags": [
+      "software directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "软件下载目录投稿收录",
+    "source": "seed-curated-verified",
+    "verified_status": 412,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://download.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "CNET 软件目录提交",
+    "authorityTier": "High",
+    "tags": [
+      "software directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "CNET 软件目录提交",
+    "source": "seed-curated-verified",
+    "verified_status": 412,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://freewarehome.com",
+    "category": "directory",
+    "submit_type": "free",
+    "title": "免费软件目录免费提交",
+    "authorityTier": "Low",
+    "tags": [
+      "freeware",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "免费软件目录免费提交",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://snapfiles.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "共享软件目录提交",
+    "authorityTier": "Low",
+    "tags": [
+      "software directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "共享软件目录提交",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://filehorse.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "title": "免费软件目录提交",
+    "authorityTier": "Low",
+    "tags": [
+      "software directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "免费软件目录提交",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://softpedia.com",
+    "category": "directory",
+    "submit_type": "apply",
+    "title": "软件目录收录需审核",
+    "authorityTier": "High",
+    "tags": [
+      "software directory",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "软件目录收录需审核",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://filehippo.com",
+    "category": "directory",
+    "submit_type": "apply",
+    "title": "软件目录收录需审核",
+    "authorityTier": "High",
+    "tags": [
+      "software directory",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "软件目录收录需审核",
+    "source": "seed-curated-verified",
+    "verified_status": 412,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://majorgeeks.com",
+    "category": "directory",
+    "submit_type": "apply",
+    "title": "软件目录提交审核",
+    "authorityTier": "Medium",
+    "tags": [
+      "software directory",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "软件目录提交审核",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://appsumo.com",
+    "category": "launch",
+    "submit_type": "apply",
+    "title": "工具特卖平台，需申请审核",
+    "authorityTier": "High",
+    "tags": [
+      "deal platform",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "工具特卖平台，需申请审核",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://betalist.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "title": "Beta 产品目录提交",
+    "authorityTier": "Medium",
+    "tags": [
+      "beta directory",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "Beta 产品目录提交",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://thereleasehub.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "title": "产品发布聚合提交",
+    "authorityTier": "Low",
+    "tags": [
+      "launch",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "产品发布聚合提交",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://betanet.net",
+    "category": "launch",
+    "submit_type": "posting",
+    "title": "独立工具分享",
+    "authorityTier": "Low",
+    "tags": [
+      "indie tools",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "独立工具分享",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://stackshare.io",
+    "category": "community",
+    "submit_type": "register",
+    "title": "开发者工具档案注册",
+    "authorityTier": "Medium",
+    "tags": [
+      "dev tools",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "开发者工具档案注册",
+    "source": "seed-curated-verified",
+    "verified_status": 429,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://slashdot.org",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "科技新闻，需投稿沟通",
+    "authorityTier": "High",
+    "tags": [
+      "tech news",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "科技新闻，需投稿沟通",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://filmora.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "视频编辑工具博客，需投稿撰文",
+    "authorityTier": "High",
+    "tags": [
+      "video tools",
+      "blog",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "视频编辑工具博客，需投稿撰文",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://capcut.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "视频工具生态博客，需投稿",
+    "authorityTier": "High",
+    "tags": [
+      "video tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "视频工具生态博客，需投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://canva.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "设计工具博客，社媒内容",
+    "authorityTier": "High",
+    "tags": [
+      "social media tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "设计工具博客，社媒内容",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://buffer.com",
+    "category": "commercial",
+    "submit_type": "publish",
+    "title": "社媒管理博客，内容发布",
+    "authorityTier": "High",
+    "tags": [
+      "social media tools",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "社媒管理博客，内容发布",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://hootsuite.com",
+    "category": "commercial",
+    "submit_type": "publish",
+    "title": "社媒管理博客",
+    "authorityTier": "High",
+    "tags": [
+      "social media",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "社媒管理博客",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://later.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "Instagram 营销博客投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "instagram",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "Instagram 营销博客投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://metricool.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "社媒分析工具博客投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "social media tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "社媒分析工具博客投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://socialbee.com",
+    "category": "commercial",
+    "submit_type": "guest_post",
+    "title": "社媒工具博客投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "social media",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "社媒工具博客投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://mailchimp.com",
+    "category": "commercial",
+    "submit_type": "publish",
+    "title": "营销资源博客，内容发布",
+    "authorityTier": "High",
+    "tags": [
+      "marketing",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "营销资源博客，内容发布",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://videohelp.com",
+    "category": "community",
+    "submit_type": "posting",
+    "title": "视频格式/工具社区，高度相关",
+    "authorityTier": "Medium",
+    "tags": [
+      "video formats",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "视频格式/工具社区，高度相关",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://doom9.org",
+    "category": "community",
+    "submit_type": "posting",
+    "title": "视频编码技术社区",
+    "authorityTier": "Medium",
+    "tags": [
+      "video codec",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "视频编码技术社区",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://videolan.org",
+    "category": "community",
+    "submit_type": "posting",
+    "title": "VLC 官方社区，视频格式",
+    "authorityTier": "High",
+    "tags": [
+      "video formats",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "VLC 官方社区，视频格式",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://ffmpeg.org",
+    "category": "resource",
+    "submit_type": "pr",
+    "title": "视频处理权威资源，开源 PR",
+    "authorityTier": "High",
+    "tags": [
+      "video formats",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "视频处理权威资源，开源 PR",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://dev.to",
+    "category": "community",
+    "submit_type": "publish",
+    "title": "开发者社区，工具教程内容发布",
+    "authorityTier": "Medium",
+    "tags": [
+      "dev community",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "开发者社区，工具教程内容发布",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://speckyboy.com",
+    "category": "resource",
+    "submit_type": "guest_post",
+    "title": "Web 工具资源投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "web tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "Web 工具资源投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://webdesignerwall.com",
+    "category": "resource",
+    "submit_type": "guest_post",
+    "title": "设计/开发工具资源投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "设计/开发工具资源投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://techradar.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "科技评测，媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "tech review",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "科技评测，媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://zdnet.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "科技新闻，媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "tech news",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "科技新闻，媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://makeuseof.com",
+    "category": "news",
+    "submit_type": "guest_post",
+    "title": "软件教程/工具推荐投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "how to",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "软件教程/工具推荐投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://howtogeek.com",
+    "category": "resource",
+    "submit_type": "guest_post",
+    "title": "教程站，视频下载主题投稿",
+    "authorityTier": "High",
+    "tags": [
+      "how to",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "教程站，视频下载主题投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://lifehacker.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "生活黑客工具推荐，媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "tools",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "生活黑客工具推荐，媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://theverge.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "科技媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "tech",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "科技媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://wired.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "科技媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "tech",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "科技媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://tomsguide.com",
+    "category": "news",
+    "submit_type": "guest_post",
+    "title": "软件指南投稿",
+    "authorityTier": "Medium",
+    "tags": [
+      "software guide",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "软件指南投稿",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://cnet.com",
+    "category": "news",
+    "submit_type": "pitch",
+    "title": "软件评测媒体征询",
+    "authorityTier": "High",
+    "tags": [
+      "software review",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "软件评测媒体征询",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://quora.com",
+    "category": "qna",
+    "submit_type": "answer",
+    "title": "问答平台，工具推荐回答",
+    "authorityTier": "High",
+    "tags": [
+      "qna",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "问答平台，工具推荐回答",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://reddit.com",
+    "category": "community",
+    "submit_type": "posting",
+    "title": "社区（需具体 subreddit）",
+    "authorityTier": "High",
+    "tags": [
+      "community",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source",
+      "bot-blocked"
+    ],
+    "note": "社区（需具体 subreddit）",
+    "source": "seed-curated-verified",
+    "verified_status": 403,
+    "verify_note": "bot-blocked, human access OK",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://stackexchange.com",
+    "category": "qna",
+    "submit_type": "answer",
+    "title": "技术问答回答",
+    "authorityTier": "High",
+    "tags": [
+      "qna",
+      "one-shot",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "技术问答回答",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  },
+  {
+    "url": "https://privacyguides.org",
+    "category": "resource",
+    "submit_type": "apply",
+    "title": "隐私工具指南收录申请",
+    "authorityTier": "Medium",
+    "tags": [
+      "privacy",
+      "multi-step",
+      "downer",
+      "video downloader",
+      "wave-source"
+    ],
+    "note": "隐私工具指南收录申请",
+    "source": "seed-curated-verified",
+    "verified_status": 200,
+    "verify_note": "ok",
+    "domains": [
+      "downer.app"
+    ]
+  }
+]

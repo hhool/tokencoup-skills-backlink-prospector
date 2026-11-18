@@ -1,0 +1,3 @@
+gate,domain,score,source,entry_url,submit_verdict,submit_http,fields,note
+anonymous_form,avivadirectory.com,50.0,wdc,https://www.avivadirectory.com/submit.php,rejected,200,"LINK_TYPE,LINK_TYPE,TITLE,URL,DESCRIPTION,DESCRIPTION_limit,OWNER_NAME,OWNER_EMAIL,COUPON",
+anonymous_form,maxibestof.one,32.0,submitlist,https://maxibestof.one/submit,rejected,200,"url,comments",

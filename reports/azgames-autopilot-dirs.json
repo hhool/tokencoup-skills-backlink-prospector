@@ -1,0 +1,88 @@
+{
+ "generated_at": "2026-11-17T17:02:00+08:00",
+ "candidates": "/tmp/reprobe-dirs.json",
+ "submit": true,
+ "processed": 2,
+ "gates": {
+  "anonymous_form": 2
+ },
+ "verdicts": {
+  "rejected": 2
+ },
+ "rows": [
+  {
+   "domain": "avivadirectory.com",
+   "source": "wdc",
+   "score": 50.0,
+   "started": "2026-11-17T17:01:45+08:00",
+   "home_status": 200,
+   "home_final": "https://www.avivadirectory.com/",
+   "home_err": "",
+   "entry_pages": 1,
+   "gate": "anonymous_form",
+   "entry_url": "https://www.avivadirectory.com/submit.php",
+   "form_fields": [
+    "LINK_TYPE",
+    "LINK_TYPE",
+    "TITLE",
+    "URL",
+    "DESCRIPTION",
+    "DESCRIPTION_limit",
+    "OWNER_NAME",
+    "OWNER_EMAIL",
+    "COUPON"
+   ],
+   "submit_action": "https://www.avivadirectory.com/submit.php",
+   "submit_http": 200,
+   "submit_final": "https://www.avivadirectory.com/submit.php",
+   "posted_fields": [
+    "CATEGORY_ID",
+    "COUPON",
+    "DESCRIPTION",
+    "DESCRIPTION_limit",
+    "OWNER_EMAIL",
+    "OWNER_NAME",
+    "TITLE",
+    "URL",
+    "submit"
+   ],
+   "submit_verdict": "rejected",
+   "submit_hints": [
+    "invalid"
+   ],
+   "submit_excerpt": "directory | add url or add site to submit to aviva directory --> submission guidelines: 1. no refunds are given. the fee is primarily for the time and effort for an editor to do a genuine evaluation of your website. 2. this is a family friendly directory, so we don't allow websites with adult, gambl",
+   "submit_at": "2026-11-17T17:01:54+08:00",
+   "done": "2026-11-17T17:01:54+08:00"
+  },
+  {
+   "domain": "maxibestof.one",
+   "source": "submitlist",
+   "score": 32.0,
+   "started": "2026-11-17T17:01:45+08:00",
+   "home_status": 200,
+   "home_final": "https://maxibestof.one/",
+   "home_err": "",
+   "entry_pages": 1,
+   "gate": "anonymous_form",
+   "entry_url": "https://maxibestof.one/submit",
+   "form_fields": [
+    "url",
+    "comments"
+   ],
+   "submit_action": "https://maxibestof.one/submit",
+   "submit_http": 200,
+   "submit_final": "https://maxibestof.one/submit",
+   "posted_fields": [
+    "comments",
+    "url"
+   ],
+   "submit_verdict": "rejected",
+   "submit_hints": [
+    "required"
+   ],
+   "submit_excerpt": "submit a website | maxibestof websites categories agency &amp; consulting e-commerce portfolio design fashion technology food &amp; drink japanese branding startup business &amp; corporate application architecture photography beauty &amp; cosmetics finance culture &amp; education magazine, newspaper",
+   "submit_at": "2026-11-17T17:02:00+08:00",
+   "done": "2026-11-17T17:02:00+08:00"
+  }
+ ]
+}

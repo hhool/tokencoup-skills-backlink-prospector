@@ -1,0 +1,348 @@
+[
+  {
+    "domain": "startupstash.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "43",
+    "verified_entry": "https://startupstash.com/add",
+    "candidates": [
+      "https://startupstash.com/add"
+    ],
+    "wildcard": false,
+    "note": "命中 1 个提交页"
+  },
+  {
+    "domain": "sitelike.org",
+    "category": "directory",
+    "submit_type": "auto",
+    "fit_score": "41",
+    "verified_entry": "https://sitelike.org/add-site",
+    "candidates": [
+      "https://sitelike.org/add-site"
+    ],
+    "wildcard": false,
+    "note": "命中 1 个提交页"
+  },
+  {
+    "domain": "aitools.fyi",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "41",
+    "verified_entry": "https://aitools.fyi/submit",
+    "candidates": [
+      "https://aitools.fyi/submit"
+    ],
+    "wildcard": false,
+    "note": "命中 1 个提交页"
+  },
+  {
+    "domain": "newsbreak.com",
+    "category": "news",
+    "submit_type": "listing",
+    "fit_score": "81",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "pr.com",
+    "category": "news",
+    "submit_type": "free",
+    "fit_score": "73",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "en.wikipedia.org",
+    "category": "resource",
+    "submit_type": "listing",
+    "fit_score": "66",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "raindrop.io",
+    "category": "bookmark",
+    "submit_type": "register",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "getpocket.com",
+    "category": "bookmark",
+    "submit_type": "register",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "flipboard.com",
+    "category": "bookmark",
+    "submit_type": "listing",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "folkd.com",
+    "category": "bookmark",
+    "submit_type": "listing",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "bizsugar.com",
+    "category": "bookmark",
+    "submit_type": "listing",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "mix.com",
+    "category": "bookmark",
+    "submit_type": "listing",
+    "fit_score": "64",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "slashdot.org",
+    "category": "bookmark",
+    "submit_type": "listing",
+    "fit_score": "59",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "diigo.com",
+    "category": "bookmark",
+    "submit_type": "register",
+    "fit_score": "58",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "alternativeto.net",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "45",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "saashub.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "42",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "dmoztools.net",
+    "category": "directory",
+    "submit_type": "auto",
+    "fit_score": "41",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "exactly.wtf",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "41",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "curlie.org",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "38",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "futurepedia.io",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "38",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "jasminedirectory.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "37",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "toolify.ai",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "37",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "theresanaiforthat.com",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "36",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "botw.org",
+    "category": "directory",
+    "submit_type": "listing",
+    "fit_score": "34",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "f6s.com",
+    "category": "launch",
+    "submit_type": "register",
+    "fit_score": "18",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "betalist.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "17",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "microlaunch.net",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "launchingnext.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "startupbuffer.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "tinylaunch.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "sideprojectors.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": true,
+    "note": "SPA通配路由，入口不可信"
+  },
+  {
+    "domain": "pitchwall.co",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "16",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "uneed.best",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "15",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  },
+  {
+    "domain": "fazier.com",
+    "category": "launch",
+    "submit_type": "listing",
+    "fit_score": "15",
+    "verified_entry": "",
+    "candidates": [],
+    "wildcard": false,
+    "note": "未探测到提交页，需人工找"
+  }
+]
