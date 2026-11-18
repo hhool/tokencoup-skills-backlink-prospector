@@ -1,10 +1,10 @@
 {
  "meta": {
-  "generated_at": "2026-11-17T01:08:03Z",
-  "date": "2026-11-17",
+  "generated_at": "2026-11-18T01:07:40Z",
+  "date": "2026-11-18",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 11,
-  "probed": 11,
+  "candidates_seen": 9,
+  "probed": 9,
   "sources": {
    "google_trends": {
     "status": "ok",
@@ -12,9 +12,8 @@
     "kept": 6
    },
    "reddit_rising": {
-    "status": "ok",
-    "raw": 25,
-    "kept": 2
+    "status": "unavailable",
+    "error": "all reddit subs failed"
    },
    "know_your_meme": {
     "status": "unavailable",
@@ -26,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 8,
+    "raw": 10,
     "kept": 3
    }
   }
  },
  "rows": [
   {
-   "term": "First class",
+   "term": "Audience",
    "sources": [
     "9gag_hot"
    ],
@@ -42,7 +41,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "James Bond",
+   "term": "Cheesy Garlic Bread",
    "sources": [
     "9gag_hot"
    ],
@@ -51,16 +50,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Just just just just",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "Stormtrooper goes duck hunting",
+   "term": "Wild beast",
    "sources": [
     "9gag_hot"
    ],
@@ -69,20 +59,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Wario",
-   "sources": [
-    "reddit_rising"
-   ],
-   "hits": 3,
-   "hit_titles": [
-    "Weird in Wario Land",
-    "Mario and Wario Scream in Fear",
-    "Wario Being Scared"
-   ],
-   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
-  },
-  {
-   "term": "butch jones",
+   "term": "black mirror",
    "sources": [
     "google_trends"
    ],
@@ -91,7 +68,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "deuda",
+   "term": "heidi overton",
    "sources": [
     "google_trends"
    ],
@@ -100,7 +77,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "estafa",
+   "term": "hilary swank",
    "sources": [
     "google_trends"
    ],
@@ -109,7 +86,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "jakobi lane",
+   "term": "john wick",
    "sources": [
     "google_trends"
    ],
@@ -118,7 +95,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "james comer",
+   "term": "julian hall",
    "sources": [
     "google_trends"
    ],
@@ -127,7 +104,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "tulsa basketball",
+   "term": "quentin coleman",
    "sources": [
     "google_trends"
    ],

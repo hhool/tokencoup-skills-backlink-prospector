@@ -1,0 +1,116 @@
+{
+ "meta": {
+  "generated_at": "2026-11-18T01:07:40Z",
+  "date": "2026-11-18",
+  "api_base": "https://soundbuttons.cc",
+  "candidates_seen": 9,
+  "probed": 9,
+  "sources": {
+   "google_trends": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 6
+   },
+   "reddit_rising": {
+    "status": "unavailable",
+    "error": "all reddit subs failed"
+   },
+   "know_your_meme": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "tiktok_hashtags": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "9gag_hot": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 3
+   }
+  }
+ },
+ "rows": [
+  {
+   "term": "Audience",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Cheesy Garlic Bread",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Wild beast",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "black mirror",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "heidi overton",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "hilary swank",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "john wick",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "julian hall",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "quentin coleman",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  }
+ ]
+}
