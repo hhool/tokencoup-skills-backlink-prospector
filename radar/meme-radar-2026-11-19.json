@@ -1,0 +1,111 @@
+{
+ "meta": {
+  "generated_at": "2026-11-19T01:06:52Z",
+  "date": "2026-11-19",
+  "api_base": "https://soundbuttons.cc",
+  "candidates_seen": 8,
+  "probed": 8,
+  "sources": {
+   "google_trends": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 8
+   },
+   "reddit_rising": {
+    "status": "unavailable",
+    "error": "all reddit subs failed"
+   },
+   "know_your_meme": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "tiktok_hashtags": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "9gag_hot": {
+    "status": "ok",
+    "raw": 7,
+    "kept": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "term": "cait conley",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "cameron boozer",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "colombia",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "gordon ramsay",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 1,
+   "hit_titles": [
+    "Gordon Ramsay Punching Salmon But Every Punch Is A Vine Boom"
+   ],
+   "action": "已有 1 条：补内容块/解释段后内链"
+  },
+  {
+   "term": "indiana fever",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "neymar",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "soldier",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 1,
+   "hit_titles": [
+    "TF2 Soldier Screaming"
+   ],
+   "action": "已有 1 条：补内容块/解释段后内链"
+  },
+  {
+   "term": "sophie cunningham",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  }
+ ]
+}
