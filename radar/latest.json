@@ -1,15 +1,15 @@
 {
  "meta": {
-  "generated_at": "2026-11-19T01:06:52Z",
-  "date": "2026-11-19",
+  "generated_at": "2026-11-20T01:07:10Z",
+  "date": "2026-11-20",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 8,
-  "probed": 8,
+  "candidates_seen": 9,
+  "probed": 9,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 8
+    "kept": 7
    },
    "reddit_rising": {
     "status": "unavailable",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 7,
-    "kept": 0
+    "raw": 8,
+    "kept": 2
    }
   }
  },
  "rows": [
   {
-   "term": "cait conley",
+   "term": "22nd amendment",
    "sources": [
     "google_trends"
    ],
@@ -41,7 +41,25 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "cameron boozer",
+   "term": "Cuck boyfriend simulator",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "Woke Simulation",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "auburn basketball",
    "sources": [
     "google_trends"
    ],
@@ -50,7 +68,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "colombia",
+   "term": "butler basketball",
    "sources": [
     "google_trends"
    ],
@@ -59,18 +77,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "gordon ramsay",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 1,
-   "hit_titles": [
-    "Gordon Ramsay Punching Salmon But Every Punch Is A Vine Boom"
-   ],
-   "action": "已有 1 条：补内容块/解释段后内链"
-  },
-  {
-   "term": "indiana fever",
+   "term": "davis martin",
    "sources": [
     "google_trends"
    ],
@@ -79,7 +86,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "neymar",
+   "term": "harrison ford",
    "sources": [
     "google_trends"
    ],
@@ -88,18 +95,16 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "soldier",
+   "term": "justin pippen",
    "sources": [
     "google_trends"
    ],
-   "hits": 1,
-   "hit_titles": [
-    "TF2 Soldier Screaming"
-   ],
-   "action": "已有 1 条：补内容块/解释段后内链"
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "sophie cunningham",
+   "term": "taylor sheridan",
    "sources": [
     "google_trends"
    ],
