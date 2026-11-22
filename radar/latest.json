@@ -1,15 +1,15 @@
 {
  "meta": {
-  "generated_at": "2026-11-21T01:07:41Z",
-  "date": "2026-11-21",
+  "generated_at": "2026-11-22T01:07:09Z",
+  "date": "2026-11-22",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 9,
-  "probed": 9,
+  "candidates_seen": 7,
+  "probed": 7,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 8
+    "kept": 5
    },
    "reddit_rising": {
     "status": "unavailable",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 7,
-    "kept": 1
+    "raw": 9,
+    "kept": 2
    }
   }
  },
  "rows": [
   {
-   "term": "America Simulator",
+   "term": "Mentality",
    "sources": [
     "9gag_hot"
    ],
@@ -41,7 +41,16 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "aaron wiggins",
+   "term": "Rockstar Girlfriend Simulator",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "andre drummond",
    "sources": [
     "google_trends"
    ],
@@ -50,7 +59,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "brownsburg football",
+   "term": "chris hemsworth",
    "sources": [
     "google_trends"
    ],
@@ -59,7 +68,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "dabo swinney",
+   "term": "dennis rodman",
    "sources": [
     "google_trends"
    ],
@@ -68,7 +77,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "dyson daniels",
+   "term": "james franklin",
    "sources": [
     "google_trends"
    ],
@@ -77,34 +86,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "ferris state football",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "jalen johnson",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "martha stewart",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "pitt basketball",
+   "term": "james wiseman",
    "sources": [
     "google_trends"
    ],
