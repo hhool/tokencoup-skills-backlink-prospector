@@ -1,10 +1,10 @@
 {
  "meta": {
-  "generated_at": "2026-11-23T01:07:46Z",
-  "date": "2026-11-23",
+  "generated_at": "2026-11-24T01:07:54Z",
+  "date": "2026-11-24",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 7,
-  "probed": 7,
+  "candidates_seen": 6,
+  "probed": 6,
   "sources": {
    "google_trends": {
     "status": "ok",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 10,
-    "kept": 2
+    "raw": 9,
+    "kept": 1
    }
   }
  },
  "rows": [
   {
-   "term": "13 years",
+   "term": "Approx",
    "sources": [
     "9gag_hot"
    ],
@@ -41,16 +41,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Slooooooowwwwww moooootiiiiiioooooonnnnnn",
-   "sources": [
-    "9gag_hot"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "jauan jennings",
+   "term": "alex ovechkin",
    "sources": [
     "google_trends"
    ],
@@ -59,7 +50,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "lowes black friday deals",
+   "term": "deni avdija",
    "sources": [
     "google_trends"
    ],
@@ -68,7 +59,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "penn state volleyball",
+   "term": "immigration",
    "sources": [
     "google_trends"
    ],
@@ -77,7 +68,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "quer taro",
+   "term": "kris murray",
    "sources": [
     "google_trends"
    ],
@@ -86,7 +77,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "temple basketball",
+   "term": "santa clara basketball",
    "sources": [
     "google_trends"
    ],
