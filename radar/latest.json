@@ -1,15 +1,15 @@
 {
  "meta": {
-  "generated_at": "2026-11-24T01:07:54Z",
-  "date": "2026-11-24",
+  "generated_at": "2026-11-25T01:07:47Z",
+  "date": "2026-11-25",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 6,
-  "probed": 6,
+  "candidates_seen": 5,
+  "probed": 5,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 5
+    "kept": 3
    },
    "reddit_rising": {
     "status": "unavailable",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 9,
-    "kept": 1
+    "raw": 8,
+    "kept": 2
    }
   }
  },
  "rows": [
   {
-   "term": "Approx",
+   "term": "Logic",
    "sources": [
     "9gag_hot"
    ],
@@ -41,7 +41,20 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "alex ovechkin",
+   "term": "Please",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 3,
+   "hit_titles": [
+    "ROBLOX PLEASE ACCEPT THIS AUDIO",
+    "please roblox aiksjdjxjsjwjsjjd",
+    "PLEASE ROBLOX I BEG!"
+   ],
+   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
+  },
+  {
+   "term": "davis warren",
    "sources": [
     "google_trends"
    ],
@@ -50,7 +63,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "deni avdija",
+   "term": "detention",
    "sources": [
     "google_trends"
    ],
@@ -59,25 +72,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "immigration",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "kris murray",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "santa clara basketball",
+   "term": "kevin huerter",
    "sources": [
     "google_trends"
    ],
