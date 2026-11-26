@@ -1,15 +1,15 @@
 {
  "meta": {
-  "generated_at": "2026-11-25T01:07:47Z",
-  "date": "2026-11-25",
+  "generated_at": "2026-11-26T01:07:47Z",
+  "date": "2026-11-26",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 5,
-  "probed": 5,
+  "candidates_seen": 9,
+  "probed": 9,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 3
+    "kept": 8
    },
    "reddit_rising": {
     "status": "unavailable",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 8,
-    "kept": 2
+    "raw": 7,
+    "kept": 1
    }
   }
  },
  "rows": [
   {
-   "term": "Logic",
+   "term": "Instructions unclear",
    "sources": [
     "9gag_hot"
    ],
@@ -41,20 +41,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "Please",
-   "sources": [
-    "9gag_hot"
-   ],
-   "hits": 3,
-   "hit_titles": [
-    "ROBLOX PLEASE ACCEPT THIS AUDIO",
-    "please roblox aiksjdjxjsjwjsjjd",
-    "PLEASE ROBLOX I BEG!"
-   ],
-   "action": "已有库：出合集页/看板 + 内链 audio-editor 页"
-  },
-  {
-   "term": "davis warren",
+   "term": "andrew tate",
    "sources": [
     "google_trends"
    ],
@@ -63,7 +50,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "detention",
+   "term": "anthony edwards",
    "sources": [
     "google_trends"
    ],
@@ -72,7 +59,52 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "kevin huerter",
+   "term": "florida panthers",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "lonzo ball",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "myles garrett",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "tony romo",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "tutu atwell",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "wake forest basketball",
    "sources": [
     "google_trends"
    ],
