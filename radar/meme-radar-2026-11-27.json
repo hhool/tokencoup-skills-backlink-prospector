@@ -1,0 +1,98 @@
+{
+ "meta": {
+  "generated_at": "2026-11-27T01:07:50Z",
+  "date": "2026-11-27",
+  "api_base": "https://soundbuttons.cc",
+  "candidates_seen": 7,
+  "probed": 7,
+  "sources": {
+   "google_trends": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 6
+   },
+   "reddit_rising": {
+    "status": "unavailable",
+    "error": "all reddit subs failed"
+   },
+   "know_your_meme": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "tiktok_hashtags": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "9gag_hot": {
+    "status": "ok",
+    "raw": 8,
+    "kept": 1
+   }
+  }
+ },
+ "rows": [
+  {
+   "term": "Retards wouldnt understand",
+   "sources": [
+    "9gag_hot"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "devonta smith injury",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "jason statham",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "jerry jones",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "kenny moore",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "lowes black friday deals",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "pachuca",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  }
+ ]
+}

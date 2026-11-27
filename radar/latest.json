@@ -1,15 +1,15 @@
 {
  "meta": {
-  "generated_at": "2026-11-26T01:07:47Z",
-  "date": "2026-11-26",
+  "generated_at": "2026-11-27T01:07:50Z",
+  "date": "2026-11-27",
   "api_base": "https://soundbuttons.cc",
-  "candidates_seen": 9,
-  "probed": 9,
+  "candidates_seen": 7,
+  "probed": 7,
   "sources": {
    "google_trends": {
     "status": "ok",
     "raw": 10,
-    "kept": 8
+    "kept": 6
    },
    "reddit_rising": {
     "status": "unavailable",
@@ -25,14 +25,14 @@
    },
    "9gag_hot": {
     "status": "ok",
-    "raw": 7,
+    "raw": 8,
     "kept": 1
    }
   }
  },
  "rows": [
   {
-   "term": "Instructions unclear",
+   "term": "Retards wouldnt understand",
    "sources": [
     "9gag_hot"
    ],
@@ -41,7 +41,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "andrew tate",
+   "term": "devonta smith injury",
    "sources": [
     "google_trends"
    ],
@@ -50,7 +50,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "anthony edwards",
+   "term": "jason statham",
    "sources": [
     "google_trends"
    ],
@@ -59,7 +59,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "florida panthers",
+   "term": "jerry jones",
    "sources": [
     "google_trends"
    ],
@@ -68,7 +68,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "lonzo ball",
+   "term": "kenny moore",
    "sources": [
     "google_trends"
    ],
@@ -77,7 +77,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "myles garrett",
+   "term": "lowes black friday deals",
    "sources": [
     "google_trends"
    ],
@@ -86,25 +86,7 @@
    "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
   },
   {
-   "term": "tony romo",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "tutu atwell",
-   "sources": [
-    "google_trends"
-   ],
-   "hits": 0,
-   "hit_titles": [],
-   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
-  },
-  {
-   "term": "wake forest basketball",
+   "term": "pachuca",
    "sources": [
     "google_trends"
    ],
