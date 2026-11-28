@@ -1,0 +1,80 @@
+{
+ "meta": {
+  "generated_at": "2026-11-28T01:07:41Z",
+  "date": "2026-11-28",
+  "api_base": "https://soundbuttons.cc",
+  "candidates_seen": 5,
+  "probed": 5,
+  "sources": {
+   "google_trends": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 5
+   },
+   "reddit_rising": {
+    "status": "unavailable",
+    "error": "all reddit subs failed"
+   },
+   "know_your_meme": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "tiktok_hashtags": {
+    "status": "unavailable",
+    "error": "HTTP Error 404: Not Found"
+   },
+   "9gag_hot": {
+    "status": "ok",
+    "raw": 10,
+    "kept": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "term": "andrew wiggins",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "brad pitt",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "colin simmons",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "crown jewel 2026",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  },
+  {
+   "term": "submarine",
+   "sources": [
+    "google_trends"
+   ],
+   "hits": 0,
+   "hit_titles": [],
+   "action": "缺口：CC0 补源进候选池（贴合调性才收，不硬凑）"
+  }
+ ]
+}
